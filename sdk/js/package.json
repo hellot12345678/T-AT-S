@@ -1,0 +1,35 @@
+{
+  "name": "@t-at-s/web",
+  "version": "1.0.0",
+  "description": "T@S (Talk. Decide. Solve.) — Universal AI Voice Agent Client SDK for Web & React",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "node test/client.test.js"
+  },
+  "keywords": [
+    "ai",
+    "voice-agent",
+    "speech-to-text",
+    "text-to-speech",
+    "t-at-s",
+    "react",
+    "function-calling",
+    "agentic-ai"
+  ],
+  "author": "hellot12345678 <hellot12345678@gmail.com>",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  }
+}
