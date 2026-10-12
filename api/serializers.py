@@ -32,7 +32,11 @@ class PlatformConfigSerializer(serializers.ModelSerializer):
         model = PlatformConfig
         fields = [
             'starter_price_inr',
+            'growth_price_inr',
+            'enterprise_price_inr',
             'free_tier_units',
+            'growth_tier_units',
+            'enterprise_tier_units',
             'grace_buffer_pct',
             'cost_per_extra_unit',
             'text_multiplier',

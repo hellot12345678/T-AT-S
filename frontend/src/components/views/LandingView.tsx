@@ -34,6 +34,17 @@ export const LandingView: React.FC<LandingViewProps> = ({
   const [isSimulatingSpeech, setIsSimulatingSpeech] = useState(false);
   const [latencyProgress, setLatencyProgress] = useState(482);
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+  const [platformConfig, setPlatformConfig] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const cfg = await TATSBackendAPI.getPlatformConfig();
+        if (cfg) setPlatformConfig(cfg);
+      } catch {}
+    };
+    fetchConfig();
+  }, []);
 
   const utterances = [
     {
@@ -703,7 +714,7 @@ export function VoiceController() {
               <div className="font-['Outfit'] text-3xl font-bold text-[#1D1A23] my-2">₹0</div>
               <p className="text-xs text-[#57423D] mb-6">Ideal for local experiments, prototyping, and personal developer agents.</p>
               <ul className="space-y-2 text-xs text-[#57423D]">
-                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> 2,000 units / month</li>
+                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> {(platformConfig?.free_tier_units || 2000).toLocaleString('en-IN')} units / month</li>
                 <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> Community Discord Support</li>
                 <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> 1 Concurrent Voice Stream</li>
                 <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> Local SQLite / pgvector</li>
@@ -731,12 +742,12 @@ export function VoiceController() {
             <div>
               <span className="font-['Outfit'] text-xs font-bold uppercase text-[#A53B22]">Growth Startup</span>
               <div className="font-['Outfit'] text-3xl font-bold text-[#1D1A23] my-2">
-                ₹4,999<span className="text-xs text-[#8B716B] font-normal">/mo</span>
+                ₹{(platformConfig?.growth_price_inr || platformConfig?.starter_price_inr || 1999).toLocaleString('en-IN')}<span className="text-xs text-[#8B716B] font-normal">/mo</span>
               </div>
               <p className="text-xs text-[#57423D] mb-6">Engineered for production apps needing reliability and instant latency.</p>
               <ul className="space-y-2 text-xs text-[#57423D]">
-                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> 50,000 units included</li>
-                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> 10% Grace Unit Buffer</li>
+                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> {(platformConfig?.growth_tier_units || 50000).toLocaleString('en-IN')} units included</li>
+                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> {platformConfig?.grace_buffer_pct || 10}% Grace Unit Buffer</li>
                 <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> Sub-850ms latency guarantee</li>
                 <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> 25 Concurrent Channels</li>
                 <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> Priority WhatsApp & Slack Bridge</li>
@@ -753,7 +764,7 @@ export function VoiceController() {
               className="w-full mt-6 py-2.5 rounded-full bg-[#A53B22] hover:bg-[#84240D] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-[16px]">payments</span>
-              <span>Deploy Growth (₹4,999)</span>
+              <span>Deploy Growth (₹{(platformConfig?.growth_price_inr || platformConfig?.starter_price_inr || 1999).toLocaleString('en-IN')})</span>
             </button>
           </div>
 

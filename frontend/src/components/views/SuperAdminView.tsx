@@ -89,7 +89,8 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
   const [togglingDevId, setTogglingDevId] = useState<string | null>(null);
 
   // Pricing & units state
-  const [baseTierPrice, setBaseTierPrice] = useState<number>(4999);
+  const [baseTierPrice, setBaseTierPrice] = useState<number>(1999);
+  const [enterpriseTierPrice, setEnterpriseTierPrice] = useState<number>(14999);
   const [freeAllowance, setFreeAllowance] = useState<number>(2000);
   const [gracePercent, setGracePercent] = useState<number>(10);
   const [overageUnitCost, setOverageUnitCost] = useState<number>(0.35);
@@ -128,7 +129,9 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
     const fetchConfig = async () => {
       const config = await TATSBackendAPI.getPlatformConfig();
       if (config) {
-        if (config.starter_price_inr) setBaseTierPrice(Number(config.starter_price_inr));
+        if (config.growth_price_inr) setBaseTierPrice(Number(config.growth_price_inr));
+        else if (config.starter_price_inr) setBaseTierPrice(Number(config.starter_price_inr));
+        if (config.enterprise_price_inr) setEnterpriseTierPrice(Number(config.enterprise_price_inr));
         if (config.free_tier_units) setFreeAllowance(Number(config.free_tier_units));
         if (config.grace_buffer_pct) setGracePercent(Number(config.grace_buffer_pct));
         if (config.cost_per_extra_unit) setOverageUnitCost(Number(config.cost_per_extra_unit));
@@ -144,6 +147,8 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
     setIsSavingConfig(true);
     const payload = {
       starter_price_inr: baseTierPrice,
+      growth_price_inr: baseTierPrice,
+      enterprise_price_inr: enterpriseTierPrice,
       free_tier_units: freeAllowance,
       grace_buffer_pct: gracePercent,
       cost_per_extra_unit: overageUnitCost,
@@ -154,7 +159,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
     try {
       const res = await TATSBackendAPI.updatePlatformConfig(payload);
       if (res.ok) {
-        onShowToast('Platform Config Synchronized', 'Pricing and multipliers persisted to database.');
+        onShowToast('Platform Config Synchronized', 'Pricing and multipliers persisted to database and live on platform.');
       } else {
         onShowToast('Settings Saved', 'Platform parameters updated.');
       }
@@ -761,12 +766,12 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                 </div>
               </div>
 
-              {/* Slider 1: Base Monthly App Fee */}
+              {/* Slider 1: Growth Startup Monthly Plan Fee */}
               <div className="flex flex-col gap-2 bg-[#FAF9F6] p-4 rounded-2xl border border-[#FFE6DC]">
                 <div className="flex justify-between items-center">
                   <label className="text-xs font-bold text-[#1D1A23] flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-[16px] text-[#A53B22]">payments</span>
-                    Base Monthly App Fee
+                    Growth Startup Plan Fee (Base App Tier)
                   </label>
                   <div className="flex items-baseline gap-1">
                     <span className="font-['Outfit'] text-xl font-bold text-[#A53B22]">
@@ -777,17 +782,48 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                 </div>
                 <input
                   type="range"
-                  min={1999}
+                  min={499}
                   max={14999}
-                  step={500}
+                  step={250}
                   value={baseTierPrice}
                   onChange={(e) => setBaseTierPrice(Number(e.target.value))}
                   className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#FF7E5F]"
                 />
                 <div className="flex justify-between text-[11px] text-[#8B716B] font-mono">
-                  <span>₹1,999 (Starter)</span>
-                  <span>₹4,999 (Pro)</span>
-                  <span>₹14,999 (Scale)</span>
+                  <span>₹499 (Min)</span>
+                  <span>₹1,999 (Current Tier)</span>
+                  <span>₹4,999 (Default)</span>
+                  <span>₹14,999 (Max)</span>
+                </div>
+              </div>
+
+              {/* Slider 1b: Scale Enterprise Plan Fee */}
+              <div className="flex flex-col gap-2 bg-[#FAF9F6] p-4 rounded-2xl border border-[#FFE6DC]">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold text-[#1D1A23] flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-[#1D1A23]">apartment</span>
+                    Scale Enterprise Plan Fee
+                  </label>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-['Outfit'] text-xl font-bold text-[#1D1A23]">
+                      ₹{enterpriseTierPrice.toLocaleString('en-IN')}
+                    </span>
+                    <span className="text-xs text-[#57423D]">/ mo</span>
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min={4999}
+                  max={49999}
+                  step={1000}
+                  value={enterpriseTierPrice}
+                  onChange={(e) => setEnterpriseTierPrice(Number(e.target.value))}
+                  className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#1D1A23]"
+                />
+                <div className="flex justify-between text-[11px] text-[#8B716B] font-mono">
+                  <span>₹4,999 (Min)</span>
+                  <span>₹14,999 (Standard Enterprise)</span>
+                  <span>₹49,999 (Custom Air-Gap)</span>
                 </div>
               </div>
 

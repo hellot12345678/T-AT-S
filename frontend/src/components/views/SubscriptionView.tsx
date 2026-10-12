@@ -28,6 +28,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   const [selectedPlan, setSelectedPlan] = useState<string>(preSelectedPlan || 'GROWTH_STARTUP');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [paymentSuccess, setPaymentSuccess] = useState<boolean>(false);
+  const [platformConfig, setPlatformConfig] = useState<any>(null);
 
   const activeApp = applications.find((a) => a.id === activeAppId) || applications[0];
 
@@ -36,6 +37,17 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       setSelectedPlan(preSelectedPlan);
     }
   }, [preSelectedPlan]);
+
+  // Fetch dynamic platform pricing set by Admin
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const cfg = await TATSBackendAPI.getPlatformConfig();
+        if (cfg) setPlatformConfig(cfg);
+      } catch {}
+    };
+    fetchConfig();
+  }, []);
 
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -58,7 +70,11 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     }
 
     if (!activeApp) {
-      onShowToast('Create Application', 'Create your application cluster to attach this plan.', 'info');
+      onShowToast(
+        'Application Cluster Required',
+        'Please provision or select an Application Cluster first so your plan quota and API credentials can be assigned.',
+        'warning'
+      );
       onOpenCreateApp();
       return;
     }
@@ -68,11 +84,15 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     try {
       // 1. Create order on Django backend
       const orderRes = await TATSBackendAPI.createRazorpayOrder(planTier, activeApp.id);
-      if (!orderRes.ok || !orderRes.data?.order) {
-        throw new Error(orderRes.data?.error || 'Failed to initialize payment order.');
+      if (!orderRes.ok) {
+        const errorMsg = orderRes.data?.error || orderRes.data?.detail || 'Failed to initialize payment order.';
+        throw new Error(errorMsg);
       }
 
-      const orderData = orderRes.data.order;
+      const orderData = orderRes.data?.order || orderRes.data;
+      if (!orderData || !orderData.order_id) {
+        throw new Error('Could not retrieve payment order ID from server.');
+      }
 
       // 2. Load Razorpay SDK
       const scriptLoaded = await loadRazorpayScript();
@@ -141,6 +161,14 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     }
   };
 
+  // Dynamic pricing values from Platform Governance / Admin
+  const growthPrice = platformConfig?.growth_price_inr || platformConfig?.starter_price_inr || 1999;
+  const enterprisePrice = platformConfig?.enterprise_price_inr || 14999;
+  const freeUnits = platformConfig?.free_tier_units || 2000;
+  const growthUnits = platformConfig?.growth_tier_units || 50000;
+  const enterpriseUnits = platformConfig?.enterprise_tier_units || 250000;
+  const gracePct = platformConfig?.grace_buffer_pct || 10;
+
   const plans = [
     {
       id: 'FREE',
@@ -150,7 +178,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       period: 'forever',
       description: 'Ideal for local experiments, prototyping, and personal developer agents.',
       features: [
-        '2,000 units / month included',
+        `${freeUnits.toLocaleString('en-IN')} units / month included`,
         '1 Concurrent Voice Stream',
         'Zero-storage volatile memory',
         'Deterministic action graph',
@@ -162,13 +190,13 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     {
       id: 'GROWTH_STARTUP',
       name: 'Growth Startup',
-      price: 4999,
-      priceLabel: '₹4,999',
+      price: growthPrice,
+      priceLabel: `₹${growthPrice.toLocaleString('en-IN')}`,
       period: '/mo',
       description: 'Engineered for production apps needing reliability and sub-850ms latency.',
       features: [
-        '50,000 units included / month',
-        '10% Grace Unit Buffer (Never Drops Callers)',
+        `${growthUnits.toLocaleString('en-IN')} units included / month`,
+        `${gracePct}% Grace Unit Buffer (Never Drops Callers)`,
         '25 Concurrent Voice Channels',
         'Sub-850ms end-to-end latency guarantee',
         '6-Second Instant Neural Voice Clone',
@@ -180,12 +208,12 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     {
       id: 'SCALE_ENTERPRISE',
       name: 'Scale Enterprise',
-      price: 14999,
-      priceLabel: '₹14,999',
+      price: enterprisePrice,
+      priceLabel: `₹${enterprisePrice.toLocaleString('en-IN')}`,
       period: '/mo',
       description: 'Dedicated air-gapped clusters for scaled operations and high call volume.',
       features: [
-        '250,000 units included / month',
+        `${enterpriseUnits.toLocaleString('en-IN')} units included / month`,
         'Unlimited Concurrent Voice Channels',
         '99.98% High Availability SLA Guarantee',
         'Dedicated isolated SQLite/pgvector DB',

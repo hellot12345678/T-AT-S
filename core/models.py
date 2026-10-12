@@ -303,8 +303,12 @@ class UsageMeter(models.Model):
 
 class PlatformConfig(models.Model):
     """Singleton model controlled dynamically by Super Admin."""
-    starter_price_inr = models.PositiveIntegerField(default=799)
+    starter_price_inr = models.PositiveIntegerField(default=1999)
+    growth_price_inr = models.PositiveIntegerField(default=1999)
+    enterprise_price_inr = models.PositiveIntegerField(default=14999)
     free_tier_units = models.PositiveIntegerField(default=2000)
+    growth_tier_units = models.PositiveIntegerField(default=50000)
+    enterprise_tier_units = models.PositiveIntegerField(default=250000)
     grace_buffer_pct = models.PositiveIntegerField(default=10)
     cost_per_extra_unit = models.DecimalField(max_digits=6, decimal_places=4, default=0.0400)
     text_multiplier = models.DecimalField(max_digits=4, decimal_places=2, default=1.0)
@@ -317,8 +321,16 @@ class PlatformConfig(models.Model):
         obj, _ = cls.objects.get_or_create(id=1)
         return obj
 
+    def save(self, *args, **kwargs):
+        # Keep starter_price_inr and growth_price_inr synchronized
+        if self.growth_price_inr and self.starter_price_inr != self.growth_price_inr:
+            self.starter_price_inr = self.growth_price_inr
+        elif self.starter_price_inr and not self.growth_price_inr:
+            self.growth_price_inr = self.starter_price_inr
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"PlatformConfig (Free: {self.free_tier_units} units, Starter: INR {self.starter_price_inr})"
+        return f"PlatformConfig (Free: {self.free_tier_units} units, Growth: INR {self.growth_price_inr or self.starter_price_inr}, Enterprise: INR {self.enterprise_price_inr})"
 
 
 class EmailOTPVerification(models.Model):

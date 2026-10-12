@@ -85,6 +85,7 @@ urlpatterns = [
 
     # Super Admin Dynamic Config & Platform Governance
     path('admin/config/', AdminConfigView.as_view(), name='api-admin-config'),
+    path('platform-config/', AdminConfigView.as_view(), name='api-platform-config'),
     path('admin/governance/', AdminGovernanceDataView.as_view(), name='api-admin-governance'),
     path('admin/developers/<uuid:dev_id>/toggle-status/', AdminDeveloperStatusView.as_view(), name='api-admin-dev-status'),
 ]

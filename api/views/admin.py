@@ -32,7 +32,13 @@ class AdminConfigView(APIView):
     )
     def post(self, request):
         config = PlatformConfig.get_active()
-        serializer = PlatformConfigSerializer(config, data=request.data, partial=True)
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        if 'starter_price_inr' in data and 'growth_price_inr' not in data:
+            data['growth_price_inr'] = data['starter_price_inr']
+        elif 'growth_price_inr' in data and 'starter_price_inr' not in data:
+            data['starter_price_inr'] = data['growth_price_inr']
+
+        serializer = PlatformConfigSerializer(config, data=data, partial=True)
         if not serializer.is_valid():
             return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 

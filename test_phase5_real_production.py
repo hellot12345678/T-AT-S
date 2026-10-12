@@ -103,7 +103,10 @@ class ProductionAuthPaymentNotificationsTestCase(TestCase):
         }, format='json')
         self.assertEqual(order_res.status_code, 201)
         self.assertIn('order_id', order_res.data)
-        self.assertEqual(order_res.data['amount'], 499900) # ₹4,999 in paise
+        from core.models import PlatformConfig
+        p_cfg = PlatformConfig.get_active()
+        expected_paise = int((getattr(p_cfg, 'growth_price_inr', None) or p_cfg.starter_price_inr or 1999) * 100)
+        self.assertEqual(order_res.data['amount'], expected_paise)
         order_id = order_res.data['order_id']
 
         print("=== 9. Verify Razorpay Payment Signature & Upgrade ===")

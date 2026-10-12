@@ -9,34 +9,16 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema
-from core.models import Developer, Application, UsageMeter, PaymentOrder, Notification
+from core.models import Developer, Application, UsageMeter, PaymentOrder, Notification, PlatformConfig
 from core.auth import DeveloperTokenAuthentication, IsDeveloperAuthenticated
 from api.serializers import RazorpayCreateOrderSerializer, RazorpayVerifySerializer
 
 logger = logging.getLogger(__name__)
 
-# Plan Configurations in INR
-PLAN_CONFIGS = {
-    'GROWTH_STARTUP': {
-        'name': 'Growth Startup',
-        'price_inr': 4999,
-        'amount_paise': 499900,
-        'units_credited': 50000,
-        'description': '50,000 units, 10% grace buffer, sub-850ms latency guarantee'
-    },
-    'STARTER': {
-        'name': 'Starter Tier',
-        'price_inr': 799,
-        'amount_paise': 79900,
-        'units_credited': 10000,
-        'description': '10,000 units, community support'
-    }
-}
-
 
 class RazorpayCreateOrderView(APIView):
     """
-    Creates a Razorpay checkout order for plan upgrades (e.g. Growth Startup at ₹4,999).
+    Creates a Razorpay checkout order for plan upgrades using dynamic platform pricing configured by Super Admin.
     """
     authentication_classes = [DeveloperTokenAuthentication]
     permission_classes = [IsDeveloperAuthenticated]
@@ -56,14 +38,53 @@ class RazorpayCreateOrderView(APIView):
         plan_tier = serializer.validated_data.get('plan_tier', 'GROWTH_STARTUP')
         app_id = serializer.validated_data.get('app_id')
 
-        plan_meta = PLAN_CONFIGS.get(plan_tier, PLAN_CONFIGS['GROWTH_STARTUP'])
+        # Fetch dynamic platform pricing set by Platform Governance / Admin
+        platform_config = PlatformConfig.get_active()
+        growth_price = getattr(platform_config, 'growth_price_inr', None) or platform_config.starter_price_inr or 1999
+        enterprise_price = getattr(platform_config, 'enterprise_price_inr', 14999) or 14999
+        growth_units = getattr(platform_config, 'growth_tier_units', 50000) or 50000
+        enterprise_units = getattr(platform_config, 'enterprise_tier_units', 250000) or 250000
+
+        plan_configs = {
+            'GROWTH_STARTUP': {
+                'name': 'Growth Startup',
+                'price_inr': growth_price,
+                'amount_paise': int(growth_price * 100),
+                'units_credited': growth_units,
+                'description': f'{growth_units:,} units, {platform_config.grace_buffer_pct}% grace buffer, sub-850ms latency guarantee'
+            },
+            'STARTER': {
+                'name': 'Starter Tier',
+                'price_inr': growth_price,
+                'amount_paise': int(growth_price * 100),
+                'units_credited': 10000,
+                'description': '10,000 units, community support'
+            },
+            'SCALE_ENTERPRISE': {
+                'name': 'Scale Enterprise',
+                'price_inr': enterprise_price,
+                'amount_paise': int(enterprise_price * 100),
+                'units_credited': enterprise_units,
+                'description': f'{enterprise_units:,} units, air-gapped clusters, SLA guarantee'
+            }
+        }
+
+        plan_meta = plan_configs.get(plan_tier, plan_configs['GROWTH_STARTUP'])
         amount_paise = plan_meta['amount_paise']
 
         app = None
         if app_id:
             app = Application.objects.filter(id=app_id, developer=dev).first()
-        if not app:
+            if not app:
+                return Response({
+                    'error': 'Application Cluster not found. Please create or select an active cluster first.'
+                }, status=status.HTTP_404_NOT_FOUND)
+        else:
             app = Application.objects.filter(developer=dev, is_active=True).first()
+            if not app:
+                return Response({
+                    'error': 'Application Cluster Required. Please create an application cluster first so your subscription units can be provisioned.'
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         razorpay_key_id = getattr(settings, 'RAZORPAY_KEY_ID', '')
         razorpay_key_secret = getattr(settings, 'RAZORPAY_KEY_SECRET', '')
@@ -90,10 +111,10 @@ class RazorpayCreateOrderView(APIView):
                 order_id = rp_order['id']
             except Exception as e:
                 logger.error(f"Razorpay live order creation failed: {e}")
-                # Fallback to local reference if gateway returns credentials error
+                # Fallback to deterministic reference
                 order_id = f"order_{uuid.uuid4().hex[:16]}"
         else:
-            # When API keys are not yet pasted into .env, generate real-formatted order
+            # Fallback when live gateway keys are awaiting configuration
             order_id = f"order_{uuid.uuid4().hex[:16]}"
 
         payment_order = PaymentOrder.objects.create(
@@ -107,11 +128,12 @@ class RazorpayCreateOrderView(APIView):
             units_credited=plan_meta['units_credited']
         )
 
-        return Response({
+        resp_payload = {
             'order_id': order_id,
             'key_id': razorpay_key_id or 'rzp_live_placeholder',
             'amount': amount_paise,
             'currency': 'INR',
+            'price_inr': plan_meta['price_inr'],
             'plan_name': plan_meta['name'],
             'plan_tier': plan_tier,
             'units_credited': plan_meta['units_credited'],
@@ -125,7 +147,11 @@ class RazorpayCreateOrderView(APIView):
                 'plan': plan_meta['name'],
                 'application': app.app_name if app else 'Primary Cluster'
             }
-        }, status=status.HTTP_201_CREATED)
+        }
+        # Include nested order dictionary for backward compatibility with all frontend callers
+        resp_payload['order'] = dict(resp_payload)
+
+        return Response(resp_payload, status=status.HTTP_201_CREATED)
 
 
 class RazorpayVerifyView(APIView):
