@@ -43,6 +43,8 @@ class PlatformConfigSerializer(serializers.ModelSerializer):
         read_only_fields = ['updated_at']
 
 
+from drf_spectacular.utils import extend_schema_field
+
 class ApplicationDetailSerializer(serializers.ModelSerializer):
     tools_count = serializers.SerializerMethodField()
     monthly_units_used = serializers.SerializerMethodField()
@@ -50,19 +52,23 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Application
-        fields = ['id', 'app_name', 'base_url', 'wake_word_policy', 'is_active', 'tools_count', 'monthly_units_used', 'api_keys_count', 'created_at']
+        fields = ['id', 'app_name', 'base_url', 'wake_word_policy', 'plan_tier', 'is_active', 'tools_count', 'monthly_units_used', 'api_keys_count', 'created_at']
 
-    def get_tools_count(self, obj):
+    @extend_schema_field(int)
+    def get_tools_count(self, obj) -> int:
         return obj.tools.filter(is_active=True).count()
 
-    def get_monthly_units_used(self, obj):
+    @extend_schema_field(int)
+    def get_monthly_units_used(self, obj) -> int:
         from django.utils import timezone
         month = timezone.now().strftime('%Y-%m')
         meter = obj.usage_meters.filter(month_year=month).first()
         return meter.units_consumed if meter else 0
 
-    def get_api_keys_count(self, obj):
+    @extend_schema_field(int)
+    def get_api_keys_count(self, obj) -> int:
         return obj.api_keys.filter(is_active=True).count()
+
 
 
 class DeveloperRegisterSerializer(serializers.Serializer):

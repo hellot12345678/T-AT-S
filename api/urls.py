@@ -11,7 +11,10 @@ from api.views import (
     ApplicationListCreateView,
     ApplicationDetailView,
     ApplicationKeyRegenerateView,
-    EndUserConfigView
+    EndUserConfigView,
+    ApplicationUsageView,
+    ApplicationAddBonusView,
+    ApplicationUpgradeView
 )
 
 urlpatterns = [
@@ -25,6 +28,12 @@ urlpatterns = [
     path('apps/', ApplicationListCreateView.as_view(), name='api-apps-list-create'),
     path('apps/<uuid:app_id>/', ApplicationDetailView.as_view(), name='api-apps-detail'),
     path('apps/<uuid:app_id>/regenerate-keys/', ApplicationKeyRegenerateView.as_view(), name='api-apps-regenerate-keys'),
+
+    # Quota Metering, Bonus & Plan Upgrade
+    path('apps/<uuid:app_id>/usage/', ApplicationUsageView.as_view(), name='api-apps-usage'),
+    path('apps/<uuid:app_id>/add-bonus/', ApplicationAddBonusView.as_view(), name='api-apps-add-bonus'),
+    path('apps/<uuid:app_id>/upgrade/', ApplicationUpgradeView.as_view(), name='api-apps-upgrade'),
+
 
     # End-User Voice Preferences & Security
     path('users/<str:client_user_id>/config/', EndUserConfigView.as_view(), name='api-user-config'),

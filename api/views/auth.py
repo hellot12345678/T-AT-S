@@ -143,6 +143,7 @@ class DeveloperLogoutView(APIView):
                 required=True
             )
         ],
+        request=None,
         responses={200: dict}
     )
     def post(self, request):

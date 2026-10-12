@@ -15,5 +15,11 @@ from .apps import (
     ApplicationKeyRegenerateView
 )
 from .users import EndUserConfigView
+from .usage import (
+    ApplicationUsageView,
+    ApplicationAddBonusView,
+    ApplicationUpgradeView
+)
+
 
 

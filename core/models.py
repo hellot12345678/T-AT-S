@@ -42,6 +42,11 @@ class Application(models.Model):
         ('LOCKED', 'Locked to App Name'),
         ('CUSTOM', 'Allow End-User Custom'),
     ]
+    PLAN_TIER_CHOICES = [
+        ('FREE', 'Free Tier (2,000 units/mo)'),
+        ('STARTER', 'Starter Tier (INR 799/mo)'),
+
+    ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     developer = models.ForeignKey(Developer, on_delete=models.CASCADE, related_name='applications')
@@ -49,8 +54,10 @@ class Application(models.Model):
     base_url = models.URLField(max_length=255, help_text="Root API URL of the developer application")
     service_key_hash = models.CharField(max_length=255)
     wake_word_policy = models.CharField(max_length=20, choices=WAKE_WORD_POLICY_CHOICES, default='CUSTOM')
+    plan_tier = models.CharField(max_length=20, choices=PLAN_TIER_CHOICES, default='FREE')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
 
     def __str__(self):
         return f"{self.app_name} ({self.developer.email})"
@@ -150,12 +157,75 @@ class UsageMeter(models.Model):
     month_year = models.CharField(max_length=7, help_text="Format: YYYY-MM")
     units_consumed = models.PositiveIntegerField(default=0)
     bonus_units = models.PositiveIntegerField(default=0)
+    text_units_consumed = models.PositiveIntegerField(default=0)
+    voice_units_consumed = models.PositiveIntegerField(default=0)
+    tool_units_consumed = models.PositiveIntegerField(default=0)
+    requests_count = models.PositiveIntegerField(default=0)
+    tools_executed_count = models.PositiveIntegerField(default=0)
 
     class Meta:
         unique_together = ('application', 'month_year')
 
     def __str__(self):
         return f"{self.application.app_name} - {self.month_year}: {self.units_consumed} units"
+
+    def record_usage(
+        self,
+        is_voice: bool,
+        tool_executed: bool,
+        text_multiplier: float = 1.0,
+        voice_multiplier: float = 2.0,
+        tool_multiplier: float = 3.0
+    ) -> int:
+        base_units = int(voice_multiplier if is_voice else text_multiplier)
+        tool_units = int(tool_multiplier) if tool_executed else 0
+        total = base_units + tool_units
+
+        self.units_consumed += total
+        if is_voice:
+            self.voice_units_consumed += base_units
+        else:
+            self.text_units_consumed += base_units
+
+        if tool_executed:
+            self.tool_units_consumed += tool_units
+            self.tools_executed_count += 1
+
+        self.requests_count += 1
+        self.save()
+        return total
+
+    def get_quota_status(self, platform_config=None) -> dict:
+        if platform_config is None:
+            platform_config = PlatformConfig.get_active()
+
+        base_quota = (platform_config.free_tier_units if self.application.plan_tier == 'FREE' else 50000) + self.bonus_units
+        grace_buffer_pct = platform_config.grace_buffer_pct
+        grace_limit = int(base_quota * (1 + grace_buffer_pct / 100))
+        remaining = max(0, base_quota - self.units_consumed)
+        is_grace_active = (base_quota < self.units_consumed <= grace_limit)
+        is_exhausted = (self.units_consumed >= grace_limit)
+
+        return {
+            'month': self.month_year,
+            'plan_tier': self.application.plan_tier,
+            'units_consumed': self.units_consumed,
+            'base_quota': base_quota,
+            'bonus_units': self.bonus_units,
+            'units_remaining': remaining,
+            'grace_buffer_pct': grace_buffer_pct,
+            'grace_limit': grace_limit,
+            'grace_buffer_active': is_grace_active,
+            'is_exhausted': is_exhausted,
+            'breakdown': {
+                'text_units': self.text_units_consumed,
+                'voice_units': self.voice_units_consumed,
+                'tool_units': self.tool_units_consumed,
+                'total_requests': self.requests_count,
+                'tools_executed': self.tools_executed_count
+            }
+        }
+
 
 
 class PlatformConfig(models.Model):
@@ -175,5 +245,6 @@ class PlatformConfig(models.Model):
         return obj
 
     def __str__(self):
-        return f"PlatformConfig (Free: {self.free_tier_units} units, Starter: ₹{self.starter_price_inr})"
+        return f"PlatformConfig (Free: {self.free_tier_units} units, Starter: INR {self.starter_price_inr})"
+
 

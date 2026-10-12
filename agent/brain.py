@@ -11,6 +11,13 @@ from .local_client import OllamaLLMClient
 
 logger = logging.getLogger(__name__)
 
+class QuotaExceededError(Exception):
+    """Raised when an application has exhausted its monthly units + grace buffer."""
+    def __init__(self, message: str, quota_status: Optional[Dict[str, Any]] = None):
+        super().__init__(message)
+        self.quota_status = quota_status or {}
+
+
 class AgentBrain:
     def __init__(self, application: Application):
         self.application = application
@@ -28,7 +35,7 @@ class AgentBrain:
         """
         Main reasoning & action loop.
         Takes incoming user utterance, reasons with LLM, executes tools,
-        updates session history and returns speech + event payload.
+        updates session history, enforces accounting quotas, and returns speech + event payload.
         """
         start_time = time.time()
         latencies = {
@@ -38,6 +45,23 @@ class AgentBrain:
             'tts_ms': 0,
             'total_ms': 0
         }
+
+        # 0. Pre-Flight Quota & Grace Buffer Check
+        current_month = timezone.now().strftime('%Y-%m')
+        meter, _ = UsageMeter.objects.get_or_create(
+            application=self.application,
+            month_year=current_month
+        )
+        platform_config = PlatformConfig.get_active()
+        quota_status = meter.get_quota_status(platform_config)
+
+        if quota_status['is_exhausted']:
+            raise QuotaExceededError(
+                f"Monthly unit quota exhausted for application '{self.application.app_name}'. "
+                f"Limit of {quota_status['grace_limit']} units reached. "
+                f"Please upgrade to Starter Tier or add credits.",
+                quota_status=quota_status
+            )
 
         # 1. Retrieve Recent Short-Term History
         recent_history = SessionHistory.objects.filter(
@@ -82,7 +106,6 @@ class AgentBrain:
         tool_dispatch_result = None
         client_event = None
         spoken_reply = ""
-        units_consumed = 2 if is_voice else 1
 
         # 4. Handle Tool Calling If Detected
         tool_calls = llm_res.get('tool_calls')
@@ -94,7 +117,6 @@ class AgentBrain:
             if call_name in tool_lookup:
                 matched_tool = tool_lookup[call_name]
                 tool_executed_name = call_name
-                units_consumed += 3 # Standard tool call unit cost
 
                 # Validate parameters
                 is_valid, cleaned_args, val_error = ToolValidator.validate_and_clean(
@@ -154,18 +176,16 @@ class AgentBrain:
             tool_payload=tool_dispatch_result
         )
 
-        # 6. Increment Usage Meter
-        current_month = timezone.now().strftime('%Y-%m')
-        meter, _ = UsageMeter.objects.get_or_create(
-            application=self.application,
-            month_year=current_month
+        # 6. Increment Usage Meter with Dynamic Accounting
+        units_consumed = meter.record_usage(
+            is_voice=is_voice,
+            tool_executed=(tool_executed_name is not None),
+            text_multiplier=float(platform_config.text_multiplier),
+            voice_multiplier=float(platform_config.voice_multiplier),
+            tool_multiplier=float(platform_config.tool_multiplier),
         )
-        meter.units_consumed += units_consumed
-        meter.save(update_fields=['units_consumed'])
 
-        platform_config = PlatformConfig.get_active()
-        remaining_units = max(0, (platform_config.free_tier_units + meter.bonus_units) - meter.units_consumed)
-
+        fresh_quota = meter.get_quota_status(platform_config)
         latencies['total_ms'] = int((time.time() - start_time) * 1000)
 
         return {
@@ -174,8 +194,10 @@ class AgentBrain:
             'tool_result': tool_dispatch_result,
             'event': client_event,
             'units_deducted': units_consumed,
-            'units_remaining': remaining_units,
+            'units_remaining': fresh_quota['units_remaining'],
+            'grace_buffer_active': fresh_quota['grace_buffer_active'],
             'latencies': latencies,
             'session_id': session_id
         }
+
 
