@@ -69,3 +69,4 @@ class NotificationMarkAllReadView(APIView):
         dev = request.developer
         Notification.objects.filter(developer=dev, is_read=False).update(is_read=True)
         return Response({'message': 'All notifications marked as read.'}, status=status.HTTP_200_OK)
+

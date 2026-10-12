@@ -81,11 +81,20 @@ export class TATSBackendAPI {
   // ==========================================
   // Developer Auth & OTP Verification
   // ==========================================
-  public static async register(name: string, email: string, phone: string, password: string) {
+  public static async register(name: string, email: string, phone: string, password?: string) {
     const res = await fetch(`${API_BASE}/auth/register/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, password }),
+      body: JSON.stringify({ name, email, phone, password: password || undefined }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  public static async loginRequestOTP(email: string) {
+    const res = await fetch(`${API_BASE}/auth/login-request-otp/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
     });
     return { ok: res.ok, status: res.status, data: await res.json() };
   }

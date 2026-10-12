@@ -10,6 +10,7 @@ import { ToastContainer } from './components/Toast';
 import { TATSBackendAPI } from './services/api';
 
 import { LandingView } from './components/views/LandingView';
+import { AuthView } from './components/views/AuthView';
 import { DeveloperDashboardView } from './components/views/DeveloperDashboardView';
 import { ToolBuilderView } from './components/views/ToolBuilderView';
 import { PlaygroundView } from './components/views/PlaygroundView';
@@ -72,14 +73,19 @@ export default function App() {
     loadApplications();
   }, [developer]);
 
-  // Auth Modal Opener with Custom Banner
+  // Dedicated Auth Page Navigation
   const handleOpenAuth = (notice?: string) => {
     setAuthBannerNotice(notice || '');
-    setIsAuthModalOpen(true);
+    setCurrentView('auth');
   };
 
   // Navigation Guard: Protect internal workspaces from unauthenticated access
   const handleNavigate = (view: AppView) => {
+    if (view === 'auth') {
+      setCurrentView('auth');
+      return;
+    }
+
     if (!developer && view !== 'landing') {
       setPendingNavView(view);
       handleOpenAuth('Sign in or register to access this developer workspace.');
@@ -115,6 +121,7 @@ export default function App() {
   const handleAuthSuccess = (dev: any) => {
     setDeveloper(dev);
     loadApplications();
+    addToast('Welcome Back!', `Logged in as ${dev.name}.`, 'success');
     if (pendingNavView) {
       setCurrentView(pendingNavView);
       setPendingNavView(null);
@@ -157,6 +164,20 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [developer]);
+
+  // Render dedicated full-page brand & auth portal
+  if (currentView === 'auth') {
+    return (
+      <div className="min-h-screen bg-[#0E0D0C] text-[#F4EFEA]">
+        <AuthView
+          onAuthSuccess={handleAuthSuccess}
+          onReturnHome={() => setCurrentView('landing')}
+          bannerNotice={authBannerNotice}
+        />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-[#1D1A23] font-['Manrope'] flex flex-col selection:bg-[#FF7E5F]/20 selection:text-[#721702]">

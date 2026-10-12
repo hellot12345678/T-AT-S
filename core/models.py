@@ -1,29 +1,98 @@
 import uuid
 import hashlib
+import secrets
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 
-class Developer(models.Model):
+
+class DeveloperManager(BaseUserManager):
+    """
+    Custom user model manager for T@S Platform Developers.
+    Supports email-based authentication with high-concurrency ACID guarantees.
+    """
+    def create_user(self, email, name="Developer", phone=None, password=None, **extra_fields):
+        if not email:
+            raise ValueError("The Email field must be set.")
+        email = self.normalize_email(email).lower().strip()
+        user = self.model(email=email, name=name, phone=phone, **extra_fields)
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, name="Platform Administrator", phone=None, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_admin', True)
+        extra_fields.setdefault('is_verified', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self.create_user(email, name=name, phone=phone, password=password, **extra_fields)
+
+
+class Developer(AbstractBaseUser, PermissionsMixin):
+    """
+    Custom High-Scale Enterprise Auth User Model for T@S (Talk. Decide. Solve.).
+    Designed for 10K+ daily concurrent users with strict ACID properties and fast indexing.
+    Inherits from AbstractBaseUser and PermissionsMixin.
+    """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=150, default="Developer")
-    email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=20, blank=True, null=True, help_text="Indian mobile number e.g. +91 9876543210")
-    password_hash = models.CharField(max_length=255)
-    is_admin = models.BooleanField(default=False, help_text="Designated platform administrator")
-    is_verified = models.BooleanField(default=False, help_text="Verified via email OTP")
-    created_at = models.DateTimeField(auto_now_add=True)
+    email = models.EmailField(unique=True, db_index=True, max_length=255)
+    phone = models.CharField(max_length=20, unique=True, null=True, blank=True, db_index=True, help_text="Indian mobile number e.g. +91 9876543210")
+    is_admin = models.BooleanField(default=False, db_index=True, help_text="Designated platform administrator")
+    is_verified = models.BooleanField(default=False, db_index=True, help_text="Verified via email OTP")
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # Custom related_name to eliminate any collision with default auth models
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='developer_groups',
+        blank=True,
+        help_text='The groups this developer belongs to.'
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='developer_user_permissions',
+        blank=True,
+        help_text='Specific permissions for this developer.'
+    )
+
+    objects = DeveloperManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['name']
+
+    class Meta:
+        verbose_name = 'Developer'
+        verbose_name_plural = 'Developers'
+        indexes = [
+            models.Index(fields=['email']),
+            models.Index(fields=['phone']),
+            models.Index(fields=['created_at']),
+        ]
 
     def __str__(self):
         role_label = " [ADMIN]" if self.is_admin else ""
         return f"{self.name} ({self.email}){role_label}"
 
-    def set_password(self, raw_password: str):
-        from django.contrib.auth.hashers import make_password
-        self.password_hash = make_password(raw_password)
+    @property
+    def password_hash(self):
+        return self.password
 
-    def check_password(self, raw_password: str) -> bool:
-        from django.contrib.auth.hashers import check_password
-        return check_password(raw_password, self.password_hash)
+    @password_hash.setter
+    def password_hash(self, val):
+        self.password = val
 
 
 class DeveloperToken(models.Model):
@@ -278,8 +347,8 @@ class EmailOTPVerification(models.Model):
         from django.conf import settings
         from django.contrib.auth.hashers import make_password
 
-        # Generate 6-digit cryptographic-style OTP
-        raw_otp = f"{random.randint(100000, 999999)}"
+        # Generate 6-digit cryptographic-grade secure OTP
+        raw_otp = f"{secrets.randbelow(900000) + 100000}"
         otp_hash = make_password(raw_otp)
         expires_at = timezone.now() + timedelta(minutes=10)
 

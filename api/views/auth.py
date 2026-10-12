@@ -1,5 +1,6 @@
 import re
 import logging
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -9,6 +10,7 @@ from core.models import Developer, DeveloperToken, EmailOTPVerification, Notific
 from core.auth import DeveloperTokenAuthentication, IsDeveloperAuthenticated
 from api.serializers import (
     DeveloperRegisterSerializer,
+    LoginRequestOTPSerializer,
     DeveloperLoginSerializer,
     DeveloperProfileSerializer,
     OTPVerifySerializer,
@@ -66,11 +68,53 @@ class SystemStatusView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class LoginRequestOTPView(APIView):
+    """
+    Passwordless Developer Login - Step 1:
+    Accepts developer email, verifies account existence, and dispatches a 6-digit cryptographic OTP to their email.
+    """
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=['Developer Auth & Onboarding'],
+        summary='Request Login OTP (Passwordless Email Auth)',
+        description='Dispatches a 6-digit cryptographic OTP to the developer email for passwordless sign-in.',
+        request=LoginRequestOTPSerializer
+    )
+    def post(self, request):
+        serializer = LoginRequestOTPSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data['email'].lower().strip()
+        dev = Developer.objects.filter(email=email).first()
+
+        if not dev:
+            return Response({
+                'error': 'No developer account found with this email. Please register first.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if not dev.is_active:
+            return Response({
+                'error': 'This account has been deactivated. Please contact platform administration.'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Dispatch 6-digit OTP
+        EmailOTPVerification.create_and_send(email=email, purpose='LOGIN')
+
+        return Response({
+            'message': f'A 6-digit login verification code has been dispatched to {email}.',
+            'requires_otp': True,
+            'email': email,
+            'is_admin': dev.is_admin
+        }, status=status.HTTP_200_OK)
+
+
 class DeveloperRegisterView(APIView):
     """
     Secure Developer Self-Service Registration.
-    Validates Indian Mobile Number (+91), email, and strong password.
-    Dispatches a 6-digit OTP to the provided email address for verification.
+    Validates Indian Mobile Number (+91), email, and dispatches 6-digit email OTP.
+    ACID compliant with atomic transaction lock.
     The very first registered developer is automatically granted Platform Administrator privilege.
     """
     permission_classes = [AllowAny]
@@ -89,7 +133,7 @@ class DeveloperRegisterView(APIView):
         data = serializer.validated_data
         email = data['email'].lower().strip()
         raw_phone = data.get('phone', '')
-        password = data['password']
+        password = data.get('password')
 
         # 1. Validate Indian Mobile
         try:
@@ -97,44 +141,44 @@ class DeveloperRegisterView(APIView):
         except ValueError as ve:
             return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2. Validate Strong Password
-        try:
-            validate_strong_password(password)
-        except ValueError as ve:
-            return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+        # 2. Validate Strong Password if provided
+        if password:
+            try:
+                validate_strong_password(password)
+            except ValueError as ve:
+                return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 3. Check duplicate email or phone
-        if Developer.objects.filter(email=email).exists():
-            existing = Developer.objects.get(email=email)
-            if not existing.is_verified:
-                # Resend OTP for unverified account
-                EmailOTPVerification.create_and_send(email=email, purpose='REGISTER')
-                return Response({
-                    'message': 'An unverified account with this email exists. A new verification OTP has been sent.',
-                    'requires_otp': True,
-                    'email': email,
-                    'is_admin': existing.is_admin
-                }, status=status.HTTP_200_OK)
-            return Response({'error': 'An account with this email address already exists. Please Sign In.'}, status=status.HTTP_400_BAD_REQUEST)
+        # 3. Check duplicate email or phone within atomic block
+        with transaction.atomic():
+            if Developer.objects.filter(email=email).exists():
+                existing = Developer.objects.get(email=email)
+                if not existing.is_verified:
+                    EmailOTPVerification.create_and_send(email=email, purpose='REGISTER')
+                    return Response({
+                        'message': 'An unverified account with this email exists. A new verification OTP has been sent.',
+                        'requires_otp': True,
+                        'email': email,
+                        'is_admin': existing.is_admin
+                    }, status=status.HTTP_200_OK)
+                return Response({'error': 'An account with this email address already exists. Please Sign In.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if Developer.objects.filter(phone=formatted_phone, is_verified=True).exists():
-            return Response({'error': 'An account with this mobile number already exists. Please Sign In.'}, status=status.HTTP_400_BAD_REQUEST)
+            if Developer.objects.filter(phone=formatted_phone, is_verified=True).exists():
+                return Response({'error': 'An account with this mobile number already exists. Please Sign In.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 4. Check if this is the very first user (Designated Platform Admin)
-        is_first_user = not Developer.objects.filter(is_admin=True).exists()
+            # 4. Check if this is the very first user (Designated Platform Admin)
+            is_first_user = not Developer.objects.select_for_update().filter(is_admin=True).exists()
 
-        dev = Developer(
-            name=data.get('name', 'Developer').strip(),
-            email=email,
-            phone=formatted_phone,
-            is_admin=is_first_user,
-            is_verified=False
-        )
-        dev.set_password(password)
-        dev.save()
+            dev = Developer.objects.create_user(
+                email=email,
+                name=data.get('name', 'Developer').strip(),
+                phone=formatted_phone,
+                password=password if password else None,
+                is_admin=is_first_user,
+                is_verified=False
+            )
 
-        # 5. Generate and send 6-digit email OTP
-        EmailOTPVerification.create_and_send(email=email, purpose='REGISTER')
+            # 5. Generate and send 6-digit email OTP
+            EmailOTPVerification.create_and_send(email=email, purpose='REGISTER')
 
         return Response({
             'message': f"Account created. A 6-digit verification code has been sent to {email}.",
@@ -172,25 +216,38 @@ class VerifyOTPView(APIView):
         except Developer.DoesNotExist:
             return Response({'error': 'No developer account found for this email.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Verify OTP
+        # Verify OTP (check provided purpose, and fallback between LOGIN and REGISTER)
         is_valid = EmailOTPVerification.verify_code(email=email, raw_code=otp, purpose=purpose)
+        if not is_valid and purpose == 'LOGIN':
+            is_valid = EmailOTPVerification.verify_code(email=email, raw_code=otp, purpose='REGISTER')
+        elif not is_valid and purpose == 'REGISTER':
+            is_valid = EmailOTPVerification.verify_code(email=email, raw_code=otp, purpose='LOGIN')
+
         if not is_valid:
             return Response({'error': 'Invalid or expired 6-digit verification code. Please check your email or request a new code.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Mark verified
-        dev.is_verified = True
-        dev.save()
+        with transaction.atomic():
+            # Mark verified
+            dev.is_verified = True
+            dev.save()
 
-        token = DeveloperToken.generate(dev)
+            token = DeveloperToken.generate(dev)
 
-        # Create welcome notification
-        if purpose == 'REGISTER':
-            Notification.objects.create(
-                developer=dev,
-                title="Welcome to T@S!",
-                message=f"Your developer account is verified and ready. Provision your first application cluster to get live API keys.",
-                notification_type='SUCCESS'
-            )
+            # Create notification
+            if purpose == 'REGISTER':
+                Notification.objects.create(
+                    developer=dev,
+                    title="Welcome to T@S!",
+                    message=f"Your developer account is verified and ready. Provision your first application cluster to get live API keys.",
+                    notification_type='SUCCESS'
+                )
+            else:
+                Notification.objects.create(
+                    developer=dev,
+                    title="Sign-In Verified",
+                    message="You have successfully authenticated via secure OTP.",
+                    notification_type='INFO'
+                )
 
         return Response({
             'message': 'Account verified successfully.',
@@ -350,7 +407,7 @@ class DeveloperLoginView(APIView):
             return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         identifier = serializer.validated_data['email'].strip()
-        password = serializer.validated_data['password']
+        password = serializer.validated_data.get('password')
 
         dev = None
         # Try finding by email
@@ -363,6 +420,18 @@ class DeveloperLoginView(APIView):
                 dev = Developer.objects.filter(phone=formatted_phone).first()
             except ValueError:
                 pass
+
+        # Passwordless Login Path (OTP-only)
+        if not password:
+            if not dev:
+                return Response({'error': 'No developer account found with this email. Please register first.'}, status=status.HTTP_404_NOT_FOUND)
+            EmailOTPVerification.create_and_send(email=dev.email, purpose='LOGIN')
+            return Response({
+                'message': f'A 6-digit login verification code has been dispatched to {dev.email}.',
+                'requires_otp': True,
+                'email': dev.email,
+                'is_admin': dev.is_admin
+            }, status=status.HTTP_200_OK)
 
         if not dev or not dev.check_password(password):
             return Response({'error': 'Invalid credentials. Please verify your email/phone and password.'}, status=status.HTTP_401_UNAUTHORIZED)

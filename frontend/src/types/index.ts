@@ -4,7 +4,8 @@ export type AppView =
   | 'visual-tool-builder'
   | 'live-voice-playground'
   | 'super-admin'
-  | 'component-wizard';
+  | 'component-wizard'
+  | 'auth';
 
 export interface TelemetrySession {
   id: string;

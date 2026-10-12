@@ -81,18 +81,22 @@ class DeveloperRegisterSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=150, default="Developer", required=False)
     email = serializers.EmailField(required=True)
     phone = serializers.CharField(max_length=20, required=True, help_text="Indian mobile number (10 digits, e.g. +91 9876543210 or 9876543210)")
-    password = serializers.CharField(max_length=128, write_only=True, required=True)
+    password = serializers.CharField(max_length=128, write_only=True, required=False, allow_blank=True)
+
+
+class LoginRequestOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True, help_text="Registered developer email address")
 
 
 class DeveloperLoginSerializer(serializers.Serializer):
     email = serializers.CharField(required=True, help_text="Email address or registered mobile number")
-    password = serializers.CharField(max_length=128, write_only=True, required=True)
+    password = serializers.CharField(max_length=128, write_only=True, required=False, allow_blank=True)
 
 
 class OTPVerifySerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     otp = serializers.CharField(max_length=6, min_length=6, required=True)
-    purpose = serializers.CharField(max_length=30, default="REGISTER")
+    purpose = serializers.CharField(max_length=30, default="LOGIN")
 
 
 class ResendOTPSerializer(serializers.Serializer):

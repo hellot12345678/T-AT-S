@@ -6,6 +6,7 @@ from .admin import AdminConfigView
 from .auth import (
     SystemStatusView,
     DeveloperRegisterView,
+    LoginRequestOTPView,
     VerifyOTPView,
     ResendOTPView,
     ForgotPasswordView,
