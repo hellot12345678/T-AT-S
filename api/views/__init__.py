@@ -2,11 +2,16 @@
 from .health import HealthCheckView
 from .chat import ChatExecutionView
 from .tools import ToolManagementView
-from .admin import AdminConfigView
+from .admin import (
+    AdminConfigView,
+    AdminGovernanceDataView,
+    AdminDeveloperStatusView
+)
 from .auth import (
     SystemStatusView,
     DeveloperRegisterView,
     LoginRequestOTPView,
+    RecoverEmailView,
     VerifyOTPView,
     ResendOTPView,
     ForgotPasswordView,

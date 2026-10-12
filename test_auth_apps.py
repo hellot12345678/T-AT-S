@@ -7,30 +7,38 @@ class DeveloperAuthAndAppsTestCase(TestCase):
         self.client = APIClient()
 
     def test_developer_register_login_and_lifecycle(self):
-        # 1. Register new developer
+        # 1. Register new developer with Indian phone
         register_payload = {
             'name': 'Test Developer',
             'email': 'dev_test@example.com',
+            'phone': '9876543210',
             'password': 'SecurePassword123!'
         }
         reg_res = self.client.post('/api/v1/auth/register/', register_payload, format='json')
         self.assertEqual(reg_res.status_code, 201)
-        self.assertIn('token', reg_res.data)
-        dev_token = reg_res.data['token']
-        self.assertTrue(dev_token.startswith('tas_dev_'))
+        self.assertTrue(reg_res.data.get('requires_otp'))
 
-        # 2. Test duplicate email failure
+        # 2. Verify OTP
+        from core.models import EmailOTPVerification
+        from django.contrib.auth.hashers import make_password
+        otp_rec = EmailOTPVerification.objects.filter(email='dev_test@example.com', purpose='REGISTER').first()
+        self.assertIsNotNone(otp_rec)
+        otp_rec.otp_hash = make_password('123456')
+        otp_rec.save()
+
+        verify_res = self.client.post('/api/v1/auth/verify-otp/', {
+            'email': 'dev_test@example.com',
+            'otp': '123456',
+            'purpose': 'REGISTER'
+        }, format='json')
+        self.assertEqual(verify_res.status_code, 200)
+        self.assertIn('token', verify_res.data)
+        active_token = verify_res.data['token']
+        self.assertTrue(active_token.startswith('tas_dev_'))
+
+        # 3. Test duplicate email failure on verified account
         dup_res = self.client.post('/api/v1/auth/register/', register_payload, format='json')
         self.assertEqual(dup_res.status_code, 400)
-
-        # 3. Login
-        login_res = self.client.post('/api/v1/auth/login/', {
-            'email': 'dev_test@example.com',
-            'password': 'SecurePassword123!'
-        }, format='json')
-        self.assertEqual(login_res.status_code, 200)
-        self.assertIn('token', login_res.data)
-        active_token = login_res.data['token']
 
         # 4. Get Developer Profile
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {active_token}')

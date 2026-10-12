@@ -124,6 +124,15 @@ export class TATSBackendAPI {
     return { ok: res.ok, status: res.status, data: await res.json() };
   }
 
+  public static async recoverEmail(phone: string) {
+    const res = await fetch(`${API_BASE}/auth/recover-email/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
   public static async forgotPassword(email: string) {
     const res = await fetch(`${API_BASE}/auth/forgot-password/`, {
       method: 'POST',
@@ -374,6 +383,23 @@ export class TATSBackendAPI {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(config),
+    });
+    return { ok: res.ok, data: await res.json() };
+  }
+
+  public static async getGovernanceData() {
+    const res = await fetch(`${API_BASE}/admin/governance/`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  }
+
+  public static async toggleDeveloperStatus(devId: string) {
+    const res = await fetch(`${API_BASE}/admin/developers/${encodeURIComponent(devId)}/toggle-status/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
     });
     return { ok: res.ok, data: await res.json() };
   }

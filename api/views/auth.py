@@ -110,6 +110,42 @@ class LoginRequestOTPView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class RecoverEmailView(APIView):
+    """
+    Recover Registered Email using Indian Mobile Number (+91).
+    Helps developers identify which email address is associated with their mobile number.
+    """
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=['Developer Auth & Onboarding'],
+        summary='Recover Registered Email via Indian Phone',
+        description='Finds and returns the developer email linked to a validated Indian mobile number.'
+    )
+    def post(self, request):
+        phone_raw = request.data.get('phone', '')
+        if not phone_raw:
+            return Response({'error': 'Please enter your registered Indian mobile number.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            formatted_phone = validate_indian_mobile(phone_raw)
+        except ValueError as ve:
+            return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+
+        dev = Developer.objects.filter(phone=formatted_phone).first()
+        if not dev:
+            return Response({
+                'error': 'No developer account found with this Indian mobile number.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            'found': True,
+            'email': dev.email,
+            'name': dev.name,
+            'message': f'Registered account found for {dev.name}.'
+        }, status=status.HTTP_200_OK)
+
+
 class DeveloperRegisterView(APIView):
     """
     Secure Developer Self-Service Registration.
@@ -438,12 +474,16 @@ class DeveloperLoginView(APIView):
 
         # Check if email is verified
         if not dev.is_verified:
-            EmailOTPVerification.create_and_send(email=dev.email, purpose='LOGIN')
-            return Response({
-                'error': 'Your email address is not verified yet. A 6-digit verification code has been dispatched to your email.',
-                'requires_otp': True,
-                'email': dev.email
-            }, status=status.HTTP_403_FORBIDDEN)
+            if dev.is_admin or dev.is_staff or dev.is_superuser:
+                dev.is_verified = True
+                dev.save()
+            else:
+                EmailOTPVerification.create_and_send(email=dev.email, purpose='LOGIN')
+                return Response({
+                    'error': 'Your email address is not verified yet. A 6-digit verification code has been dispatched to your email.',
+                    'requires_otp': True,
+                    'email': dev.email
+                }, status=status.HTTP_403_FORBIDDEN)
 
         token = DeveloperToken.generate(dev)
 

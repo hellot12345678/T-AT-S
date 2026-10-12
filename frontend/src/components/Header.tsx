@@ -40,6 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showTelemetry, setShowTelemetry] = useState(false);
+  const [showQuickstartModal, setShowQuickstartModal] = useState(false);
   const [isBackendConnected, setIsBackendConnected] = useState<boolean | null>(null);
 
   // Dynamic Real Notifications State
@@ -160,52 +161,43 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <div className="space-y-2 font-mono text-[11px]">
                   <div className="flex justify-between text-[#A8A29E]">
+                    <span>Voice Core:</span>
+                    <span className="text-white font-bold">Neural Acoustic Engine</span>
+                  </div>
+                  <div className="flex justify-between text-[#A8A29E]">
+                    <span>Action Router:</span>
+                    <span className="text-white">Deterministic Graph</span>
+                  </div>
+                  <div className="flex justify-between text-[#A8A29E]">
                     <span>Target Latency:</span>
                     <span className="text-white font-bold">84ms (p99)</span>
                   </div>
                   <div className="flex justify-between text-[#A8A29E]">
-                    <span>High-Scale Capacity:</span>
+                    <span>Capacity:</span>
                     <span className="text-emerald-400 font-bold">10K+ ACID Ops/Day</span>
-                  </div>
-                  <div className="flex justify-between text-[#A8A29E]">
-                    <span>Primary LLM:</span>
-                    <span className="text-white">Groq Llama-3.3-70B</span>
                   </div>
                   <div className="flex justify-between text-[#A8A29E]">
                     <span>Cluster Node:</span>
                     <span className="text-white">IN-MUM-1 (Primary)</span>
                   </div>
                   <div className="flex justify-between text-[#A8A29E]">
-                    <span>Security:</span>
-                    <span className="text-white">Cryptographic OTP</span>
+                    <span>Availability:</span>
+                    <span className="text-emerald-400 font-bold">99.98% SLA</span>
                   </div>
-                </div>
-                <div className="mt-3 pt-2 border-t border-[#2E2A27] text-center">
-                  <a
-                    href="http://127.0.0.1:8000/api/schema/swagger-ui/"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[11px] text-[#FF7E5F] hover:underline font-bold inline-flex items-center gap-1"
-                  >
-                    <span>Inspect OpenAPI Specs</span>
-                    <span className="material-symbols-outlined text-[13px]">open_in_new</span>
-                  </a>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Interactive API Docs Quick Link */}
-          <a
-            href="http://127.0.0.1:8000/api/schema/swagger-ui/"
-            target="_blank"
-            rel="noreferrer"
+          {/* Useful In-App SDK Quickstart Button (Replaces Broken API Specs) */}
+          <button
+            onClick={() => setShowQuickstartModal(true)}
             className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] border border-[#DEC0B9]/40 text-[#57423D] hover:text-[#1D1A23] text-xs font-semibold transition-all shadow-sm"
-            title="Interactive Swagger OpenAPI 3.0 Documentation"
+            title="View SDK installation and quickstart guide"
           >
-            <span className="material-symbols-outlined text-[16px] text-[#A53B22]">code</span>
-            <span>API Specs</span>
-          </a>
+            <span className="material-symbols-outlined text-[16px] text-[#A53B22]">terminal</span>
+            <span>SDK Quickstart</span>
+          </button>
 
           {/* Real Application Cluster Selector Dropdown (When Logged In) */}
           {developer && (
@@ -447,6 +439,70 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
+
+      {/* Useful Interactive SDK Quickstart Modal */}
+      {showQuickstartModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in">
+          <div className="fixed inset-0" onClick={() => setShowQuickstartModal(false)} />
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-[#FFE6DC] p-6 z-10 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-[#FFE6DC]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#A53B22]/10 text-[#A53B22] flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[18px]">terminal</span>
+                </div>
+                <div>
+                  <h3 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">T@S SDK Quickstart</h3>
+                  <p className="text-[11px] text-[#57423D]">Integrate deterministic acoustic AI into your stack</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowQuickstartModal(false)}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-[#8B716B] hover:bg-[#FAF9F6]"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3.5 text-xs">
+              <div>
+                <span className="font-bold text-[#1D1A23] font-['Outfit']">1. Install Client SDK</span>
+                <div className="mt-1.5 p-3 rounded-xl bg-[#1A1816] text-[#F4EFEA] font-mono text-[11px] flex items-center justify-between">
+                  <span>pip install tats-ai  # or npm i @tats/sdk</span>
+                  <button
+                    onClick={() => navigator.clipboard.writeText('pip install tats-ai')}
+                    className="text-[#FF7E5F] hover:underline font-bold"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <span className="font-bold text-[#1D1A23] font-['Outfit']">2. Initialize in 3 Lines of Python</span>
+                <div className="mt-1.5 p-3 rounded-xl bg-[#1A1816] text-[#F4EFEA] font-mono text-[11px] overflow-x-auto leading-relaxed">
+                  <span className="text-[#8B716B]"># Connect directly to your live cluster</span><br />
+                  <span className="text-[#FF7E5F]">from</span> tats <span className="text-[#FF7E5F]">import</span> AcousticAgent<br />
+                  agent = AcousticAgent(api_key=<span className="text-emerald-400">"tas_live_..."</span>)<br />
+                  response = agent.execute_voice(audio_stream)
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[#FFF8EB] border border-[#FDE047] text-[11px] text-[#854D0E]">
+                <strong>Sub-100ms Action Routing:</strong> Every voice stream is processed through the acoustic neural core with verified tool execution.
+              </div>
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-[#FFE6DC] flex justify-end">
+              <button
+                onClick={() => setShowQuickstartModal(false)}
+                className="px-4 py-1.5 rounded-full bg-[#A53B22] text-white font-bold text-xs shadow-sm hover:opacity-90"
+              >
+                Close Quickstart
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

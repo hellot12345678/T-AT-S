@@ -265,6 +265,7 @@ export default function App() {
             <SuperAdminView
               onNavigate={handleNavigate}
               onShowToast={addToast}
+              developer={developer}
             />
           )}
         </main>

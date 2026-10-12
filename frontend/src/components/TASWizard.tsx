@@ -8,7 +8,8 @@ interface TASWizardProps {
 }
 
 export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccessToast }) => {
-  const [currentStep, setCurrentStep] = useState(3);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [maxAllowedStep, setMaxAllowedStep] = useState(1);
   const [wakeWord, setWakeWord] = useState('Hey Acme');
   const [passphrase, setPassphrase] = useState('Blue Phoenix Alpha');
   const [selectedPersona, setSelectedPersona] = useState<'browser' | 'aura' | 'clone'>('aura');
@@ -18,6 +19,14 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
   const [micVolume, setMicVolume] = useState(64);
   const [isWiped, setIsWiped] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Reset to Step 1 whenever opened
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentStep(1);
+      setMaxAllowedStep(1);
+    }
+  }, [isOpen]);
 
   // Voice clone recorder countdown simulation
   useEffect(() => {
@@ -53,9 +62,39 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
   if (!isOpen) return null;
 
   const handleNext = async () => {
-    if (currentStep < 5) {
-      setCurrentStep(currentStep + 1);
-    } else {
+    if (currentStep === 1) {
+      setMaxAllowedStep((prev) => Math.max(prev, 2));
+      setCurrentStep(2);
+      return;
+    }
+
+    if (currentStep === 2) {
+      if (!wakeWord.trim() || wakeWord.trim().length < 3) {
+        if (onSuccessToast) onSuccessToast('Please enter a valid wake word with at least 3 characters.');
+        return;
+      }
+      setMaxAllowedStep((prev) => Math.max(prev, 3));
+      setCurrentStep(3);
+      return;
+    }
+
+    if (currentStep === 3) {
+      if (!passphrase.trim() || passphrase.trim().length < 4) {
+        if (onSuccessToast) onSuccessToast('Please enter a secure biometric passphrase (at least 4 characters).');
+        return;
+      }
+      setMaxAllowedStep((prev) => Math.max(prev, 4));
+      setCurrentStep(4);
+      return;
+    }
+
+    if (currentStep === 4) {
+      setMaxAllowedStep((prev) => Math.max(prev, 5));
+      setCurrentStep(5);
+      return;
+    }
+
+    if (currentStep === 5) {
       setIsSaving(true);
       try {
         await TATSBackendAPI.saveUserConfig('default_user', {
@@ -64,7 +103,7 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
           voice_tier: selectedPersona === 'clone' ? 'CLONED' : selectedPersona === 'aura' ? 'LIBRARY' : 'BROWSER'
         });
         if (onSuccessToast) {
-          onSuccessToast(`Acoustic Voice Agent calibrated! Custom wake word "${wakeWord}" & biometrics stored in Django database.`);
+          onSuccessToast(`Acoustic Voice Agent calibrated! Custom wake word "${wakeWord}" stored.`);
         }
       } catch {
         if (onSuccessToast) onSuccessToast('Agent calibrated and deployed to local memory.');
@@ -131,8 +170,13 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
               return (
                 <button
                   key={step.num}
-                  onClick={() => setCurrentStep(step.num)}
-                  className="flex flex-col gap-1 text-left group"
+                  disabled={step.num > maxAllowedStep}
+                  onClick={() => {
+                    if (step.num <= maxAllowedStep) {
+                      setCurrentStep(step.num);
+                    }
+                  }}
+                  className={`flex flex-col gap-1 text-left group ${step.num > maxAllowedStep ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                 >
                   <div className="flex items-center gap-2">
                     <div

@@ -4,9 +4,12 @@ from api.views import (
     ChatExecutionView,
     ToolManagementView,
     AdminConfigView,
+    AdminGovernanceDataView,
+    AdminDeveloperStatusView,
     SystemStatusView,
     DeveloperRegisterView,
     LoginRequestOTPView,
+    RecoverEmailView,
     VerifyOTPView,
     ResendOTPView,
     ForgotPasswordView,
@@ -38,6 +41,7 @@ urlpatterns = [
     path('auth/resend-otp/', ResendOTPView.as_view(), name='api-auth-resend-otp'),
     path('auth/forgot-password/', ForgotPasswordView.as_view(), name='api-auth-forgot-password'),
     path('auth/reset-password/', ResetPasswordView.as_view(), name='api-auth-reset-password'),
+    path('auth/recover-email/', RecoverEmailView.as_view(), name='api-auth-recover-email'),
     path('auth/login-request-otp/', LoginRequestOTPView.as_view(), name='api-auth-login-request-otp'),
     path('auth/login/', DeveloperLoginView.as_view(), name='api-auth-login'),
     path('auth/logout/', DeveloperLogoutView.as_view(), name='api-auth-logout'),
@@ -77,6 +81,8 @@ urlpatterns = [
     path('tools/', ToolManagementView.as_view(), name='api-tools-list'),
     path('tools/register/', ToolManagementView.as_view(), name='api-tools-register'),
 
-    # Super Admin Dynamic Config
+    # Super Admin Dynamic Config & Platform Governance
     path('admin/config/', AdminConfigView.as_view(), name='api-admin-config'),
+    path('admin/governance/', AdminGovernanceDataView.as_view(), name='api-admin-governance'),
+    path('admin/developers/<uuid:dev_id>/toggle-status/', AdminDeveloperStatusView.as_view(), name='api-admin-dev-status'),
 ]
