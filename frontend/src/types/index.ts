@@ -6,7 +6,8 @@ export type AppView =
   | 'super-admin'
   | 'component-wizard'
   | 'subscription-pricing'
-  | 'auth';
+  | 'auth'
+  | 'settings';
 
 export interface TelemetrySession {
   id: string;
@@ -51,6 +52,16 @@ export interface TenantRecord {
   renderUptime: string;
   ping: string;
   colorScheme: 'coral' | 'amber' | 'cyan' | 'slate';
+}
+
+export interface DeveloperProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  is_admin?: boolean;
+  is_verified?: boolean;
+  date_joined?: string;
 }
 
 export interface DeveloperUser {

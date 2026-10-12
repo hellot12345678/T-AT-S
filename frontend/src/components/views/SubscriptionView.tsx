@@ -10,6 +10,7 @@ interface SubscriptionViewProps {
   activeAppId: string;
   onSelectApp: (app: any) => void;
   onRefreshApps: () => Promise<void>;
+  onOpenCreateApp: () => void;
   preSelectedPlan?: string;
 }
 
@@ -21,6 +22,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   activeAppId,
   onSelectApp,
   onRefreshApps,
+  onOpenCreateApp,
   preSelectedPlan
 }) => {
   const [selectedPlan, setSelectedPlan] = useState<string>(preSelectedPlan || 'GROWTH_STARTUP');
@@ -56,7 +58,8 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     }
 
     if (!activeApp) {
-      onShowToast('Cluster Required', 'Please create or select an application cluster first.', 'warning');
+      onShowToast('Create Application', 'Create your application cluster to attach this plan.', 'info');
+      onOpenCreateApp();
       return;
     }
 
@@ -218,7 +221,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           </p>
         </div>
 
-        {/* Application Cluster Picker */}
+        {/* Application Cluster Picker & Create Option */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-[#FAF9F6] p-3 rounded-2xl border border-[#FFE6DC]">
           <div className="flex flex-col">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#8B716B] font-['Outfit']">
@@ -240,7 +243,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                 ))}
               </select>
             ) : (
-              <span className="text-xs font-bold text-[#A53B22]">No Active Cluster</span>
+              <span className="text-xs font-bold text-[#A53B22]">No Clusters Provisioned</span>
             )}
           </div>
 
@@ -252,8 +255,38 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
               </span>
             </div>
           )}
+
+          <button
+            onClick={onOpenCreateApp}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#FF7E5F] to-[#FF5F45] text-white font-['Outfit'] font-bold text-xs shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
+            title="Create a new application cluster"
+          >
+            <span className="material-symbols-outlined text-[16px]">add_circle</span>
+            <span>+ Create App Cluster</span>
+          </button>
         </div>
       </div>
+
+      {applications.length === 0 && (
+        <div className="p-4 rounded-2xl bg-[#FFF8EB] border border-[#FDE047] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#854D0E] shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-[24px] text-[#A53B22] shrink-0">rocket_launch</span>
+            <div>
+              <p className="font-bold text-[#1D1A23] text-sm">Provision an Application Cluster First</p>
+              <p className="text-[11px] text-[#854D0E]">
+                To attach and activate the Growth Startup or Enterprise plan, create your first application cluster in 5 seconds.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenCreateApp}
+            className="px-4 py-2 rounded-xl bg-[#A53B22] hover:bg-[#84240D] text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <span className="material-symbols-outlined text-[16px]">add_circle</span>
+            <span>+ Create Cluster Now</span>
+          </button>
+        </div>
+      )}
 
       {paymentSuccess && (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between text-xs animate-in fade-in">
@@ -333,7 +366,13 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                   </div>
                 ) : (
                   <button
-                    onClick={() => handleSubscribe(plan.id, plan.name, plan.price)}
+                    onClick={() => {
+                      if (!activeApp) {
+                        onOpenCreateApp();
+                      } else {
+                        handleSubscribe(plan.id, plan.name, plan.price);
+                      }
+                    }}
                     disabled={isProcessing}
                     className={`w-full py-3 rounded-full font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
                       plan.popular
@@ -345,6 +384,11 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                       <>
                         <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
                         <span>Processing Order...</span>
+                      </>
+                    ) : !activeApp ? (
+                      <>
+                        <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                        <span>+ Create Cluster to Deploy</span>
                       </>
                     ) : (
                       <>

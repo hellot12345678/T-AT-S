@@ -17,6 +17,7 @@ from api.views import (
     DeveloperLoginView,
     DeveloperLogoutView,
     DeveloperMeView,
+    DeveloperChangePasswordView,
     ApplicationListCreateView,
     ApplicationDetailView,
     ApplicationKeyRegenerateView,
@@ -46,6 +47,7 @@ urlpatterns = [
     path('auth/login/', DeveloperLoginView.as_view(), name='api-auth-login'),
     path('auth/logout/', DeveloperLogoutView.as_view(), name='api-auth-logout'),
     path('auth/me/', DeveloperMeView.as_view(), name='api-auth-me'),
+    path('auth/change-password/', DeveloperChangePasswordView.as_view(), name='api-auth-change-password'),
 
     # Developer Applications & API Key Management
     path('apps/', ApplicationListCreateView.as_view(), name='api-apps-list-create'),

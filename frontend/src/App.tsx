@@ -16,6 +16,7 @@ import { ToolBuilderView } from './components/views/ToolBuilderView';
 import { PlaygroundView } from './components/views/PlaygroundView';
 import { SuperAdminView } from './components/views/SuperAdminView';
 import { SubscriptionView } from './components/views/SubscriptionView';
+import { SettingsView } from './components/views/SettingsView';
 
 export default function App() {
   // Developer Session & Tenancy State
@@ -187,6 +188,10 @@ export default function App() {
         handleNavigate('component-wizard');
       } else if (e.key === '5') {
         handleNavigate(developer?.is_admin ? 'super-admin' : 'subscription-pricing');
+      } else if (e.key === '6') {
+        handleNavigate(developer?.is_admin ? 'subscription-pricing' : 'settings');
+      } else if (e.key === '7' && developer?.is_admin) {
+        handleNavigate('settings');
       }
     };
 
@@ -310,6 +315,26 @@ export default function App() {
                 addToast('Switched Cluster', `Active application context set to "${app.app_name}".`);
               }}
               onRefreshApps={loadApplications}
+              onOpenCreateApp={() => setIsAppCreateModalOpen(true)}
+            />
+          )}
+
+          {currentView === 'settings' && developer && (
+            <SettingsView
+              onNavigate={handleNavigate}
+              onShowToast={addToast}
+              developer={developer}
+              applications={applications}
+              activeAppId={activeAppId}
+              onSelectApp={(app) => {
+                setActiveAppId(app.id);
+                addToast('Switched Cluster', `Active application context set to "${app.app_name}".`);
+              }}
+              onRefreshApps={loadApplications}
+              onOpenCreateApp={() => setIsAppCreateModalOpen(true)}
+              onUpdateDeveloperProfile={(updatedDev) => {
+                setDeveloper(updatedDev);
+              }}
             />
           )}
         </main>

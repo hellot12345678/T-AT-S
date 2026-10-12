@@ -129,6 +129,37 @@ class ApplicationDetailView(APIView):
 
     @extend_schema(
         tags=['Application Management'],
+        summary='Update Application Settings',
+        description='Updates application name, base URL, or wake word policy.'
+    )
+    def patch(self, request, app_id):
+        try:
+            app = Application.objects.get(id=app_id, developer=request.developer)
+        except Application.DoesNotExist:
+            return Response({'error': 'Application not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        app_name = request.data.get('app_name')
+        if app_name and app_name.strip():
+            app.app_name = app_name.strip()
+
+        base_url = request.data.get('base_url')
+        if base_url and base_url.strip():
+            app.base_url = base_url.strip()
+
+        wake_word_policy = request.data.get('wake_word_policy')
+        if wake_word_policy in ['CUSTOM', 'LOCKED']:
+            app.wake_word_policy = wake_word_policy
+
+        app.save()
+        serializer = ApplicationDetailSerializer(app)
+        return Response({
+            'message': f"Application '{app.app_name}' settings updated successfully.",
+            'application': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+    @extend_schema(
+        tags=['Application Management'],
         summary='Delete / Deactivate Application',
         description='Deactivates an application and all its tools and active keys.',
         parameters=[

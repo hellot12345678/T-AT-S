@@ -553,3 +553,82 @@ class DeveloperMeView(APIView):
                 'created_at': dev.created_at
             }
         }, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=['Developer Auth & Onboarding'],
+        summary='Update Developer Profile',
+        description='Allows developer to update their full name and Indian mobile phone.'
+    )
+    def patch(self, request):
+        dev = request.developer
+        name = request.data.get('name')
+        if name and name.strip():
+            dev.name = name.strip()
+
+        phone_raw = request.data.get('phone')
+        if phone_raw is not None:
+            if phone_raw.strip():
+                try:
+                    dev.phone = validate_indian_mobile(phone_raw)
+                except ValueError as ve:
+                    return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                dev.phone = None
+
+        dev.save()
+        return Response({
+            'message': 'Developer profile updated successfully.',
+            'developer': {
+                'id': str(dev.id),
+                'name': dev.name,
+                'email': dev.email,
+                'phone': dev.phone,
+                'is_admin': dev.is_admin,
+                'is_verified': dev.is_verified,
+                'applications_count': dev.applications.count(),
+                'created_at': dev.created_at
+            }
+        }, status=status.HTTP_200_OK)
+
+
+class DeveloperChangePasswordView(APIView):
+    """
+    Allows authenticated developer to change their password by validating old password.
+    """
+    authentication_classes = [DeveloperTokenAuthentication]
+    permission_classes = [IsDeveloperAuthenticated]
+
+    @extend_schema(
+        tags=['Developer Auth & Onboarding'],
+        summary='Change Account Password',
+        description='Validates old password and sets a new strong password.'
+    )
+    def post(self, request):
+        dev = request.developer
+        old_password = request.data.get('old_password', '')
+        new_password = request.data.get('new_password', '')
+
+        if not old_password or not new_password:
+            return Response({'error': 'Please provide both your current password and new password.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from django.contrib.auth.hashers import check_password
+        if not check_password(old_password, dev.password):
+            return Response({'error': 'Current password does not match.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            validate_strong_password(new_password)
+        except ValueError as ve:
+            return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+
+        dev.set_password(new_password)
+        dev.save()
+
+        Notification.objects.create(
+            developer=dev,
+            title="Password Changed",
+            message="Your account password was successfully updated from Developer Settings.",
+            notification_type='SYSTEM'
+        )
+
+        return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+

@@ -18,7 +18,8 @@ from .auth import (
     ResetPasswordView,
     DeveloperLoginView,
     DeveloperLogoutView,
-    DeveloperMeView
+    DeveloperMeView,
+    DeveloperChangePasswordView
 )
 from .apps import (
     ApplicationListCreateView,

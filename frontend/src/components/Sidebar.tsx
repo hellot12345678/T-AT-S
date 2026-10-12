@@ -9,15 +9,24 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isMicActive, isAdmin }) => {
-  const navItems: { path: AppView; label: string; icon: string; shortcut: string }[] = [
-    { path: 'developer-dashboard', label: 'Developer Dashboard', icon: 'monitoring', shortcut: '1' },
-    { path: 'visual-tool-builder', label: 'Visual Tool Builder', icon: 'account_tree', shortcut: '2' },
-    { path: 'live-voice-playground', label: 'Live Voice Playground', icon: 'mic', shortcut: '3' },
-    { path: 'component-wizard', label: 'Component Wizard', icon: 'auto_awesome', shortcut: '4' },
+  const rawNavItems: { path: AppView; label: string; icon: string }[] = [
+    { path: 'developer-dashboard', label: 'Developer Dashboard', icon: 'monitoring' },
+    { path: 'visual-tool-builder', label: 'Visual Tool Builder', icon: 'account_tree' },
+    { path: 'live-voice-playground', label: 'Live Voice Playground', icon: 'mic' },
+    { path: 'component-wizard', label: 'Component Wizard', icon: 'auto_awesome' },
     ...(isAdmin
-      ? [{ path: 'super-admin' as AppView, label: 'Platform Governance', icon: 'admin_panel_settings', shortcut: '5' }]
-      : [{ path: 'subscription-pricing' as AppView, label: 'Subscription & Plans', icon: 'payments', shortcut: '5' }]),
+      ? [
+          { path: 'super-admin' as AppView, label: 'Platform Governance', icon: 'admin_panel_settings' },
+          { path: 'subscription-pricing' as AppView, label: 'Subscription & Plans', icon: 'payments' },
+        ]
+      : [{ path: 'subscription-pricing' as AppView, label: 'Subscription & Plans', icon: 'payments' }]),
+    { path: 'settings' as AppView, label: 'Account & Settings', icon: 'settings' },
   ];
+
+  const navItems = rawNavItems.map((item, idx) => ({
+    ...item,
+    shortcut: String(idx + 1),
+  }));
 
   return (
     <aside className="fixed left-0 top-16 bottom-0 w-64 bg-[#F8F1FE]/80 backdrop-blur-xl z-30 flex flex-col justify-between py-4 border-r border-[#FFE6DC]/60 shadow-[0_4px_20px_-2px_rgba(30,27,36,0.03)] hidden lg:flex">

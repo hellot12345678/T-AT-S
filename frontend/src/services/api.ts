@@ -194,6 +194,28 @@ export class TATSBackendAPI {
     return await res.json();
   }
 
+  public static async updateProfile(payload: { name?: string; phone?: string }) {
+    const res = await fetch(`${API_BASE}/auth/me/`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (res.ok && data.developer) {
+      this.setCurrentDeveloper(data.developer);
+    }
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  public static async changePassword(payload: { old_password: string; new_password: string }) {
+    const res = await fetch(`${API_BASE}/auth/change-password/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
   // ==========================================
   // Application Management
   // ==========================================
@@ -216,6 +238,15 @@ export class TATSBackendAPI {
       body: JSON.stringify({ app_name: appName, base_url: baseUrl, wake_word_policy: wakeWordPolicy }),
     });
     return { ok: res.ok, data: await res.json() };
+  }
+
+  public static async updateApplication(appId: string, payload: { app_name?: string; base_url?: string; wake_word_policy?: string }) {
+    const res = await fetch(`${API_BASE}/apps/${appId}/`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
   }
 
   public static async regenerateAppKey(appId: string) {

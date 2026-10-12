@@ -413,6 +413,17 @@ export const Header: React.FC<HeaderProps> = ({
                       </button>
                     )}
 
+                    <button
+                      onClick={() => {
+                        onNavigate('settings');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-[#1D1A23] hover:bg-[#F8F1FE] rounded-lg flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-[#A53B22]">settings</span>
+                      <span>Account & Agent Settings</span>
+                    </button>
+
                     <div className="my-1 border-t border-[#FFE6DC]/60"></div>
                     <button
                       onClick={() => {
