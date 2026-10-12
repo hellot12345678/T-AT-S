@@ -79,3 +79,4 @@ export class WakeWordDetector {
       .trim();
   }
 }
+

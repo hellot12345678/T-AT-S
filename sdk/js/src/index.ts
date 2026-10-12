@@ -9,3 +9,4 @@ export * from './audio/wakeWordDetector';
 export * from './audio/speechRecognition';
 export * from './audio/speechSynthesis';
 export * from './react';
+

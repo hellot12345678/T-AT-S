@@ -131,3 +131,4 @@ Works anywhere without React (Vue, Angular, Svelte, or plain HTML):
 ## 📄 License
 
 MIT License — Copyright (c) 2026 T@S Platform.
+

@@ -56,3 +56,4 @@ export interface TATSConfig {
   onEvent?: (event: UIEvent) => void;
   onError?: (error: Error | string) => void;
 }
+

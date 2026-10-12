@@ -18,6 +18,10 @@ db.sqlite3
 *.egg-info/
 build/
 dist/
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
 
 
 

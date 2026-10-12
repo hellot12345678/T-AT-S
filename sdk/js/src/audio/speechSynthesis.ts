@@ -96,3 +96,4 @@ export class TTSManager {
     return Boolean(this.synth?.speaking);
   }
 }
+

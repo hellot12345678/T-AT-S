@@ -94,3 +94,4 @@ console.log('[PASS] Non-wake phrase rejected as expected');
 console.log('==================================================');
 console.log('ALL JAVASCRIPT SDK WAKE WORD & AUDIO TESTS PASSED!');
 console.log('==================================================');
+

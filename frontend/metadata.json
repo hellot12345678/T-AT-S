@@ -1,0 +1,6 @@
+{
+  "name": "T@S Acoustic Action Engine",
+  "description": "Universal AI Voice Agent Platform that turns human speech into live backend software executions with deterministic sub-850ms latency.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
