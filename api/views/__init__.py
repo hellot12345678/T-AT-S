@@ -12,7 +12,8 @@ from .auth import (
 from .apps import (
     ApplicationListCreateView,
     ApplicationDetailView,
-    ApplicationKeyRegenerateView
+    ApplicationKeyRegenerateView,
+    ApplicationSessionsView
 )
 from .users import EndUserConfigView
 from .usage import (

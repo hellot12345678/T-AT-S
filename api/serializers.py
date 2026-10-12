@@ -49,10 +49,11 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
     tools_count = serializers.SerializerMethodField()
     monthly_units_used = serializers.SerializerMethodField()
     api_keys_count = serializers.SerializerMethodField()
+    api_key_prefix = serializers.SerializerMethodField()
 
     class Meta:
         model = Application
-        fields = ['id', 'app_name', 'base_url', 'wake_word_policy', 'plan_tier', 'is_active', 'tools_count', 'monthly_units_used', 'api_keys_count', 'created_at']
+        fields = ['id', 'app_name', 'base_url', 'wake_word_policy', 'plan_tier', 'is_active', 'tools_count', 'monthly_units_used', 'api_keys_count', 'api_key_prefix', 'created_at']
 
     @extend_schema_field(int)
     def get_tools_count(self, obj) -> int:
@@ -68,6 +69,11 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
     @extend_schema_field(int)
     def get_api_keys_count(self, obj) -> int:
         return obj.api_keys.filter(is_active=True).count()
+
+    @extend_schema_field(str)
+    def get_api_key_prefix(self, obj) -> str:
+        key = obj.api_keys.filter(is_active=True).first()
+        return key.key_prefix if key else ""
 
 
 

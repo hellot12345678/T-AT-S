@@ -22,6 +22,11 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
   const [appId, setAppId] = useState('');
   const [activeApiKey, setActiveApiKey] = useState(TATSBackendAPI.getApiKey());
   const [toolsCount, setToolsCount] = useState(18);
+  const [activeToolsList, setActiveToolsList] = useState<any[]>([
+    { name: 'create_task', desc: 'v1.2 · Linear, Jira', endpoint: '/api/v1/tasks/create/', icon: 'task_alt' },
+    { name: 'refund_order', desc: 'v2.0 · Stripe, Razorpay', endpoint: '/api/v1/payments/refund/', icon: 'payments' },
+    { name: 'lookup_crm', desc: 'v3.4 · HubSpot, Salesforce', endpoint: '/api/v1/crm/contacts/', icon: 'contacts' }
+  ]);
   const [monthlyUnitsUsed, setMonthlyUnitsUsed] = useState(16800);
   const [monthlyQuota, setMonthlyQuota] = useState(20000);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
@@ -38,11 +43,47 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
           setAppId(mainApp.id);
           setToolsCount(mainApp.tools_count || 18);
           setMonthlyUnitsUsed(mainApp.monthly_units_used || 0);
+
+          // Fetch real telemetry sessions for this app
+          try {
+            const teleRes = await TATSBackendAPI.getSessionTelemetry(mainApp.id);
+            if (teleRes && teleRes.sessions && teleRes.sessions.length > 0) {
+              const mapped = teleRes.sessions.map((s: any) => ({
+                id: s.id,
+                timestamp: new Date(s.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                caller: s.client_user_id || 'voice_caller',
+                wakeWord: 'Hey Acme',
+                userTranscript: s.content,
+                actionName: s.tool_name || 'dialogue_turn',
+                authStatus: 'verified',
+                totalLatency: 480,
+                speedBreakdown: '480ms',
+                status: 200,
+                statusText: '200 OK',
+                voiceConfidence: 0.98,
+                taskPayload: s.tool_payload || { text: s.content }
+              }));
+              setTelemetry(mapped);
+            }
+          } catch (e) {
+            // Telemetry fetch fallback
+          }
+
+          // Fetch real tools for this app
+          try {
+            const toolsRes = await TATSBackendAPI.getTools(activeApiKey);
+            if (toolsRes && toolsRes.tools && toolsRes.tools.length > 0) {
+              setActiveToolsList(toolsRes.tools);
+              setToolsCount(toolsRes.tools.length);
+            }
+          } catch (e) {
+            // Tools fetch fallback
+          }
         }
       }
     };
     fetchLiveData();
-  }, []);
+  }, [activeApiKey]);
 
   const filteredTelemetry = telemetry.filter((t) => {
     if (filter === 'voice') return t.authStatus === 'verified';
@@ -483,27 +524,25 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
                 <h3 className="font-['Outfit'] text-base font-bold text-[#1D1A23]">Active Operational Tools</h3>
               </div>
               <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#FAF9F6] border border-[#FFE6DC] text-[#57423D]">
-                18 Loaded
+                {activeToolsList.length} Loaded
               </span>
             </div>
 
             <div className="flex flex-col gap-2">
-              {[
-                { name: 'create_task', desc: 'v1.2 · Linear, Jira', icon: 'task_alt', color: '#A53B22' },
-                { name: 'refund_order', desc: 'v2.0 · Stripe, Razorpay', icon: 'payments', color: '#845400' },
-                { name: 'lookup_crm', desc: 'v3.4 · HubSpot, Salesforce', icon: 'contacts', color: '#006688' }
-              ].map((tool) => (
+              {activeToolsList.slice(0, 5).map((tool) => (
                 <div
                   key={tool.name}
                   className="p-3 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC] flex items-center justify-between group hover:bg-[#F8F1FE] transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#A53B22] shadow-xs">
-                      <span className="material-symbols-outlined text-[16px]">{tool.icon}</span>
+                      <span className="material-symbols-outlined text-[16px]">
+                        {tool.name.includes('task') ? 'task_alt' : tool.name.includes('refund') || tool.name.includes('pay') ? 'payments' : 'hub'}
+                      </span>
                     </div>
                     <div className="flex flex-col min-w-0">
                       <span className="font-mono font-bold text-xs text-[#1D1A23] truncate">{tool.name}</span>
-                      <span className="text-[10px] text-[#8B716B] truncate">{tool.desc}</span>
+                      <span className="text-[10px] text-[#8B716B] truncate">{tool.description || tool.endpoint || tool.desc}</span>
                     </div>
                   </div>
                   <button

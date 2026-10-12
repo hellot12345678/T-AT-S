@@ -11,6 +11,7 @@ from api.views import (
     ApplicationListCreateView,
     ApplicationDetailView,
     ApplicationKeyRegenerateView,
+    ApplicationSessionsView,
     EndUserConfigView,
     ApplicationUsageView,
     ApplicationAddBonusView,
@@ -28,6 +29,7 @@ urlpatterns = [
     path('apps/', ApplicationListCreateView.as_view(), name='api-apps-list-create'),
     path('apps/<uuid:app_id>/', ApplicationDetailView.as_view(), name='api-apps-detail'),
     path('apps/<uuid:app_id>/regenerate-keys/', ApplicationKeyRegenerateView.as_view(), name='api-apps-regenerate-keys'),
+    path('apps/<uuid:app_id>/sessions/', ApplicationSessionsView.as_view(), name='api-apps-sessions'),
 
     # Quota Metering, Bonus & Plan Upgrade
     path('apps/<uuid:app_id>/usage/', ApplicationUsageView.as_view(), name='api-apps-usage'),

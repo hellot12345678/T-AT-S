@@ -187,6 +187,34 @@ export class TATSBackendAPI {
   }
 
   // ==========================================
+  // Session Telemetry
+  // ==========================================
+  public static async getSessionTelemetry(appId: string) {
+    const res = await fetch(`${API_BASE}/apps/${appId}/sessions/`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  }
+
+  // ==========================================
+  // End User Config
+  // ==========================================
+  public static async saveUserConfig(clientUserId: string, config: {
+    wake_word: string;
+    passphrase?: string;
+    voice_tier?: string;
+  }) {
+    const res = await fetch(`${API_BASE}/users/${encodeURIComponent(clientUserId)}/config/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(config),
+    });
+    return { ok: res.ok, data: await res.json() };
+  }
+
+  // ==========================================
   // Super Admin Platform Config
   // ==========================================
   public static async getPlatformConfig() {
@@ -204,6 +232,27 @@ export class TATSBackendAPI {
       body: JSON.stringify(config),
     });
     return { ok: res.ok, data: await res.json() };
+  }
+
+  // ==========================================
+  // Developer Profile Local Storage
+  // ==========================================
+  public static getCurrentDeveloper(): { id: string; name: string; email: string } | null {
+    const item = localStorage.getItem('tats_dev_profile');
+    if (!item) return null;
+    try {
+      return JSON.parse(item);
+    } catch {
+      return null;
+    }
+  }
+
+  public static setCurrentDeveloper(profile: { id: string; name: string; email: string } | null): void {
+    if (profile) {
+      localStorage.setItem('tats_dev_profile', JSON.stringify(profile));
+    } else {
+      localStorage.removeItem('tats_dev_profile');
+    }
   }
 }
 

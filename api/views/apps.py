@@ -194,3 +194,43 @@ class ApplicationKeyRegenerateView(APIView):
             'warning': 'Old API keys have been deactivated. Update your application environment variables immediately.'
         }, status=status.HTTP_200_OK)
 
+
+class ApplicationSessionsView(APIView):
+    """
+    Returns recent session history and tool telemetry for an application.
+    """
+    authentication_classes = [DeveloperTokenAuthentication]
+
+    @extend_schema(
+        tags=['Application Management'],
+        summary='Get Application Session Telemetry',
+        description='Fetches recent user voice/text sessions, spoken utterances, executed tools, and payloads.',
+        responses={200: dict}
+    )
+    def get(self, request, app_id):
+        try:
+            app = Application.objects.get(id=app_id, developer=request.developer)
+        except Application.DoesNotExist:
+            return Response({'error': 'Application not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        from core.models import SessionHistory
+        sessions = SessionHistory.objects.filter(application=app).order_by('-created_at')[:40]
+        serialized = [
+            {
+                'id': str(s.id),
+                'session_id': s.session_id,
+                'client_user_id': s.client_user_id,
+                'role': s.role,
+                'content': s.content,
+                'tool_name': s.tool_name,
+                'tool_payload': s.tool_payload,
+                'created_at': s.created_at.isoformat()
+            }
+            for s in sessions
+        ]
+        return Response({
+            'count': len(serialized),
+            'sessions': serialized
+        }, status=status.HTTP_200_OK)
+
+

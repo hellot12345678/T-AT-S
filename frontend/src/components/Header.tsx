@@ -7,19 +7,34 @@ interface HeaderProps {
   onNavigate: (view: AppView) => void;
   onOpenCommand: () => void;
   onOpenWizard: () => void;
+  developer: { id?: string; name: string; email: string } | null;
+  onOpenAuth: () => void;
+  onLogout: () => void;
+  applications: any[];
+  activeAppId: string;
+  onSelectApp: (app: any) => void;
+  onOpenCreateApp: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   currentView,
   onNavigate,
   onOpenCommand,
-  onOpenWizard
+  onOpenWizard,
+  developer,
+  onOpenAuth,
+  onLogout,
+  applications,
+  activeAppId,
+  onSelectApp,
+  onOpenCreateApp
 }) => {
-  const [selectedEnv, setSelectedEnv] = useState('Local Node (127.0.0.1:8000)');
   const [showEnvDropdown, setShowEnvDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isBackendConnected, setIsBackendConnected] = useState<boolean | null>(null);
+
+  const activeApp = applications.find((a) => a.id === activeAppId) || applications[0];
 
   useEffect(() => {
     const checkEngine = async () => {
@@ -30,12 +45,6 @@ export const Header: React.FC<HeaderProps> = ({
     const interval = setInterval(checkEngine, 10000);
     return () => clearInterval(interval);
   }, []);
-
-  const envs = [
-    'Local Node (127.0.0.1:8000)',
-    'Production: Acme App (v2.4)',
-    'Staging: Acme Hotfix (v2.5-rc)'
-  ];
 
 
   return (
@@ -93,42 +102,59 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
 
-          {/* Environment Selector Dropdown */}
+          {/* Real Application Cluster Selector Dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowEnvDropdown(!showEnvDropdown)}
               className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F8F1FE] hover:bg-[#EDE5F2] border border-[#DEC0B9]/30 text-[#1D1A23] text-xs font-semibold transition-all shadow-[0_1px_4px_rgba(255,126,95,0.04)]"
             >
               <span className="material-symbols-outlined text-[#845400] text-[16px]">dns</span>
-
-              <span className="truncate max-w-[170px]">{selectedEnv}</span>
+              <span className="truncate max-w-[170px]">{activeApp ? activeApp.app_name : 'Default Cluster'}</span>
               <span className="material-symbols-outlined text-[16px] text-[#8B716B]">expand_more</span>
             </button>
 
             {showEnvDropdown && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-[#FFE6DC] p-1.5 z-50 animate-in fade-in zoom-in-95">
-                <div className="px-3 py-1.5 text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit']">
-                  Cluster Environment
+              <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-[#FFE6DC] p-1.5 z-50 animate-in fade-in zoom-in-95">
+                <div className="flex items-center justify-between px-3 py-1.5 text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit'] border-b border-[#FFE6DC]/50">
+                  <span>Your App Clusters</span>
+                  <span className="font-mono text-[#A53B22]">{applications.length} Active</span>
                 </div>
-                {envs.map((env) => (
+                <div className="py-1 max-h-56 overflow-y-auto">
+                  {applications.map((app) => (
+                    <button
+                      key={app.id}
+                      onClick={() => {
+                        onSelectApp(app);
+                        setShowEnvDropdown(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between ${
+                        activeApp?.id === app.id
+                          ? 'bg-[#FFDAD2]/40 text-[#A53B22] font-semibold'
+                          : 'hover:bg-[#FAF9F6] text-[#1D1A23]'
+                      }`}
+                    >
+                      <div className="flex flex-col min-w-0">
+                        <span className="truncate font-semibold">{app.app_name}</span>
+                        <span className="font-mono text-[10px] text-[#8B716B] truncate">{app.api_key_prefix || 'tas_live_...'}</span>
+                      </div>
+                      {activeApp?.id === app.id && (
+                        <span className="material-symbols-outlined text-[16px] text-[#A53B22]">check</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className="pt-1 border-t border-[#FFE6DC]/60">
                   <button
-                    key={env}
                     onClick={() => {
-                      setSelectedEnv(env);
                       setShowEnvDropdown(false);
+                      onOpenCreateApp();
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between ${
-                      selectedEnv === env
-                        ? 'bg-[#FFDAD2]/40 text-[#A53B22] font-semibold'
-                        : 'hover:bg-[#FAF9F6] text-[#1D1A23]'
-                    }`}
+                    className="w-full flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#A53B22] hover:bg-[#FFDAD2]/30 rounded-lg transition-colors"
                   >
-                    <span>{env}</span>
-                    {selectedEnv === env && (
-                      <span className="material-symbols-outlined text-[16px] text-[#A53B22]">check</span>
-                    )}
+                    <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                    <span>+ Create New Application</span>
                   </button>
-                ))}
+                </div>
               </div>
             )}
           </div>
@@ -184,54 +210,89 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* User Profile */}
-          <div className="relative">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 pl-1.5 focus:outline-none group"
-            >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF7E5F] to-[#00C2FF] p-0.5 shadow-sm">
-                <div className="w-full h-full rounded-full bg-white flex items-center justify-center font-bold text-xs text-[#A53B22]">
-                  TDS
+          {/* User Profile or Sign In Button */}
+          {developer ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 pl-1.5 focus:outline-none group"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF7E5F] to-[#00C2FF] p-0.5 shadow-sm">
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center font-bold text-xs text-[#A53B22] uppercase">
+                    {developer.name.slice(0, 2)}
+                  </div>
                 </div>
-              </div>
-              <div className="hidden md:flex flex-col text-left">
-                <span className="text-xs font-bold text-[#1D1A23] leading-none group-hover:text-[#A53B22] transition-colors">
-                  tds
-                </span>
-                <span className="text-[10px] text-[#57423D] leading-none mt-1">Lead Eng</span>
-              </div>
-            </button>
+                <div className="hidden md:flex flex-col text-left">
+                  <span className="text-xs font-bold text-[#1D1A23] leading-none group-hover:text-[#A53B22] transition-colors">
+                    {developer.name}
+                  </span>
+                  <span className="text-[10px] text-[#57423D] leading-none mt-1">Developer</span>
+                </div>
+              </button>
 
-            {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-[#FFE6DC] p-1.5 z-50 animate-in fade-in zoom-in-95">
-                <div className="px-3 py-2 border-b border-[#FFE6DC]/50">
-                  <p className="text-xs font-bold text-[#1D1A23]">tds</p>
-                  <p className="text-[11px] text-[#57423D]">tds@acme.engineering</p>
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-[#FFE6DC] p-1.5 z-50 animate-in fade-in zoom-in-95">
+                  <div className="px-3 py-2 border-b border-[#FFE6DC]/50">
+                    <p className="text-xs font-bold text-[#1D1A23]">{developer.name}</p>
+                    <p className="text-[11px] text-[#57423D] truncate">{developer.email}</p>
+                  </div>
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onOpenCreateApp();
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-[#1D1A23] hover:bg-[#F8F1FE] rounded-lg flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-[#006688]">add_circle</span>
+                      <span>New Application</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onNavigate('developer-dashboard');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-[#1D1A23] hover:bg-[#F8F1FE] rounded-lg flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-[#A53B22]">dashboard</span>
+                      <span>Workspace Settings</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onNavigate('super-admin');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-[#1D1A23] hover:bg-[#F8F1FE] rounded-lg flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-[#845400]">admin_panel_settings</span>
+                      <span>Platform Governance</span>
+                    </button>
+                    <div className="my-1 border-t border-[#FFE6DC]/60"></div>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onLogout();
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 font-semibold"
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-red-600">logout</span>
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="py-1">
-                  <button
-                    onClick={() => {
-                      onNavigate('developer-dashboard');
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 text-xs text-[#1D1A23] hover:bg-[#F8F1FE] rounded-lg"
-                  >
-                    Workspace Settings
-                  </button>
-                  <button
-                    onClick={() => {
-                      onNavigate('super-admin');
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 text-xs text-[#1D1A23] hover:bg-[#F8F1FE] rounded-lg"
-                  >
-                    Platform Governance
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onOpenAuth}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FF5F45] text-white text-xs font-bold shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                <span className="material-symbols-outlined text-[16px]">login</span>
+                <span>Sign In</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

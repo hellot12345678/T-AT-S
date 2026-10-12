@@ -4,7 +4,10 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { CommandPalette } from './components/CommandPalette';
 import { TASWizard } from './components/TASWizard';
+import { AuthModal } from './components/AuthModal';
+import { AppCreateModal } from './components/AppCreateModal';
 import { ToastContainer } from './components/Toast';
+import { TATSBackendAPI } from './services/api';
 
 import { LandingView } from './components/views/LandingView';
 import { DeveloperDashboardView } from './components/views/DeveloperDashboardView';
@@ -16,7 +19,16 @@ export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('developer-dashboard');
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAppCreateModalOpen, setIsAppCreateModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Developer Session & Tenancy State
+  const [developer, setDeveloper] = useState<{ id?: string; name: string; email: string } | null>(
+    TATSBackendAPI.getCurrentDeveloper()
+  );
+  const [applications, setApplications] = useState<any[]>([]);
+  const [activeAppId, setActiveAppId] = useState<string>('');
 
   const addToast = (title: string, description?: string, type: 'success' | 'info' | 'warning' = 'success') => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
@@ -28,6 +40,42 @@ export default function App() {
 
   const dismissToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // Fetch applications & check session
+  const loadApplications = async () => {
+    try {
+      const res = await TATSBackendAPI.getApplications();
+      if (res && res.applications) {
+        setApplications(res.applications);
+        if (res.applications.length > 0) {
+          setActiveAppId((prev) => prev || res.applications[0].id);
+        }
+      }
+    } catch {
+      // Backend offline
+    }
+  };
+
+  useEffect(() => {
+    loadApplications();
+  }, [developer]);
+
+  const handleLogout = async () => {
+    await TATSBackendAPI.logout();
+    TATSBackendAPI.setCurrentDeveloper(null);
+    setDeveloper(null);
+    addToast('Signed Out', 'Your session has been terminated safely.');
+  };
+
+  const handleAuthSuccess = (dev: any) => {
+    setDeveloper(dev);
+    loadApplications();
+  };
+
+  const handleAppCreated = (app: any) => {
+    setApplications((prev) => [app, ...prev]);
+    setActiveAppId(app.id);
   };
 
   // Keyboard navigation shortcuts: ⌘K for command palette, 1-6 for view switching
@@ -71,12 +119,25 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-[#1D1A23] font-['Manrope'] flex flex-col selection:bg-[#FF7E5F]/20 selection:text-[#721702]">
-      {/* Top Header */}
+      {/* Top Header with Real Auth & Application Switcher */}
       <Header
         currentView={currentView}
         onNavigate={handleNavigate}
         onOpenCommand={() => setIsCommandOpen(true)}
         onOpenWizard={() => setIsWizardOpen(true)}
+        developer={developer}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
+        applications={applications}
+        activeAppId={activeAppId}
+        onSelectApp={(app) => {
+          setActiveAppId(app.id);
+          if (app.api_key_prefix) {
+            // Note: will use stored raw key or fallback prefix
+          }
+          addToast('Switched Cluster', `Active application context changed to "${app.app_name}".`);
+        }}
+        onOpenCreateApp={() => setIsAppCreateModalOpen(true)}
       />
 
       <div className="flex flex-1 pt-16">
@@ -132,6 +193,22 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {/* Developer Authentication Modal (Sign In & Sign Up) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+        onShowToast={addToast}
+      />
+
+      {/* New Application Cluster Provisioning Modal */}
+      <AppCreateModal
+        isOpen={isAppCreateModalOpen}
+        onClose={() => setIsAppCreateModalOpen(false)}
+        onCreated={handleAppCreated}
+        onShowToast={addToast}
+      />
 
       {/* 5-Step End-User Setup Wizard Overlay */}
       <TASWizard
