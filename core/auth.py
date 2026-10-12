@@ -1,6 +1,6 @@
 import hashlib
 from rest_framework import authentication, exceptions
-from .models import APIKey, Application
+from .models import APIKey, Application, Developer, DeveloperToken
 
 class APIKeyAuthentication(authentication.BaseAuthentication):
     """
@@ -43,4 +43,39 @@ class APIKeyAuthentication(authentication.BaseAuthentication):
         request.application = api_key.application
         request.developer = api_key.application.developer
         return (api_key.application, api_key)
+
+
+class DeveloperTokenAuthentication(authentication.BaseAuthentication):
+    """
+    Authenticates developer dashboard requests:
+    Authorization: Bearer tas_dev_...
+    or X-Developer-Token: tas_dev_...
+    """
+    def authenticate(self, request):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            auth_header = request.headers.get('X-Developer-Token') or request.query_params.get('dev_token')
+            if not auth_header:
+                return None
+            raw_token = auth_header.strip()
+        else:
+            parts = auth_header.split()
+            if len(parts) == 2 and parts[0].lower() in ['bearer', 'token']:
+                raw_token = parts[1].strip()
+            elif len(parts) == 1:
+                raw_token = parts[0].strip()
+            else:
+                return None
+
+        if not raw_token.startswith('tas_dev_'):
+            return None
+
+        try:
+            token = DeveloperToken.objects.select_related('developer').get(key=raw_token)
+        except DeveloperToken.DoesNotExist:
+            raise exceptions.AuthenticationFailed('Invalid or expired developer token.')
+
+        request.developer = token.developer
+        return (token.developer, token)
+
 

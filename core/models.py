@@ -13,6 +13,29 @@ class Developer(models.Model):
     def __str__(self):
         return f"{self.name} ({self.email})"
 
+    def set_password(self, raw_password: str):
+        from django.contrib.auth.hashers import make_password
+        self.password_hash = make_password(raw_password)
+
+    def check_password(self, raw_password: str) -> bool:
+        from django.contrib.auth.hashers import check_password
+        return check_password(raw_password, self.password_hash)
+
+
+class DeveloperToken(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    developer = models.ForeignKey(Developer, on_delete=models.CASCADE, related_name='tokens')
+    key = models.CharField(max_length=64, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Token for {self.developer.email}"
+
+    @classmethod
+    def generate(cls, developer):
+        raw_key = f"tas_dev_{uuid.uuid4().hex}"
+        return cls.objects.create(developer=developer, key=raw_key)
+
 
 class Application(models.Model):
     WAKE_WORD_POLICY_CHOICES = [
@@ -38,6 +61,21 @@ class Application(models.Model):
 
     def verify_service_key(self, raw_key: str) -> bool:
         return self.service_key_hash == self.hash_key(raw_key)
+
+    @classmethod
+    def create_with_keys(cls, developer, app_name: str, base_url: str, wake_word_policy: str = 'CUSTOM'):
+        raw_service_key = f"tas_srv_{uuid.uuid4().hex}"
+        service_key_hash = cls.hash_key(raw_service_key)
+        app = cls.objects.create(
+            developer=developer,
+            app_name=app_name,
+            base_url=base_url,
+            service_key_hash=service_key_hash,
+            wake_word_policy=wake_word_policy,
+            is_active=True
+        )
+        api_key_obj, raw_api_key = APIKey.generate_for_app(app)
+        return app, raw_api_key, raw_service_key
 
 
 class APIKey(models.Model):

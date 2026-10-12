@@ -46,10 +46,11 @@ class PlatformConfigSerializer(serializers.ModelSerializer):
 class ApplicationDetailSerializer(serializers.ModelSerializer):
     tools_count = serializers.SerializerMethodField()
     monthly_units_used = serializers.SerializerMethodField()
+    api_keys_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Application
-        fields = ['id', 'app_name', 'base_url', 'wake_word_policy', 'is_active', 'tools_count', 'monthly_units_used', 'created_at']
+        fields = ['id', 'app_name', 'base_url', 'wake_word_policy', 'is_active', 'tools_count', 'monthly_units_used', 'api_keys_count', 'created_at']
 
     def get_tools_count(self, obj):
         return obj.tools.filter(is_active=True).count()
@@ -59,4 +60,56 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
         month = timezone.now().strftime('%Y-%m')
         meter = obj.usage_meters.filter(month_year=month).first()
         return meter.units_consumed if meter else 0
+
+    def get_api_keys_count(self, obj):
+        return obj.api_keys.filter(is_active=True).count()
+
+
+class DeveloperRegisterSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=150, default="Developer", required=False)
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(max_length=128, write_only=True, required=True)
+
+
+class DeveloperLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(max_length=128, write_only=True, required=True)
+
+
+class DeveloperProfileSerializer(serializers.Serializer):
+    id = serializers.UUIDField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    email = serializers.EmailField(read_only=True)
+    applications_count = serializers.IntegerField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+
+
+class ApplicationCreateSerializer(serializers.Serializer):
+    app_name = serializers.CharField(max_length=100, required=True, help_text="Name of your app, e.g. 'Foodie Express'")
+    base_url = serializers.URLField(max_length=255, required=True, help_text="Backend webhook root URL, e.g. 'http://localhost:8000'")
+    wake_word_policy = serializers.ChoiceField(
+        choices=Application.WAKE_WORD_POLICY_CHOICES,
+        default='CUSTOM',
+        help_text="'LOCKED' to app name or 'CUSTOM' allowing end-users their own wake word"
+    )
+
+
+class ApplicationCreatedResponseSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    app_name = serializers.CharField()
+    base_url = serializers.URLField()
+    wake_word_policy = serializers.CharField()
+    api_key = serializers.CharField(help_text="Raw live API key: Bearer tas_live_... (save this!)")
+    service_key = serializers.CharField(help_text="Service verification key: tas_srv_... (save this!)")
+    created_at = serializers.DateTimeField()
+
+
+class EndUserConfigSerializer(serializers.ModelSerializer):
+    passphrase = serializers.CharField(write_only=True, required=False, allow_blank=True)
+
+    class Meta:
+        model = EndUserConfig
+        fields = ['id', 'client_user_id', 'wake_word', 'voice_tier', 'passphrase', 'last_active']
+        read_only_fields = ['id', 'last_active']
+
 

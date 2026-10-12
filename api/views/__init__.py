@@ -3,4 +3,17 @@ from .health import HealthCheckView
 from .chat import ChatExecutionView
 from .tools import ToolManagementView
 from .admin import AdminConfigView
+from .auth import (
+    DeveloperRegisterView,
+    DeveloperLoginView,
+    DeveloperLogoutView,
+    DeveloperMeView
+)
+from .apps import (
+    ApplicationListCreateView,
+    ApplicationDetailView,
+    ApplicationKeyRegenerateView
+)
+from .users import EndUserConfigView
+
 

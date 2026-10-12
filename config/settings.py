@@ -119,7 +119,7 @@ REST_FRAMEWORK = {
 # Swagger / OpenAPI 3.0 Documentation Settings
 SPECTACULAR_SETTINGS = {
     'TITLE': 'T@S (Talk. Decide. Solve.) Acoustic Action Engine API',
-    'DESCRIPTION': 'Universal AI Voice Agent Platform — OpenAPI 3.0 Interactive Specification. Test runtime chat, tool registries, keep-alive health probes, and dynamic platform administration.',
+    'DESCRIPTION': 'Universal AI Voice Agent Platform — OpenAPI 3.0 Interactive Specification. Test runtime chat, tool registries, keep-alive health probes, developer onboarding, and dynamic platform administration.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
@@ -128,6 +128,26 @@ SPECTACULAR_SETTINGS = {
         'persistAuthorization': True,
         'displayOperationId': True,
     },
+    'APPEND_COMPONENTS': {
+        'securitySchemes': {
+            'ApiKeyAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'tas_live_*',
+                'description': 'Bearer tas_live_... for Application & Agent Chat calls.'
+            },
+            'DevTokenAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'tas_dev_*',
+                'description': 'Bearer tas_dev_... for Developer account & app administration.'
+            }
+        }
+    },
+    'SECURITY': [
+        {'ApiKeyAuth': []},
+        {'DevTokenAuth': []},
+    ]
 }
 
 # CORS Configuration
@@ -139,6 +159,7 @@ CORS_ALLOW_HEADERS = [
     'x-user-id',
     'x-service-key',
     'x-api-key',
+    'x-developer-token',
     'accept',
     'origin',
 ]
