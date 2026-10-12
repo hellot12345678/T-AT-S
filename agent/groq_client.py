@@ -10,7 +10,7 @@ class GroqLLMClient:
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         t_settings = getattr(settings, 'T_AT_S', {})
         self.api_key = api_key or t_settings.get('GROQ_API_KEY') or os.getenv('GROQ_API_KEY', '')
-        self.model = model or t_settings.get('DEFAULT_MODEL', 'llama-3.3-70b-versatile')
+        self.model = model or os.getenv('GROQ_MODEL') or t_settings.get('DEFAULT_MODEL', 'openai/gpt-oss-120b')
         self._client = None
 
     @property
@@ -43,52 +43,71 @@ class GroqLLMClient:
                 'tool_calls': None
             }
 
-        kwargs: Dict[str, Any] = {
-            'model': self.model,
-            'messages': messages,
-            'temperature': temperature,
-            'max_tokens': 1024,
-        }
+        models_to_try = list(dict.fromkeys([self.model, 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'llama-3.3-70b-versatile']))
 
-        if tools and len(tools) > 0:
-            kwargs['tools'] = tools
-            kwargs['tool_choice'] = 'auto'
+        last_error = "Unknown error"
+        for candidate_model in models_to_try:
+            kwargs: Dict[str, Any] = {
+                'model': candidate_model,
+                'messages': messages,
+                'temperature': temperature,
+                'max_tokens': 1024,
+            }
 
-        try:
-            response = self.client.chat.completions.create(**kwargs)
-            choice = response.choices[0]
-            message = choice.message
+            if tools and len(tools) > 0:
+                kwargs['tools'] = tools
+                kwargs['tool_choice'] = 'auto'
 
-            tool_calls_payload = []
-            if message.tool_calls:
-                for tc in message.tool_calls:
-                    try:
-                        args = json.loads(tc.function.arguments)
-                    except Exception:
-                        args = {'raw': tc.function.arguments}
-                    tool_calls_payload.append({
-                        'id': tc.id,
-                        'name': tc.function.name,
-                        'arguments': args
-                    })
+            try:
+                response = self.client.chat.completions.create(**kwargs)
+                choice = response.choices[0]
+                message = choice.message
 
-            return {
-                'success': True,
-                'content': message.content,
-                'tool_calls': tool_calls_payload if tool_calls_payload else None,
-                'usage': {
-                    'prompt_tokens': getattr(response.usage, 'prompt_tokens', 0),
-                    'completion_tokens': getattr(response.usage, 'completion_tokens', 0),
-                    'total_tokens': getattr(response.usage, 'total_tokens', 0)
+                tool_calls_payload = []
+                if message.tool_calls:
+                    for tc in message.tool_calls:
+                        try:
+                            args = json.loads(tc.function.arguments)
+                        except Exception:
+                            args = {'raw': tc.function.arguments}
+                        tool_calls_payload.append({
+                            'id': tc.id,
+                            'name': tc.function.name,
+                            'arguments': args
+                        })
+
+                # Remember working model
+                self.model = candidate_model
+
+                return {
+                    'success': True,
+                    'content': message.content,
+                    'tool_calls': tool_calls_payload if tool_calls_payload else None,
+                    'model_used': candidate_model,
+                    'usage': {
+                        'prompt_tokens': getattr(response.usage, 'prompt_tokens', 0),
+                        'completion_tokens': getattr(response.usage, 'completion_tokens', 0),
+                        'total_tokens': getattr(response.usage, 'total_tokens', 0)
+                    }
                 }
-            }
+            except Exception as e:
+                err_msg = str(e)
+                last_error = err_msg
+                if '404' in err_msg or 'model_not_found' in err_msg:
+                    logger.info(f"Model '{candidate_model}' not found on Groq, trying next candidate...")
+                    continue
+                logger.exception("Groq API Completion failure")
+                return {
+                    'success': False,
+                    'error': err_msg,
+                    'content': None,
+                    'tool_calls': None
+                }
 
-        except Exception as e:
-            logger.exception("Groq API Completion failure")
-            return {
-                'success': False,
-                'error': str(e),
-                'content': None,
-                'tool_calls': None
-            }
+        return {
+            'success': False,
+            'error': f"All candidate Groq models failed: {last_error}",
+            'content': None,
+            'tool_calls': None
+        }
 
