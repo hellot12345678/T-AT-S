@@ -1,5 +1,5 @@
 import hashlib
-from rest_framework import authentication, exceptions
+from rest_framework import authentication, exceptions, permissions
 from .models import APIKey, Application, Developer, DeveloperToken
 
 class APIKeyAuthentication(authentication.BaseAuthentication):
@@ -77,5 +77,16 @@ class DeveloperTokenAuthentication(authentication.BaseAuthentication):
 
         request.developer = token.developer
         return (token.developer, token)
+
+
+class IsDeveloperAuthenticated(permissions.BasePermission):
+    """
+    Ensures that the request was made by an authenticated developer.
+    """
+    message = 'Authentication required. Provide a valid Bearer tas_dev_... token.'
+
+    def has_permission(self, request, view):
+        return bool(getattr(request, 'developer', None))
+
 
 

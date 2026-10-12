@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from core.models import Application, APIKey
-from core.auth import DeveloperTokenAuthentication
+from core.auth import DeveloperTokenAuthentication, IsDeveloperAuthenticated
 from api.serializers import (
     ApplicationDetailSerializer,
     ApplicationCreateSerializer,
@@ -16,6 +16,7 @@ class ApplicationListCreateView(APIView):
     Manages tenant applications belonging to the authenticated developer.
     """
     authentication_classes = [DeveloperTokenAuthentication]
+    permission_classes = [IsDeveloperAuthenticated]
 
     @extend_schema(
         tags=['Application Management'],
@@ -100,6 +101,7 @@ class ApplicationDetailView(APIView):
     Retrieves or deletes a single application cluster.
     """
     authentication_classes = [DeveloperTokenAuthentication]
+    permission_classes = [IsDeveloperAuthenticated]
 
     @extend_schema(
         tags=['Application Management'],
@@ -157,6 +159,7 @@ class ApplicationKeyRegenerateView(APIView):
     Regenerates a fresh live API Key for an application.
     """
     authentication_classes = [DeveloperTokenAuthentication]
+    permission_classes = [IsDeveloperAuthenticated]
 
     @extend_schema(
         tags=['Application Management'],
@@ -200,6 +203,7 @@ class ApplicationSessionsView(APIView):
     Returns recent session history and tool telemetry for an application.
     """
     authentication_classes = [DeveloperTokenAuthentication]
+    permission_classes = [IsDeveloperAuthenticated]
 
     @extend_schema(
         tags=['Application Management'],
