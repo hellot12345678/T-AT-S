@@ -188,3 +188,4 @@ class DeveloperMeView(APIView):
                 'created_at': dev.created_at
             }
         }, status=status.HTTP_200_OK)
+

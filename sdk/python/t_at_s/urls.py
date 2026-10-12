@@ -10,3 +10,4 @@ urlpatterns = [
     # Direct action dispatcher: POST /api/tats/actions/<action_name>/
     path('actions/<str:action_name>/', TATSDispatchView.as_view(), name='action_dispatch'),
 ]
+

@@ -38,3 +38,4 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"  [FAILED] {err['action']}: {err['error']}"))
 
         self.stdout.write(self.style.SUCCESS(f"\nSync complete! ({res['synced_count']}/{res['total_actions']} tools live on T@S Engine)"))
+

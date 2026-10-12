@@ -191,3 +191,4 @@ class ActionRegistry:
 
 # Global registry singleton
 registry = ActionRegistry()
+

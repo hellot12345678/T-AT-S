@@ -94,3 +94,4 @@ class EndUserConfigView(APIView):
             'message': f"Preferences updated for user '{client_user_id}'.",
             'config': EndUserConfigSerializer(user_cfg).data
         }, status=status.HTTP_200_OK)
+

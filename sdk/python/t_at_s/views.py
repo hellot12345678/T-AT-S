@@ -98,3 +98,4 @@ class TATSDispatchView(View):
                 'action': target_action,
                 'error': f"Error executing '{target_action}': {str(e)}"
             }, status=500)
+

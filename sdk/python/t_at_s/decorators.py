@@ -53,3 +53,4 @@ def tats_action(
     else:
         # Called as @tats_action(...)
         return decorator
+

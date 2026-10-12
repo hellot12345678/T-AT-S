@@ -142,3 +142,4 @@ print("Units Consumed:", response['units']['consumed'])
 ## 📄 License
 
 MIT License — Copyright (c) 2026 T@S Platform.
+

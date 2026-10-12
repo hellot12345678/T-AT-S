@@ -192,3 +192,4 @@ class ApplicationKeyRegenerateView(APIView):
             'key_prefix': api_key_obj.key_prefix,
             'warning': 'Old API keys have been deactivated. Update your application environment variables immediately.'
         }, status=status.HTTP_200_OK)
+

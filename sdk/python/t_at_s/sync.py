@@ -11,3 +11,4 @@ def sync_actions(
     """
     client = TATSClient(api_key=api_key, base_url=engine_url)
     return client.sync_registry(host_base_url=host_url)
+
