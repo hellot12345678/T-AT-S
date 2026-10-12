@@ -34,3 +34,4 @@ class BurstRateThrottle(SimpleRateThrottle):
 
     def get_rate(self):
         return '10/second'
+

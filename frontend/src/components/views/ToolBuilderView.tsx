@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppView, ToolParam } from '../../types';
 import { INITIAL_PARAMS } from '../../data/mockData';
+import { TATSBackendAPI } from '../../services/api';
 
 interface ToolBuilderViewProps {
   onNavigate: (view: AppView) => void;
@@ -19,6 +20,7 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
   const [params, setParams] = useState<ToolParam[]>(INITIAL_PARAMS);
   const [isValidating, setIsValidating] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
   const [responseMock, setResponseMock] = useState<any>({
     status: 'success',
     task_id: 'tsk_84712',
@@ -81,8 +83,58 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
     }, 700);
   };
 
-  const handleRunTrigger = () => {
+  const handleDeployTool = async () => {
+    setIsDeploying(true);
+    const apiKey = TATSBackendAPI.getApiKey();
+    try {
+      const res = await TATSBackendAPI.registerTool(apiKey, {
+        name: toolId,
+        description: toolDesc,
+        endpoint: webhookUrl,
+        method: httpMethod,
+        parameters_schema: generatedSchema
+      });
+      if (res.ok) {
+        onShowToast('Tool Registered in Django DB', `Action "${toolId}" deployed to engine registry.`);
+        setResponseMock({
+          status: 'success',
+          action: 'deployed_to_django_engine',
+          tool_id: toolId,
+          endpoint: webhookUrl,
+          db_registered: true,
+          timestamp: new Date().toISOString()
+        });
+        setIsDeploying(false);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+    setIsDeploying(false);
+    onShowToast('Deployed (Local Sandbox)', `Tool "${toolId}" compiled into local vector memory.`);
+  };
+
+  const handleRunTrigger = async () => {
     setIsExecuting(true);
+    const apiKey = TATSBackendAPI.getApiKey();
+    try {
+      const res = await TATSBackendAPI.registerTool(apiKey, {
+        name: toolId,
+        description: toolDesc,
+        endpoint: webhookUrl,
+        method: httpMethod,
+        parameters_schema: generatedSchema
+      });
+      if (res.ok && res.data) {
+        setIsExecuting(false);
+        setResponseMock(res.data);
+        onShowToast('Tool Registered & Verified', `Backend returned 200 OK.`);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+
     setTimeout(() => {
       setIsExecuting(false);
       const randomTaskId = `tsk_${Math.floor(10000 + Math.random() * 90000)}`;
@@ -155,6 +207,16 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
               {isValidating ? 'refresh' : 'verified'}
             </span>
             <span>{isValidating ? 'Validating...' : 'Validate Schema'}</span>
+          </button>
+          <button
+            onClick={handleDeployTool}
+            disabled={isDeploying}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1D1A23] hover:bg-[#342D3D] text-white text-xs font-bold shadow-sm transition-all"
+          >
+            <span className={`material-symbols-outlined text-[16px] text-[#FFAE33] ${isDeploying ? 'animate-spin' : ''}`}>
+              {isDeploying ? 'refresh' : 'cloud_upload'}
+            </span>
+            <span>{isDeploying ? 'Deploying...' : 'Deploy Tool to Engine'}</span>
           </button>
           <button
             onClick={handleAddParam}

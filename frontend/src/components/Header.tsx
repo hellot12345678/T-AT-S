@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView } from '../types';
+import { TATSBackendAPI } from '../services/api';
 
 interface HeaderProps {
   currentView: AppView;
@@ -14,16 +15,28 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCommand,
   onOpenWizard
 }) => {
-  const [selectedEnv, setSelectedEnv] = useState('Production: Acme App (v2.4)');
+  const [selectedEnv, setSelectedEnv] = useState('Local Node (127.0.0.1:8000)');
   const [showEnvDropdown, setShowEnvDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isBackendConnected, setIsBackendConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkEngine = async () => {
+      const res = await TATSBackendAPI.checkHealth();
+      setIsBackendConnected(Boolean(res && res.status === 'healthy'));
+    };
+    checkEngine();
+    const interval = setInterval(checkEngine, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const envs = [
+    'Local Node (127.0.0.1:8000)',
     'Production: Acme App (v2.4)',
-    'Staging: Acme Hotfix (v2.5-rc)',
-    'Local Node (127.0.0.1:8000)'
+    'Staging: Acme Hotfix (v2.5-rc)'
   ];
+
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 z-40 bg-[#FFFFFF]/85 backdrop-blur-xl border-b border-[#FFE6DC]/60 shadow-[0_1px_8px_rgba(30,27,36,0.03)]">
@@ -63,6 +76,23 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Status Indicators & Profile Controls */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
+          {/* Live Backend Connection Indicator */}
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all shadow-sm"
+               style={{
+                 backgroundColor: isBackendConnected ? '#E6F9EE' : '#FFF4E5',
+                 borderColor: isBackendConnected ? '#6EE7B7' : '#FCD34D',
+                 color: isBackendConnected ? '#065F46' : '#92400E'
+               }}
+               title={isBackendConnected ? "Connected to Django Acoustic Action Engine at http://127.0.0.1:8000" : "Engine is currently offline (using offline mock mode)"}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${isBackendConnected ? 'bg-[#10B981] animate-pulse' : 'bg-[#F59E0B]'}`}
+            />
+            <span className="hidden sm:inline font-mono text-[11px]">
+              {isBackendConnected === null ? 'Engine: Checking...' : isBackendConnected ? 'Engine: Live' : 'Engine: Offline (Mock)'}
+            </span>
+          </div>
+
           {/* Environment Selector Dropdown */}
           <div className="relative">
             <button
@@ -70,6 +100,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F8F1FE] hover:bg-[#EDE5F2] border border-[#DEC0B9]/30 text-[#1D1A23] text-xs font-semibold transition-all shadow-[0_1px_4px_rgba(255,126,95,0.04)]"
             >
               <span className="material-symbols-outlined text-[#845400] text-[16px]">dns</span>
+
               <span className="truncate max-w-[170px]">{selectedEnv}</span>
               <span className="material-symbols-outlined text-[16px] text-[#8B716B]">expand_more</span>
             </button>

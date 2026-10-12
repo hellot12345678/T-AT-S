@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView, TelemetrySession } from '../../types';
 import { INITIAL_TELEMETRY } from '../../data/mockData';
+import { TATSBackendAPI } from '../../services/api';
 
 interface DeveloperDashboardViewProps {
   onNavigate: (view: AppView) => void;
@@ -16,6 +17,33 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showSecret, setShowSecret] = useState(false);
 
+  // Live Backend State
+  const [appName, setAppName] = useState('Acme Product Engine');
+  const [appId, setAppId] = useState('');
+  const [activeApiKey, setActiveApiKey] = useState(TATSBackendAPI.getApiKey());
+  const [toolsCount, setToolsCount] = useState(18);
+  const [monthlyUnitsUsed, setMonthlyUnitsUsed] = useState(16800);
+  const [monthlyQuota, setMonthlyQuota] = useState(20000);
+  const [isLiveConnected, setIsLiveConnected] = useState(false);
+
+  useEffect(() => {
+    const fetchLiveData = async () => {
+      const health = await TATSBackendAPI.checkHealth();
+      if (health && health.status === 'healthy') {
+        setIsLiveConnected(true);
+        const appsRes = await TATSBackendAPI.getApplications();
+        if (appsRes && appsRes.applications && appsRes.applications.length > 0) {
+          const mainApp = appsRes.applications[0];
+          setAppName(mainApp.app_name);
+          setAppId(mainApp.id);
+          setToolsCount(mainApp.tools_count || 18);
+          setMonthlyUnitsUsed(mainApp.monthly_units_used || 0);
+        }
+      }
+    };
+    fetchLiveData();
+  }, []);
+
   const filteredTelemetry = telemetry.filter((t) => {
     if (filter === 'voice') return t.authStatus === 'verified';
     if (filter === 'failed') return t.authStatus === 'rejected';
@@ -23,7 +51,20 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
     return true;
   });
 
-  const handleTestTool = (toolName: string) => {
+  const handleTestTool = async (toolName: string) => {
+    if (isLiveConnected) {
+      onShowToast(`Executing live ${toolName}()`, 'Sending payload to Django Acoustic Engine...');
+      const res = await TATSBackendAPI.chat(activeApiKey, {
+        client_user_id: 'dev_tester',
+        session_id: 'test_session',
+        message: `Run tool ${toolName} with test arguments`,
+        is_voice: false
+      });
+      if (res.ok) {
+        onShowToast(`Tool ${toolName} Dispatched`, `Response 200 OK (${res.data.units_consumed || 1} units consumed).`);
+        return;
+      }
+    }
     onShowToast(`Simulating ${toolName}() execution`, `Triggered test runner webhook. 200 OK in 142ms.`);
   };
 
@@ -32,12 +73,32 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
     onShowToast('Copied to clipboard', `${label} copied successfully.`);
   };
 
-  const handleRegenerateKey = () => {
+  const handleRegenerateKey = async () => {
+    if (appId) {
+      const res = await TATSBackendAPI.regenerateAppKey(appId);
+      if (res.ok && res.data.api_key) {
+        const newKey = res.data.api_key.key;
+        setActiveApiKey(newKey);
+        TATSBackendAPI.setApiKey(newKey);
+        onShowToast('API Key Rotated in Django DB', `New Key: ${res.data.api_key.key_prefix}...`);
+        return;
+      }
+    }
     onShowToast('API Key Rotated', 'New 256-bit rotating token generated for cluster.');
   };
 
-  const handleDeploySchema = () => {
-    onShowToast('Tool Schema Deployed', '18 active tool nodes compiled into agent vector memory.');
+  const handleDeploySchema = async () => {
+    if (isLiveConnected) {
+      await TATSBackendAPI.registerTool(activeApiKey, {
+        name: 'create_task',
+        description: 'Creates a project task or reminder in workspace',
+        endpoint: '/api/v1/tasks/create/',
+        method: 'POST'
+      });
+      onShowToast('Tool Schema Deployed', 'Schema nodes compiled and saved into Django engine memory.');
+    } else {
+      onShowToast('Tool Schema Deployed', '18 active tool nodes compiled into agent vector memory.');
+    }
   };
 
   return (
@@ -62,7 +123,7 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
             </div>
 
             <h1 className="font-['Outfit'] text-2xl sm:text-3xl font-extrabold text-[#1D1A23] tracking-tight">
-              App Workspace: Acme Product Engine
+              App Workspace: {appName}
             </h1>
             <p className="text-xs sm:text-sm text-[#57423D] max-w-3xl leading-relaxed">
               Voice-to-action engine that converts human speech into instant software actions in under 850 milliseconds.
@@ -191,8 +252,10 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
               </span>
             </div>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-['Outfit'] text-4xl sm:text-5xl font-extrabold text-[#1D1A23]">16.8k</span>
-              <span className="font-['Outfit'] text-lg text-[#57423D] font-semibold">/ 20k</span>
+              <span className="font-['Outfit'] text-4xl sm:text-5xl font-extrabold text-[#1D1A23]">
+                {monthlyUnitsUsed >= 1000 ? `${(monthlyUnitsUsed / 1000).toFixed(1)}k` : monthlyUnitsUsed}
+              </span>
+              <span className="font-['Outfit'] text-lg text-[#57423D] font-semibold">/ {(monthlyQuota / 1000).toFixed(0)}k</span>
             </div>
             <div className="flex items-center gap-1.5 text-[#57423D] text-xs">
               <span className="material-symbols-outlined text-[#FF7E5F] text-[16px]">shield</span>
@@ -204,14 +267,14 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
             <div className="relative w-full h-3 bg-[#EDE5F2] rounded-full overflow-hidden flex">
               <div
                 className="h-full bg-gradient-to-r from-[#00C2FF] via-[#FFAE33] to-[#FF7E5F] rounded-l-full"
-                style={{ width: '84%' }}
+                style={{ width: `${Math.min(100, Math.round((monthlyUnitsUsed / monthlyQuota) * 100))}%` }}
               ></div>
               <div className="absolute top-0 bottom-0 left-[80%] w-0.5 bg-white z-10"></div>
             </div>
             <div className="flex justify-between items-center text-[#8B716B] text-[10px] font-mono">
               <span>0</span>
               <span className="text-[#845400] font-semibold">80% Alert</span>
-              <span className="text-[#A53B22] font-semibold">100% (20k)</span>
+              <span className="text-[#A53B22] font-semibold">100% ({(monthlyQuota / 1000).toFixed(0)}k)</span>
             </div>
           </div>
         </div>
@@ -228,7 +291,7 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
               </span>
             </div>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-['Outfit'] text-4xl sm:text-5xl font-extrabold text-[#1D1A23]">18</span>
+              <span className="font-['Outfit'] text-4xl sm:text-5xl font-extrabold text-[#1D1A23]">{toolsCount}</span>
               <span className="font-['Outfit'] text-lg text-[#57423D] font-semibold">Tools</span>
             </div>
             <div className="flex items-center gap-1.5 text-[#57423D] text-xs">
@@ -481,7 +544,7 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
               </span>
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF9F6] border border-[#FFE6DC] font-mono text-xs">
                 <span className="text-[#1D1A23]">
-                  {showSecret ? 'tas_live_89f029148b3049a2' : 'tas_live_89f0••••••••49a2'}
+                  {showSecret ? activeApiKey : (activeApiKey.length > 14 ? `${activeApiKey.slice(0, 10)}••••••••${activeApiKey.slice(-4)}` : 'tas_live_••••')}
                 </span>
                 <div className="flex items-center gap-1">
                   <button
@@ -494,7 +557,7 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
                     </span>
                   </button>
                   <button
-                    onClick={() => copyToClipboard('tas_live_89f029148b3049a2', 'Engine Client Secret')}
+                    onClick={() => copyToClipboard(activeApiKey, 'Engine Client Secret')}
                     className="text-[#8B716B] hover:text-[#1D1A23] p-1"
                     title="Copy key"
                   >

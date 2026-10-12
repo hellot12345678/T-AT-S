@@ -6,8 +6,19 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
 
 export class TATSBackendAPI {
-  private static getToken(): string | null {
-    return localStorage.getItem('tats_dev_token');
+  public static readonly DEFAULT_DEMO_API_KEY = 'tas_live_a2fb9c89abcb4d74951548ac001c5707';
+  public static readonly DEFAULT_DEMO_DEV_TOKEN = 'tas_dev_5e70d2e115a544f7b23d596380202e16';
+
+  public static getApiKey(): string {
+    return localStorage.getItem('tats_api_key') || this.DEFAULT_DEMO_API_KEY;
+  }
+
+  public static setApiKey(key: string): void {
+    localStorage.setItem('tats_api_key', key);
+  }
+
+  public static getToken(): string | null {
+    return localStorage.getItem('tats_dev_token') || this.DEFAULT_DEMO_DEV_TOKEN;
   }
 
   public static setToken(token: string): void {

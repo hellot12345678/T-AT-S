@@ -24,3 +24,4 @@ class DeveloperTokenAuthScheme(OpenApiAuthenticationExtension):
             'bearerFormat': 'tas_dev_*',
             'description': 'Bearer tas_dev_... for Developer account & app administration.'
         }
+

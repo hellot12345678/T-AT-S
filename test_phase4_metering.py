@@ -137,3 +137,4 @@ class Phase4MeteringTestCase(TestCase):
         self.assertEqual(upgrade_res.status_code, 200)
         self.assertEqual(upgrade_res.data['plan_tier'], 'STARTER')
         self.assertEqual(upgrade_res.data['quota']['base_quota'], 50500)
+

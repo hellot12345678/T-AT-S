@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppView } from '../../types';
 import { PLAYGROUND_PRESETS } from '../../data/mockData';
+import { TATSBackendAPI } from '../../services/api';
 
 interface PlaygroundViewProps {
   onNavigate: (view: AppView) => void;
@@ -56,8 +57,127 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({
     return () => clearInterval(interval);
   }, [micState, isMuted]);
 
+  const executeUtterance = async (text: string, presetFallback?: typeof PLAYGROUND_PRESETS[0]) => {
+    setMicState('listening');
+    setTranscript(`“${text}”`);
+    onShowToast('Streaming to T@S Engine', 'Processing intent & executing actions...');
+
+    const apiKey = TATSBackendAPI.getApiKey();
+    try {
+      const startTime = Date.now();
+      const res = await TATSBackendAPI.chat(apiKey, {
+        client_user_id: 'playground_user',
+        session_id: 'sess_vox_9941',
+        message: text,
+        is_voice: true
+      });
+
+      if (res.ok && res.data) {
+        const totalMs = res.data.metrics?.total_ms || (Date.now() - startTime);
+        const llmMs = res.data.metrics?.llm_ms || Math.round(totalMs * 0.45);
+        const toolMs = res.data.metrics?.tool_ms || Math.round(totalMs * 0.25);
+        const replyText = res.data.reply || `Executed action successfully.`;
+
+        setCurrentTool(res.data.tool_executed || (presetFallback ? presetFallback.action : 'voice_reply'));
+        setE2eLatency(totalMs);
+        setStepLatencies({
+          auth: 0.12,
+          vector: 24,
+          llm: llmMs,
+          api: toolMs,
+          tts: 140
+        });
+        setEndpointText(res.data.action_dispatched ? 'POST /api/v1/tools/execute/ → 200 OK' : 'POST /api/v1/chat/ → 200 OK');
+        setCurrentActionPayload(
+          res.data.tool_output && typeof res.data.tool_output === 'object'
+            ? Object.fromEntries(Object.entries(res.data.tool_output).map(([k, v]) => [k, String(v)]))
+            : { status: 'success', units: String(res.data.units_consumed || 1) }
+        );
+        setVoiceReply(`“${replyText}”`);
+        onShowToast(`Dispatched via Django Backend`, `${totalMs}ms latency (${res.data.units_consumed || 1} units).`);
+
+        setMicState('synthesizing');
+        if ('speechSynthesis' in window && !isMuted) {
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(replyText);
+          utter.lang = language;
+          utter.onend = () => setMicState('listening');
+          window.speechSynthesis.speak(utter);
+        } else {
+          setTimeout(() => setMicState('listening'), 1800);
+        }
+        return;
+      }
+    } catch {
+      // Backend offline fallback
+    }
+
+    // Fallback to preset simulation if backend call was offline
+    if (presetFallback) {
+      setCurrentTool(presetFallback.action);
+      setE2eLatency(presetFallback.totalLatency);
+      setStepLatencies({
+        auth: 0.12,
+        vector: presetFallback.asr,
+        llm: presetFallback.llm,
+        api: presetFallback.act,
+        tts: 140
+      });
+      setEndpointText(`${presetFallback.method} ${presetFallback.endpoint} → 200 OK`);
+      setCurrentActionPayload({
+        action: presetFallback.action,
+        ...Object.fromEntries(Object.entries(presetFallback.result).map(([k, v]) => [k, String(v)]))
+      });
+      const reply = `“Executed ${presetFallback.action} with ${presetFallback.totalLatency}ms response time.”`;
+      setVoiceReply(reply);
+      onShowToast(`Simulating (Offline Mock): ${presetFallback.label}`, `Deterministic dispatch finished in ${presetFallback.totalLatency}ms.`);
+
+      setTimeout(() => {
+        setMicState('synthesizing');
+        if ('speechSynthesis' in window && !isMuted) {
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(reply);
+          utter.lang = language;
+          utter.onend = () => setMicState('listening');
+          window.speechSynthesis.speak(utter);
+        } else {
+          setTimeout(() => setMicState('listening'), 1800);
+        }
+      }, 500);
+    }
+  };
+
   const toggleMic = () => {
     if (micState === 'idle') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          const rec = new SpeechRecognition();
+          rec.lang = language;
+          rec.continuous = false;
+          rec.interimResults = false;
+          rec.onstart = () => {
+            setMicState('listening');
+            onShowToast('Acoustic Stream Active', 'Microphone active. Speak your command now...');
+          };
+          rec.onresult = (event: any) => {
+            const spoken = event.results[0][0].transcript;
+            executeUtterance(spoken);
+          };
+          rec.onerror = () => {
+            setMicState('idle');
+            onShowToast('Microphone Standby', 'Microphone stream idle.');
+          };
+          rec.onend = () => {
+            if (micState === 'listening') setMicState('idle');
+          };
+          rec.start();
+          return;
+        } catch {
+          // Fallback
+        }
+      }
+
       setMicState('listening');
       onShowToast('Acoustic Stream Active', 'Listening for wake word "Hey Acme"...');
     } else if (micState === 'listening') {
@@ -73,31 +193,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({
   };
 
   const executePreset = (preset: typeof PLAYGROUND_PRESETS[0]) => {
-    setMicState('listening');
-    setTranscript(`“${preset.utterance}”`);
-    setCurrentTool(preset.action);
-    setE2eLatency(preset.totalLatency);
-    setStepLatencies({
-      auth: 0.12,
-      vector: preset.asr,
-      llm: preset.llm,
-      api: preset.act,
-      tts: 140
-    });
-    setEndpointText(`${preset.method} ${preset.endpoint} → 200 OK`);
-    setCurrentActionPayload({
-      action: preset.action,
-      ...Object.fromEntries(Object.entries(preset.result).map(([k, v]) => [k, String(v)]))
-    });
-    setVoiceReply(`“Executed ${preset.action} with ${preset.totalLatency}ms response time.”`);
-    onShowToast(`Simulating: ${preset.label}`, `Deterministic dispatch finished in ${preset.totalLatency}ms.`);
-
-    setTimeout(() => {
-      setMicState('synthesizing');
-      setTimeout(() => {
-        setMicState('listening');
-      }, 1800);
-    }, 600);
+    executeUtterance(preset.utterance, preset);
   };
 
   return (

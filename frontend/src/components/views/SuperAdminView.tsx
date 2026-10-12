@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView, DeveloperUser, EndUserVoiceConfig } from '../../types';
 import { TENANT_RECORDS, DEVELOPER_USERS, END_USER_VOICE_CONFIGS } from '../../data/mockData';
+import { TATSBackendAPI } from '../../services/api';
 
 interface SuperAdminViewProps {
   onNavigate: (view: AppView) => void;
@@ -39,6 +40,50 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
   const [textMultiplier, setTextMultiplier] = useState(1.0);
   const [voiceMultiplier, setVoiceMultiplier] = useState(2.0);
   const [toolMultiplier, setToolMultiplier] = useState(3.0);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
+
+  // Fetch live platform config from Django backend
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const fetchConfig = async () => {
+      const config = await TATSBackendAPI.getPlatformConfig();
+      if (config) {
+        if (config.starter_price_inr) setBaseTierPrice(Number(config.starter_price_inr));
+        if (config.free_tier_units) setFreeAllowance(Number(config.free_tier_units));
+        if (config.grace_buffer_pct) setGracePercent(Number(config.grace_buffer_pct));
+        if (config.cost_per_extra_unit) setOverageUnitCost(Number(config.cost_per_extra_unit));
+        if (config.text_multiplier) setTextMultiplier(Number(config.text_multiplier));
+        if (config.voice_multiplier) setVoiceMultiplier(Number(config.voice_multiplier));
+        if (config.tool_multiplier) setToolMultiplier(Number(config.tool_multiplier));
+      }
+    };
+    fetchConfig();
+  }, [isAuthenticated]);
+
+  const handleSavePlatformConfig = async () => {
+    setIsSavingConfig(true);
+    const payload = {
+      starter_price_inr: baseTierPrice,
+      free_tier_units: freeAllowance,
+      grace_buffer_pct: gracePercent,
+      cost_per_extra_unit: overageUnitCost,
+      text_multiplier: textMultiplier,
+      voice_multiplier: voiceMultiplier,
+      tool_multiplier: toolMultiplier,
+    };
+    try {
+      const res = await TATSBackendAPI.updatePlatformConfig(payload);
+      if (res.ok) {
+        onShowToast('Platform Config Synchronized', 'Pricing and multipliers saved to Django database.');
+        setIsSavingConfig(false);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+    setIsSavingConfig(false);
+    onShowToast('Settings Saved', 'Platform parameters updated in local state.');
+  };
 
   // End user configs
   const [endUserConfigs, setEndUserConfigs] = useState<EndUserVoiceConfig[]>(END_USER_VOICE_CONFIGS);
@@ -578,9 +623,21 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                     Adjust base monthly plan prices, included free units, and cost per extra unit.
                   </p>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-[#FAF9F6] border border-[#FFE6DC] text-[#57423D] font-mono text-[11px] font-bold">
-                  Live Pricing
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-[#FAF9F6] border border-[#FFE6DC] text-[#57423D] font-mono text-[11px] font-bold">
+                    Live Pricing
+                  </span>
+                  <button
+                    onClick={handleSavePlatformConfig}
+                    disabled={isSavingConfig}
+                    className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#A53B22] hover:bg-[#84240D] text-white text-xs font-bold shadow-sm transition-all"
+                  >
+                    <span className={`material-symbols-outlined text-[15px] ${isSavingConfig ? 'animate-spin' : ''}`}>
+                      {isSavingConfig ? 'refresh' : 'save'}
+                    </span>
+                    <span>{isSavingConfig ? 'Saving...' : 'Save Settings'}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Slider 1: Base Monthly App Fee */}
