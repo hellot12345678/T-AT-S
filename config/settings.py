@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     # Third-Party Frameworks
     'rest_framework',
     'corsheaders',
+    'drf_spectacular',
     
     # T@S Core Subsystems
     'core.apps.CoreConfig',
@@ -103,6 +104,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # REST Framework Configuration
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
@@ -112,6 +114,20 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
     ],
+}
+
+# Swagger / OpenAPI 3.0 Documentation Settings
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'T@S (Talk. Decide. Solve.) Acoustic Action Engine API',
+    'DESCRIPTION': 'Universal AI Voice Agent Platform — OpenAPI 3.0 Interactive Specification. Test runtime chat, tool registries, keep-alive health probes, and dynamic platform administration.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+    },
 }
 
 # CORS Configuration
