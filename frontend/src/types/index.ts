@@ -5,6 +5,7 @@ export type AppView =
   | 'live-voice-playground'
   | 'super-admin'
   | 'component-wizard'
+  | 'subscription-pricing'
   | 'auth';
 
 export interface TelemetrySession {

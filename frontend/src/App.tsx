@@ -15,11 +15,20 @@ import { DeveloperDashboardView } from './components/views/DeveloperDashboardVie
 import { ToolBuilderView } from './components/views/ToolBuilderView';
 import { PlaygroundView } from './components/views/PlaygroundView';
 import { SuperAdminView } from './components/views/SuperAdminView';
+import { SubscriptionView } from './components/views/SubscriptionView';
 
 export default function App() {
   // Developer Session & Tenancy State
   const [developer, setDeveloper] = useState<any>(TATSBackendAPI.getCurrentDeveloper());
-  const [currentView, setCurrentView] = useState<AppView>(developer ? 'developer-dashboard' : 'landing');
+  const [currentView, setCurrentView] = useState<AppView>(() => {
+    const cached = localStorage.getItem('tats_current_view') as AppView | null;
+    const dev = TATSBackendAPI.getCurrentDeveloper();
+    if (!dev) return 'landing';
+    if (!cached || cached === 'landing' || cached === 'auth') {
+      return 'developer-dashboard';
+    }
+    return cached;
+  });
   const [pendingNavView, setPendingNavView] = useState<AppView | null>(null);
 
   // Modal Controls
@@ -31,7 +40,7 @@ export default function App() {
 
   // Application Tenancy State
   const [applications, setApplications] = useState<any[]>([]);
-  const [activeAppId, setActiveAppId] = useState<string>('');
+  const [activeAppId, setActiveAppId] = useState<string>(() => localStorage.getItem('tats_active_app_id') || '');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const addToast = (title: string, description?: string, type: 'success' | 'info' | 'warning' = 'success') => {
@@ -73,22 +82,42 @@ export default function App() {
     loadApplications();
   }, [developer]);
 
+  // Sync active view and cluster to localStorage
+  useEffect(() => {
+    if (currentView && currentView !== 'auth') {
+      localStorage.setItem('tats_current_view', currentView);
+    }
+  }, [currentView]);
+
+  useEffect(() => {
+    if (activeAppId) {
+      localStorage.setItem('tats_active_app_id', activeAppId);
+    }
+  }, [activeAppId]);
+
   // Dedicated Auth Page Navigation
-  const handleOpenAuth = (notice?: string) => {
+  const handleOpenAuth = (notice?: string, targetView?: AppView) => {
     setAuthBannerNotice(notice || '');
+    if (targetView) setPendingNavView(targetView);
     setCurrentView('auth');
   };
 
-  // Navigation Guard: Protect internal workspaces from unauthenticated access
+  // Navigation Guard: Protect internal workspaces from unauthenticated access & block landing if logged in
   const handleNavigate = (view: AppView) => {
     if (view === 'auth') {
       setCurrentView('auth');
       return;
     }
 
+    // When logged in, block landing/overview page completely
+    if (developer && view === 'landing') {
+      setCurrentView('developer-dashboard');
+      return;
+    }
+
     if (!developer && view !== 'landing') {
       setPendingNavView(view);
-      handleOpenAuth('Sign in or register to access this developer workspace.');
+      handleOpenAuth('Sign in or register to access this developer workspace.', view);
       return;
     }
 
@@ -114,6 +143,8 @@ export default function App() {
     setDeveloper(null);
     setApplications([]);
     setActiveAppId('');
+    localStorage.removeItem('tats_current_view');
+    localStorage.removeItem('tats_active_app_id');
     setCurrentView('landing');
     addToast('Signed Out', 'You have been safely disconnected from your workspace.', 'info');
   };
@@ -122,7 +153,7 @@ export default function App() {
     setDeveloper(dev);
     loadApplications();
     addToast('Welcome Back!', `Logged in as ${dev.name}.`, 'success');
-    if (pendingNavView) {
+    if (pendingNavView && pendingNavView !== 'landing' && pendingNavView !== 'auth') {
       setCurrentView(pendingNavView);
       setPendingNavView(null);
     } else {
@@ -147,17 +178,15 @@ export default function App() {
         e.preventDefault();
         if (developer) setIsCommandOpen((prev) => !prev);
       } else if (e.key === '1') {
-        handleNavigate('landing');
+        handleNavigate(developer ? 'developer-dashboard' : 'landing');
       } else if (e.key === '2') {
-        handleNavigate('developer-dashboard');
-      } else if (e.key === '3') {
         handleNavigate('visual-tool-builder');
-      } else if (e.key === '4') {
+      } else if (e.key === '3') {
         handleNavigate('live-voice-playground');
-      } else if (e.key === '5' && developer?.is_admin) {
-        handleNavigate('super-admin');
-      } else if (e.key === '6') {
+      } else if (e.key === '4') {
         handleNavigate('component-wizard');
+      } else if (e.key === '5') {
+        handleNavigate(developer?.is_admin ? 'super-admin' : 'subscription-pricing');
       }
     };
 
@@ -266,6 +295,21 @@ export default function App() {
               onNavigate={handleNavigate}
               onShowToast={addToast}
               developer={developer}
+            />
+          )}
+
+          {currentView === 'subscription-pricing' && (
+            <SubscriptionView
+              onNavigate={handleNavigate}
+              onShowToast={addToast}
+              developer={developer}
+              applications={applications}
+              activeAppId={activeAppId}
+              onSelectApp={(app) => {
+                setActiveAppId(app.id);
+                addToast('Switched Cluster', `Active application context set to "${app.app_name}".`);
+              }}
+              onRefreshApps={loadApplications}
             />
           )}
         </main>

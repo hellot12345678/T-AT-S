@@ -353,6 +353,19 @@ export class TATSBackendAPI {
   // ==========================================
   // End User Config
   // ==========================================
+  public static async getUserConfig(clientUserId: string = 'default_user') {
+    try {
+      const res = await fetch(`${API_BASE}/users/${encodeURIComponent(clientUserId)}/config/`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
   public static async saveUserConfig(clientUserId: string, config: {
     wake_word: string;
     passphrase?: string;

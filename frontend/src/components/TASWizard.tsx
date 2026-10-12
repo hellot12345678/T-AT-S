@@ -20,12 +20,37 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
   const [isWiped, setIsWiped] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Reset to Step 1 whenever opened
+  // Load saved config on open
   useEffect(() => {
-    if (isOpen) {
-      setCurrentStep(1);
-      setMaxAllowedStep(1);
-    }
+    if (!isOpen) return;
+    setCurrentStep(1);
+    setMaxAllowedStep(1);
+
+    // Load from localStorage cache
+    try {
+      const cached = localStorage.getItem('tats_wizard_config');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.wakeWord) setWakeWord(parsed.wakeWord);
+        if (parsed.passphrase) setPassphrase(parsed.passphrase);
+        if (parsed.selectedPersona) setSelectedPersona(parsed.selectedPersona);
+      }
+    } catch {}
+
+    // Fetch live saved config from database
+    const loadSaved = async () => {
+      try {
+        const res = await TATSBackendAPI.getUserConfig('default_user');
+        if (res && res.wake_word) {
+          setWakeWord(res.wake_word);
+          if (res.voice_tier) {
+            const persona = res.voice_tier === 'CLONED' ? 'clone' : res.voice_tier === 'LIBRARY' ? 'aura' : 'browser';
+            setSelectedPersona(persona);
+          }
+        }
+      } catch {}
+    };
+    loadSaved();
   }, [isOpen]);
 
   // Voice clone recorder countdown simulation
@@ -96,11 +121,22 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
 
     if (currentStep === 5) {
       setIsSaving(true);
+      const voiceTier = selectedPersona === 'clone' ? 'CLONED' : selectedPersona === 'aura' ? 'LIBRARY' : 'BROWSER';
+      // Persist locally so data is never lost on refresh
+      try {
+        localStorage.setItem('tats_wizard_config', JSON.stringify({
+          wakeWord: wakeWord.trim(),
+          passphrase: passphrase.trim(),
+          selectedPersona,
+          savedAt: new Date().toISOString()
+        }));
+      } catch {}
+
       try {
         await TATSBackendAPI.saveUserConfig('default_user', {
-          wake_word: wakeWord,
-          passphrase: passphrase,
-          voice_tier: selectedPersona === 'clone' ? 'CLONED' : selectedPersona === 'aura' ? 'LIBRARY' : 'BROWSER'
+          wake_word: wakeWord.trim(),
+          passphrase: passphrase.trim(),
+          voice_tier: voiceTier
         });
         if (onSuccessToast) {
           onSuccessToast(`Acoustic Voice Agent calibrated! Custom wake word "${wakeWord}" stored.`);

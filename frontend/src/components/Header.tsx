@@ -102,11 +102,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="font-['Outfit'] font-bold text-xl tracking-tight text-[#1D1A23]">
                 T@S
               </span>
-              {developer?.is_admin && (
-                <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-[#FFF8EB] border border-[#FDE047] text-[10px] font-bold text-[#854D0E] font-['Outfit']">
-                  PLATFORM ADMIN
-                </span>
-              )}
             </div>
           </button>
         </div>
@@ -189,15 +184,17 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Useful In-App SDK Quickstart Button (Replaces Broken API Specs) */}
-          <button
-            onClick={() => setShowQuickstartModal(true)}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] border border-[#DEC0B9]/40 text-[#57423D] hover:text-[#1D1A23] text-xs font-semibold transition-all shadow-sm"
-            title="View SDK installation and quickstart guide"
-          >
-            <span className="material-symbols-outlined text-[16px] text-[#A53B22]">terminal</span>
-            <span>SDK Quickstart</span>
-          </button>
+          {/* Useful In-App SDK Quickstart Button (Visible only when not logged in) */}
+          {!developer && (
+            <button
+              onClick={() => setShowQuickstartModal(true)}
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] border border-[#DEC0B9]/40 text-[#57423D] hover:text-[#1D1A23] text-xs font-semibold transition-all shadow-sm"
+              title="View SDK installation and quickstart guide"
+            >
+              <span className="material-symbols-outlined text-[16px] text-[#A53B22]">terminal</span>
+              <span>SDK Quickstart</span>
+            </button>
+          )}
 
           {/* Real Application Cluster Selector Dropdown (When Logged In) */}
           {developer && (
@@ -391,6 +388,17 @@ export const Header: React.FC<HeaderProps> = ({
                       <span>Workspace Dashboard</span>
                     </button>
 
+                    <button
+                      onClick={() => {
+                        onNavigate('subscription-pricing');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-[#1D1A23] hover:bg-[#F8F1FE] rounded-lg flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-[#006688]">payments</span>
+                      <span>Subscription & Plans</span>
+                    </button>
+
                     {/* ONLY VISIBLE TO DESIGNATED PLATFORM ADMIN */}
                     {developer.is_admin && (
                       <button
@@ -423,17 +431,26 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <div className="flex items-center gap-2">
               <button
-                onClick={onOpenAuth}
-                className="px-3.5 py-1.5 rounded-full border border-[#DEC0B9]/60 hover:border-[#A53B22] text-[#57423D] hover:text-[#A53B22] text-xs font-bold transition-all"
+                onClick={() => {
+                  const pricingEl = document.getElementById('pricing');
+                  if (pricingEl) {
+                    pricingEl.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    onNavigate('subscription-pricing');
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#DEC0B9]/60 hover:border-[#A53B22] text-[#57423D] hover:text-[#A53B22] text-xs font-semibold bg-[#FAF9F6] transition-all"
+                title="View Transparent Pricing Plans"
               >
-                Sign In
+                <span className="material-symbols-outlined text-[15px] text-[#A53B22]">payments</span>
+                <span>Plans</span>
               </button>
               <button
                 onClick={onOpenAuth}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FF5F45] text-white text-xs font-bold shadow-sm shadow-[#FF5F45]/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FF5F45] text-white text-xs font-bold shadow-sm shadow-[#FF5F45]/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                <span className="material-symbols-outlined text-[16px]">bolt</span>
-                <span>Get Started Free</span>
+                <span className="material-symbols-outlined text-[15px]">login</span>
+                <span>Sign In</span>
               </button>
             </div>
           )}

@@ -712,9 +712,9 @@ export function VoiceController() {
             <button
               onClick={() => {
                 if (developer) {
-                  onNavigate('developer-dashboard');
+                  onNavigate('subscription-pricing');
                 } else {
-                  onOpenAuth('Create your free developer account to start building.');
+                  onOpenAuth('Sign in or register to start building with Developer Free.', 'subscription-pricing');
                 }
               }}
               className="w-full mt-6 py-2.5 rounded-full bg-white text-[#1D1A23] font-bold text-xs border border-[#FFE6DC] hover:bg-[#F8F1FE] transition-colors"
@@ -743,21 +743,17 @@ export function VoiceController() {
               </ul>
             </div>
             <button
-              onClick={handleDeployGrowth}
-              disabled={isPaymentProcessing}
-              className="w-full mt-6 py-2.5 rounded-full bg-[#A53B22] hover:bg-[#84240D] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              onClick={() => {
+                if (developer) {
+                  onNavigate('subscription-pricing');
+                } else {
+                  onOpenAuth('Sign in or register to complete your Growth Startup subscription.', 'subscription-pricing');
+                }
+              }}
+              className="w-full mt-6 py-2.5 rounded-full bg-[#A53B22] hover:bg-[#84240D] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
             >
-              {isPaymentProcessing ? (
-                <>
-                  <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
-                  <span>Connecting to Razorpay...</span>
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-[16px]">payments</span>
-                  <span>Deploy Growth (₹4,999)</span>
-                </>
-              )}
+              <span className="material-symbols-outlined text-[16px]">payments</span>
+              <span>Deploy Growth (₹4,999)</span>
             </button>
           </div>
 
@@ -774,12 +770,18 @@ export function VoiceController() {
                 <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> Custom acoustics fine-tuning</li>
               </ul>
             </div>
-            <a
-              href="mailto:enterprise@tats.ai?subject=T@S%20Enterprise%20Dedicated%20Cluster%20Inquiry"
+            <button
+              onClick={() => {
+                if (developer) {
+                  onNavigate('subscription-pricing');
+                } else {
+                  onOpenAuth('Sign in or register to inspect Enterprise plans.', 'subscription-pricing');
+                }
+              }}
               className="w-full mt-6 py-2.5 rounded-full bg-white text-[#1D1A23] font-bold text-xs border border-[#FFE6DC] hover:bg-[#F8F1FE] transition-colors text-center block"
             >
-              Contact Enterprise
-            </a>
+              Deploy Enterprise
+            </button>
           </div>
         </div>
       </section>
