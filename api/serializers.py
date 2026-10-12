@@ -80,20 +80,68 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
 class DeveloperRegisterSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=150, default="Developer", required=False)
     email = serializers.EmailField(required=True)
+    phone = serializers.CharField(max_length=20, required=True, help_text="Indian mobile number (10 digits, e.g. +91 9876543210 or 9876543210)")
     password = serializers.CharField(max_length=128, write_only=True, required=True)
 
 
 class DeveloperLoginSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
+    email = serializers.CharField(required=True, help_text="Email address or registered mobile number")
     password = serializers.CharField(max_length=128, write_only=True, required=True)
+
+
+class OTPVerifySerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    otp = serializers.CharField(max_length=6, min_length=6, required=True)
+    purpose = serializers.CharField(max_length=30, default="REGISTER")
+
+
+class ResendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    purpose = serializers.CharField(max_length=30, default="REGISTER")
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    otp = serializers.CharField(max_length=6, min_length=6, required=True)
+    new_password = serializers.CharField(max_length=128, write_only=True, required=True)
 
 
 class DeveloperProfileSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
     name = serializers.CharField(read_only=True)
     email = serializers.EmailField(read_only=True)
+    phone = serializers.CharField(read_only=True)
+    is_admin = serializers.BooleanField(read_only=True)
+    is_verified = serializers.BooleanField(read_only=True)
     applications_count = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
+
+
+class NotificationSerializer(serializers.Serializer):
+    id = serializers.UUIDField(read_only=True)
+    title = serializers.CharField(read_only=True)
+    message = serializers.CharField(read_only=True)
+    notification_type = serializers.CharField(read_only=True)
+    is_read = serializers.BooleanField(read_only=True)
+    link = serializers.CharField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+
+
+class RazorpayCreateOrderSerializer(serializers.Serializer):
+    app_id = serializers.UUIDField(required=False, allow_null=True)
+    plan_tier = serializers.CharField(max_length=50, default='GROWTH_STARTUP')
+
+
+class RazorpayVerifySerializer(serializers.Serializer):
+    razorpay_order_id = serializers.CharField(required=True)
+    razorpay_payment_id = serializers.CharField(required=True)
+    razorpay_signature = serializers.CharField(required=True)
+    app_id = serializers.UUIDField(required=False, allow_null=True)
+
 
 
 class ApplicationCreateSerializer(serializers.Serializer):

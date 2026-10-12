@@ -5,17 +5,20 @@ interface SidebarProps {
   currentView: AppView;
   onNavigate: (view: AppView) => void;
   isMicActive?: boolean;
+  isAdmin?: boolean;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isMicActive }) => {
-  const navItems: { path: AppView; label: string; icon: string; shortcut: string }[] = [
-    { path: 'landing', label: 'Landing', icon: 'explore', shortcut: '1' },
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isMicActive, isAdmin }) => {
+  const allNavItems: { path: AppView; label: string; icon: string; shortcut: string; adminOnly?: boolean }[] = [
+    { path: 'landing', label: 'Home / Overview', icon: 'explore', shortcut: '1' },
     { path: 'developer-dashboard', label: 'Developer Dashboard', icon: 'monitoring', shortcut: '2' },
     { path: 'visual-tool-builder', label: 'Visual Tool Builder', icon: 'account_tree', shortcut: '3' },
     { path: 'live-voice-playground', label: 'Live Voice Playground', icon: 'mic', shortcut: '4' },
-    { path: 'super-admin', label: 'Super Admin', icon: 'admin_panel_settings', shortcut: '5' },
+    { path: 'super-admin', label: 'Platform Governance', icon: 'admin_panel_settings', shortcut: '5', adminOnly: true },
     { path: 'component-wizard', label: 'Component Wizard', icon: 'auto_awesome', shortcut: '6' },
   ];
+
+  const navItems = allNavItems.filter((item) => !item.adminOnly || isAdmin);
 
   return (
     <aside className="fixed left-0 top-16 bottom-0 w-64 bg-[#F8F1FE]/80 backdrop-blur-xl z-30 flex flex-col justify-between py-4 border-r border-[#FFE6DC]/60 shadow-[0_4px_20px_-2px_rgba(30,27,36,0.03)] hidden lg:flex">
@@ -25,7 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isMic
           <span className="font-['Outfit'] text-[11px] font-bold text-[#57423D] uppercase tracking-wider">
             Workspaces
           </span>
-          <span className="text-[10px] text-[#8B716B] font-mono">1-6</span>
+          <span className="text-[10px] text-[#8B716B] font-mono">1-{navItems.length}</span>
         </div>
 
         <nav className="flex flex-col gap-1 mt-1">
@@ -76,13 +79,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isMic
             </div>
             <span
               className={`w-2 h-2 rounded-full ${
-                isMicActive ? 'bg-[#00C2FF] animate-ping' : 'bg-[#FFAE33]'
+                isMicActive ? 'bg-[#00C2FF] animate-ping' : 'bg-[#10B981]'
               }`}
-            ></span>
+            />
           </div>
           <p className="text-[11px] text-[#57423D] leading-snug">
-            Autonomous voice pipeline connected • 48kHz PCM buffer
+            Stream ready on edge cluster. Deterministic action inference under 850ms.
           </p>
+          <div className="flex items-center justify-between text-[10px] text-[#8B716B] font-mono pt-1 border-t border-[#FFE6DC]/60">
+            <span>Sample: 16-bit 48kHz</span>
+            <span className="text-[#A53B22] font-semibold">&lt;15ms Buffer</span>
+          </div>
         </div>
       </div>
     </aside>

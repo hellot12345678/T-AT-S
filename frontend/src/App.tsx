@@ -16,44 +16,55 @@ import { PlaygroundView } from './components/views/PlaygroundView';
 import { SuperAdminView } from './components/views/SuperAdminView';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<AppView>('developer-dashboard');
+  // Developer Session & Tenancy State
+  const [developer, setDeveloper] = useState<any>(TATSBackendAPI.getCurrentDeveloper());
+  const [currentView, setCurrentView] = useState<AppView>(developer ? 'developer-dashboard' : 'landing');
+  const [pendingNavView, setPendingNavView] = useState<AppView | null>(null);
+
+  // Modal Controls
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authBannerNotice, setAuthBannerNotice] = useState<string>('');
   const [isAppCreateModalOpen, setIsAppCreateModalOpen] = useState(false);
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // Developer Session & Tenancy State
-  const [developer, setDeveloper] = useState<{ id?: string; name: string; email: string } | null>(
-    TATSBackendAPI.getCurrentDeveloper()
-  );
+  // Application Tenancy State
   const [applications, setApplications] = useState<any[]>([]);
   const [activeAppId, setActiveAppId] = useState<string>('');
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const addToast = (title: string, description?: string, type: 'success' | 'info' | 'warning' = 'success') => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
     setToasts((prev) => [...prev, { id, title, description, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3800);
+    }, 4200);
   };
 
   const dismissToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Fetch applications & check session
+  // Fetch applications
   const loadApplications = async () => {
+    if (!developer) {
+      setApplications([]);
+      setActiveAppId('');
+      return;
+    }
     try {
       const res = await TATSBackendAPI.getApplications();
       if (res && res.applications) {
         setApplications(res.applications);
         if (res.applications.length > 0) {
-          setActiveAppId((prev) => prev || res.applications[0].id);
+          setActiveAppId((prev) => {
+            const exists = res.applications.some((a: any) => a.id === prev);
+            return exists ? prev : res.applications[0].id;
+          });
         }
       }
     } catch {
-      // Backend offline
+      // Backend offline or token expired
     }
   };
 
@@ -61,16 +72,55 @@ export default function App() {
     loadApplications();
   }, [developer]);
 
+  // Auth Modal Opener with Custom Banner
+  const handleOpenAuth = (notice?: string) => {
+    setAuthBannerNotice(notice || '');
+    setIsAuthModalOpen(true);
+  };
+
+  // Navigation Guard: Protect internal workspaces from unauthenticated access
+  const handleNavigate = (view: AppView) => {
+    if (!developer && view !== 'landing') {
+      setPendingNavView(view);
+      handleOpenAuth('Sign in or register to access this developer workspace.');
+      return;
+    }
+
+    if (view === 'super-admin' && (!developer || !developer.is_admin)) {
+      addToast('Access Restricted', 'Platform Governance is restricted to the designated Platform Administrator.', 'warning');
+      setCurrentView('developer-dashboard');
+      return;
+    }
+
+    if (view === 'component-wizard') {
+      if (!developer) {
+        handleOpenAuth('Sign in to launch your personalized acoustic setup wizard.');
+      } else {
+        setIsWizardOpen(true);
+      }
+    } else {
+      setCurrentView(view);
+    }
+  };
+
   const handleLogout = async () => {
     await TATSBackendAPI.logout();
-    TATSBackendAPI.setCurrentDeveloper(null);
     setDeveloper(null);
-    addToast('Signed Out', 'Your session has been terminated safely.');
+    setApplications([]);
+    setActiveAppId('');
+    setCurrentView('landing');
+    addToast('Signed Out', 'You have been safely disconnected from your workspace.', 'info');
   };
 
   const handleAuthSuccess = (dev: any) => {
     setDeveloper(dev);
     loadApplications();
+    if (pendingNavView) {
+      setCurrentView(pendingNavView);
+      setPendingNavView(null);
+    } else {
+      setCurrentView('developer-dashboard');
+    }
   };
 
   const handleAppCreated = (app: any) => {
@@ -78,10 +128,9 @@ export default function App() {
     setActiveAppId(app.id);
   };
 
-  // Keyboard navigation shortcuts: ⌘K for command palette, 1-6 for view switching
+  // Keyboard navigation shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in an input or textarea
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
         return;
@@ -89,78 +138,84 @@ export default function App() {
 
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setIsCommandOpen((prev) => !prev);
+        if (developer) setIsCommandOpen((prev) => !prev);
       } else if (e.key === '1') {
-        setCurrentView('landing');
+        handleNavigate('landing');
       } else if (e.key === '2') {
-        setCurrentView('developer-dashboard');
+        handleNavigate('developer-dashboard');
       } else if (e.key === '3') {
-        setCurrentView('visual-tool-builder');
+        handleNavigate('visual-tool-builder');
       } else if (e.key === '4') {
-        setCurrentView('live-voice-playground');
-      } else if (e.key === '5') {
-        setCurrentView('super-admin');
+        handleNavigate('live-voice-playground');
+      } else if (e.key === '5' && developer?.is_admin) {
+        handleNavigate('super-admin');
       } else if (e.key === '6') {
-        setIsWizardOpen(true);
+        handleNavigate('component-wizard');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const handleNavigate = (view: AppView) => {
-    if (view === 'component-wizard') {
-      setIsWizardOpen(true);
-    } else {
-      setCurrentView(view);
-    }
-  };
+  }, [developer]);
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-[#1D1A23] font-['Manrope'] flex flex-col selection:bg-[#FF7E5F]/20 selection:text-[#721702]">
-      {/* Top Header with Real Auth & Application Switcher */}
+      {/* Top Header */}
       <Header
         currentView={currentView}
         onNavigate={handleNavigate}
         onOpenCommand={() => setIsCommandOpen(true)}
-        onOpenWizard={() => setIsWizardOpen(true)}
+        onOpenWizard={() => {
+          if (!developer) {
+            handleOpenAuth('Sign in to launch the calibration wizard.');
+          } else {
+            setIsWizardOpen(true);
+          }
+        }}
         developer={developer}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenAuth={() => handleOpenAuth()}
         onLogout={handleLogout}
         applications={applications}
         activeAppId={activeAppId}
         onSelectApp={(app) => {
           setActiveAppId(app.id);
-          if (app.api_key_prefix) {
-            // Note: will use stored raw key or fallback prefix
-          }
-          addToast('Switched Cluster', `Active application context changed to "${app.app_name}".`);
+          addToast('Switched Cluster', `Active application context set to "${app.app_name}".`);
         }}
         onOpenCreateApp={() => setIsAppCreateModalOpen(true)}
       />
 
       <div className="flex flex-1 pt-16">
-        {/* Left Workspaces Sidebar */}
-        {currentView !== 'landing' && (
+        {/* Left Workspaces Sidebar (Shown only when authenticated & not on landing) */}
+        {developer && currentView !== 'landing' && (
           <Sidebar
             currentView={currentView}
             onNavigate={handleNavigate}
             isMicActive={currentView === 'live-voice-playground'}
+            isAdmin={Boolean(developer?.is_admin)}
           />
         )}
 
         {/* Main Content View Container */}
         <main
           className={`flex-1 transition-all ${
-            currentView !== 'landing' ? 'lg:pl-64' : 'w-full'
+            developer && currentView !== 'landing' ? 'lg:pl-64' : 'w-full'
           }`}
         >
           {currentView === 'landing' && (
             <LandingView
               onNavigate={handleNavigate}
               onShowToast={addToast}
-              onOpenWizard={() => setIsWizardOpen(true)}
+              onOpenWizard={() => {
+                if (!developer) {
+                  handleOpenAuth('Sign in to launch the acoustic calibration wizard.');
+                } else {
+                  setIsWizardOpen(true);
+                }
+              }}
+              developer={developer}
+              onOpenAuth={handleOpenAuth}
+              activeAppId={activeAppId}
+              onRefreshApps={loadApplications}
             />
           )}
 
@@ -185,7 +240,7 @@ export default function App() {
             />
           )}
 
-          {currentView === 'super-admin' && (
+          {currentView === 'super-admin' && developer?.is_admin && (
             <SuperAdminView
               onNavigate={handleNavigate}
               onShowToast={addToast}
@@ -194,12 +249,13 @@ export default function App() {
         </main>
       </div>
 
-      {/* Developer Authentication Modal (Sign In & Sign Up) */}
+      {/* Developer Authentication Modal (Sign In, Indian Mobile Register, OTP, Forgot Password) */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={handleAuthSuccess}
         onShowToast={addToast}
+        bannerNotice={authBannerNotice}
       />
 
       {/* New Application Cluster Provisioning Modal */}
@@ -218,14 +274,16 @@ export default function App() {
       />
 
       {/* Global ⌘K Command Palette */}
-      <CommandPalette
-        isOpen={isCommandOpen}
-        onClose={() => setIsCommandOpen(false)}
-        onNavigate={handleNavigate}
-        onTriggerPreset={(type) => {
-          addToast('Preset Triggered', `Loaded ${type} voice intent into playground.`);
-        }}
-      />
+      {developer && (
+        <CommandPalette
+          isOpen={isCommandOpen}
+          onClose={() => setIsCommandOpen(false)}
+          onNavigate={handleNavigate}
+          onTriggerPreset={(type) => {
+            addToast('Preset Loaded', `Initialized ${type} voice profile in playground.`);
+          }}
+        />
+      )}
 
       {/* Toast Notification Stream */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

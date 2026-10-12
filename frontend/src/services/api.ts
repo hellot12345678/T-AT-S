@@ -1,24 +1,25 @@
 /**
  * T@S Backend API Client.
- * Connects the dashboard and playground directly to the Django Acoustic Action Engine.
+ * Connects the dashboard, playground, and billing directly to the Django Acoustic Action Engine.
  */
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
 
 export class TATSBackendAPI {
-  public static readonly DEFAULT_DEMO_API_KEY = 'tas_live_a2fb9c89abcb4d74951548ac001c5707';
-  public static readonly DEFAULT_DEMO_DEV_TOKEN = 'tas_dev_5e70d2e115a544f7b23d596380202e16';
-
-  public static getApiKey(): string {
-    return localStorage.getItem('tats_api_key') || this.DEFAULT_DEMO_API_KEY;
+  public static getApiKey(): string | null {
+    return localStorage.getItem('tats_api_key');
   }
 
   public static setApiKey(key: string): void {
     localStorage.setItem('tats_api_key', key);
   }
 
+  public static clearApiKey(): void {
+    localStorage.removeItem('tats_api_key');
+  }
+
   public static getToken(): string | null {
-    return localStorage.getItem('tats_dev_token') || this.DEFAULT_DEMO_DEV_TOKEN;
+    return localStorage.getItem('tats_dev_token');
   }
 
   public static setToken(token: string): void {
@@ -27,6 +28,8 @@ export class TATSBackendAPI {
 
   public static clearToken(): void {
     localStorage.removeItem('tats_dev_token');
+    localStorage.removeItem('tats_dev_profile');
+    localStorage.removeItem('tats_api_key');
   }
 
   private static getHeaders(customAuth?: string): HeadersInit {
@@ -48,7 +51,7 @@ export class TATSBackendAPI {
   }
 
   // ==========================================
-  // Health & Ping
+  // Health & System Status
   // ==========================================
   public static async checkHealth(): Promise<{ status: string; service: string } | null> {
     try {
@@ -60,33 +63,97 @@ export class TATSBackendAPI {
     }
   }
 
-  // ==========================================
-  // Developer Auth
-  // ==========================================
-  public static async register(name: string, email: string, password: string) {
-    const res = await fetch(`${API_BASE}/auth/register/`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify({ name, email, password }),
-    });
-    const data = await res.json();
-    if (res.ok && data.token) {
-      this.setToken(data.token);
+  public static async checkSystemStatus(): Promise<{
+    is_initialized: boolean;
+    admin_exists: boolean;
+    developers_count: number;
+    first_user_becomes_admin: boolean;
+  } | null> {
+    try {
+      const res = await fetch(`${API_BASE}/auth/system-status/`, { method: 'GET' });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
     }
-    return { ok: res.ok, data };
   }
 
-  public static async login(email: string, password: string) {
-    const res = await fetch(`${API_BASE}/auth/login/`, {
+  // ==========================================
+  // Developer Auth & OTP Verification
+  // ==========================================
+  public static async register(name: string, email: string, phone: string, password: string) {
+    const res = await fetch(`${API_BASE}/auth/register/`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, password }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  public static async verifyOTP(email: string, otp: string, purpose: string = 'REGISTER') {
+    const res = await fetch(`${API_BASE}/auth/verify-otp/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp, purpose }),
     });
     const data = await res.json();
     if (res.ok && data.token) {
       this.setToken(data.token);
+      if (data.developer) {
+        this.setCurrentDeveloper(data.developer);
+      }
     }
-    return { ok: res.ok, data };
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  public static async resendOTP(email: string, purpose: string = 'REGISTER') {
+    const res = await fetch(`${API_BASE}/auth/resend-otp/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, purpose }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  public static async forgotPassword(email: string) {
+    const res = await fetch(`${API_BASE}/auth/forgot-password/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  public static async resetPassword(email: string, otp: string, newPassword: string) {
+    const res = await fetch(`${API_BASE}/auth/reset-password/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp, new_password: newPassword }),
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      this.setToken(data.token);
+      if (data.developer) {
+        this.setCurrentDeveloper(data.developer);
+      }
+    }
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  public static async login(identifier: string, password: string) {
+    const res = await fetch(`${API_BASE}/auth/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: identifier, password }),
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      this.setToken(data.token);
+      if (data.developer) {
+        this.setCurrentDeveloper(data.developer);
+      }
+    }
+    return { ok: res.ok, status: res.status, data };
   }
 
   public static async logout() {
@@ -113,6 +180,9 @@ export class TATSBackendAPI {
   // Application Management
   // ==========================================
   public static async getApplications() {
+    const token = this.getToken();
+    if (!token) return null;
+
     const res = await fetch(`${API_BASE}/apps/`, {
       method: 'GET',
       headers: this.getHeaders(),
@@ -139,12 +209,76 @@ export class TATSBackendAPI {
   }
 
   // ==========================================
+  // Dynamic Real Notifications
+  // ==========================================
+  public static async getNotifications() {
+    const token = this.getToken();
+    if (!token) return { unread_count: 0, notifications: [] };
+
+    try {
+      const res = await fetch(`${API_BASE}/notifications/`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+      if (!res.ok) return { unread_count: 0, notifications: [] };
+      return await res.json();
+    } catch {
+      return { unread_count: 0, notifications: [] };
+    }
+  }
+
+  public static async markNotificationRead(id: string) {
+    const res = await fetch(`${API_BASE}/notifications/${id}/read/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+    });
+    return { ok: res.ok, data: await res.json() };
+  }
+
+  public static async markAllNotificationsRead() {
+    const res = await fetch(`${API_BASE}/notifications/mark-all-read/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+    });
+    return { ok: res.ok, data: await res.json() };
+  }
+
+  // ==========================================
+  // Razorpay Payments & Subscriptions
+  // ==========================================
+  public static async createRazorpayOrder(planTier: string = 'GROWTH_STARTUP', appId?: string) {
+    const res = await fetch(`${API_BASE}/payments/create-order/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ plan_tier: planTier, app_id: appId }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  public static async verifyRazorpayPayment(payload: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    app_id?: string;
+  }) {
+    const res = await fetch(`${API_BASE}/payments/verify/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  // ==========================================
   // Tool Registry
   // ==========================================
-  public static async getTools(apiKey: string) {
+  public static async getTools(apiKey?: string) {
+    const key = apiKey || this.getApiKey();
+    if (!key) return null;
+
     const res = await fetch(`${API_BASE}/tools/`, {
       method: 'GET',
-      headers: this.getHeaders(apiKey),
+      headers: this.getHeaders(key),
     });
     if (!res.ok) return null;
     return await res.json();
@@ -220,6 +354,7 @@ export class TATSBackendAPI {
   public static async getPlatformConfig() {
     const res = await fetch(`${API_BASE}/admin/config/`, {
       method: 'GET',
+      headers: this.getHeaders(),
     });
     if (!res.ok) return null;
     return await res.json();
@@ -228,7 +363,7 @@ export class TATSBackendAPI {
   public static async updatePlatformConfig(config: Record<string, any>) {
     const res = await fetch(`${API_BASE}/admin/config/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: this.getHeaders(),
       body: JSON.stringify(config),
     });
     return { ok: res.ok, data: await res.json() };
@@ -237,7 +372,14 @@ export class TATSBackendAPI {
   // ==========================================
   // Developer Profile Local Storage
   // ==========================================
-  public static getCurrentDeveloper(): { id: string; name: string; email: string } | null {
+  public static getCurrentDeveloper(): {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    is_admin?: boolean;
+    is_verified?: boolean;
+  } | null {
     const item = localStorage.getItem('tats_dev_profile');
     if (!item) return null;
     try {
@@ -247,7 +389,7 @@ export class TATSBackendAPI {
     }
   }
 
-  public static setCurrentDeveloper(profile: { id: string; name: string; email: string } | null): void {
+  public static setCurrentDeveloper(profile: any): void {
     if (profile) {
       localStorage.setItem('tats_dev_profile', JSON.stringify(profile));
     } else {
@@ -255,4 +397,3 @@ export class TATSBackendAPI {
     }
   }
 }
-

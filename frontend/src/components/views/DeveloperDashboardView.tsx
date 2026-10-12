@@ -13,23 +13,20 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
   onShowToast
 }) => {
   const [filter, setFilter] = useState<'all' | 'voice' | 'failed' | 'webhook'>('all');
-  const [telemetry, setTelemetry] = useState<TelemetrySession[]>(INITIAL_TELEMETRY);
+  const [telemetry, setTelemetry] = useState<TelemetrySession[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showSecret, setShowSecret] = useState(false);
 
   // Live Backend State
-  const [appName, setAppName] = useState('Acme Product Engine');
+  const [appName, setAppName] = useState('');
   const [appId, setAppId] = useState('');
-  const [activeApiKey, setActiveApiKey] = useState(TATSBackendAPI.getApiKey());
-  const [toolsCount, setToolsCount] = useState(18);
-  const [activeToolsList, setActiveToolsList] = useState<any[]>([
-    { name: 'create_task', desc: 'v1.2 · Linear, Jira', endpoint: '/api/v1/tasks/create/', icon: 'task_alt' },
-    { name: 'refund_order', desc: 'v2.0 · Stripe, Razorpay', endpoint: '/api/v1/payments/refund/', icon: 'payments' },
-    { name: 'lookup_crm', desc: 'v3.4 · HubSpot, Salesforce', endpoint: '/api/v1/crm/contacts/', icon: 'contacts' }
-  ]);
-  const [monthlyUnitsUsed, setMonthlyUnitsUsed] = useState(16800);
-  const [monthlyQuota, setMonthlyQuota] = useState(20000);
+  const [activeApiKey, setActiveApiKey] = useState(TATSBackendAPI.getApiKey() || '');
+  const [toolsCount, setToolsCount] = useState(0);
+  const [activeToolsList, setActiveToolsList] = useState<any[]>([]);
+  const [monthlyUnitsUsed, setMonthlyUnitsUsed] = useState(0);
+  const [monthlyQuota, setMonthlyQuota] = useState(2000);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
+
 
   useEffect(() => {
     const fetchLiveData = async () => {
@@ -496,6 +493,26 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
                     )}
                   </React.Fragment>
                 ))}
+
+                {filteredTelemetry.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-xs text-[#8B716B]">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <span className="material-symbols-outlined text-[36px] text-[#FF7E5F]/60">record_voice_over</span>
+                        <p className="font-bold text-[#1D1A23] text-sm font-['Outfit']">No Session Activity Recorded Yet</p>
+                        <p className="text-[11px] max-w-sm text-[#57423D]">
+                          Test a voice command in the Live Voice Playground or dispatch a tool through the SDK to record real-time acoustic sessions.
+                        </p>
+                        <button
+                          onClick={() => onNavigate('live-voice-playground')}
+                          className="mt-2 px-4 py-1.5 rounded-full bg-[#A53B22] text-white text-xs font-bold hover:bg-[#84240D] transition-colors"
+                        >
+                          Launch Playground →
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -553,6 +570,14 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
                   </button>
                 </div>
               ))}
+
+              {activeToolsList.length === 0 && (
+                <div className="py-6 px-3 rounded-2xl bg-[#FAF9F6] border border-dashed border-[#FFE6DC] text-center text-xs text-[#8B716B]">
+                  <span className="material-symbols-outlined text-[24px] text-[#A53B22] block mb-1">integration_instructions</span>
+                  <p className="font-semibold text-[#1D1A23]">No tools registered yet</p>
+                  <p className="text-[11px] mt-0.5">Use the Visual Schema Builder below or register tools via SDK.</p>
+                </div>
+              )}
             </div>
 
             <button

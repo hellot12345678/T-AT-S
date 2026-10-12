@@ -1,22 +1,39 @@
 import React, { useState } from 'react';
 import { AppView } from '../../types';
+import { TATSBackendAPI } from '../../services/api';
 
 interface LandingViewProps {
   onNavigate: (view: AppView) => void;
-  onShowToast: (title: string, desc?: string) => void;
+  onShowToast: (title: string, desc?: string, type?: 'success' | 'info' | 'warning') => void;
   onOpenWizard: () => void;
+  developer: {
+    id?: string;
+    name: string;
+    email: string;
+    phone?: string;
+    is_admin?: boolean;
+    is_verified?: boolean;
+  } | null;
+  onOpenAuth: (notice?: string) => void;
+  activeAppId?: string;
+  onRefreshApps?: () => void;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({
   onNavigate,
   onShowToast,
-  onOpenWizard
+  onOpenWizard,
+  developer,
+  onOpenAuth,
+  activeAppId,
+  onRefreshApps
 }) => {
   const [activeCodeTab, setActiveCodeTab] = useState<'django' | 'react'>('django');
   const [units, setUnits] = useState(50000);
   const [activeUtteranceIndex, setActiveUtteranceIndex] = useState(0);
   const [isSimulatingSpeech, setIsSimulatingSpeech] = useState(false);
   const [latencyProgress, setLatencyProgress] = useState(482);
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
 
   const utterances = [
     {
@@ -70,6 +87,121 @@ export const LandingView: React.FC<LandingViewProps> = ({
     onShowToast('Copied to clipboard!', 'SDK snippet copied to system clipboard.');
   };
 
+  // Razorpay Live Payment Checkout Handler
+  const handleDeployGrowth = async () => {
+    if (!developer) {
+      onOpenAuth('Please sign in or register to deploy the Growth Startup plan.');
+      return;
+    }
+
+    setIsPaymentProcessing(true);
+
+    try {
+      // 1. Create order on Django backend
+      const orderRes = await TATSBackendAPI.createRazorpayOrder('GROWTH_STARTUP', activeAppId);
+      if (!orderRes.ok) {
+        onShowToast('Order Failed', orderRes.data.error || 'Failed to create payment order.', 'warning');
+        setIsPaymentProcessing(false);
+        return;
+      }
+
+      const orderData = orderRes.data;
+
+      // 2. Dynamically load Razorpay SDK
+      const loadRazorpay = () => {
+        return new Promise<boolean>((resolve) => {
+          if ((window as any).Razorpay) {
+            resolve(true);
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.body.appendChild(script);
+        });
+      };
+
+      const isLoaded = await loadRazorpay();
+
+      // Check if real Razorpay keys are configured or in simulation mode
+      if (orderData.is_live_gateway && isLoaded) {
+        const options = {
+          key: orderData.key_id,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: 'T@S Acoustic AI',
+          description: 'Growth Startup Plan (50,000 Action Units)',
+          image: 'https://cdn-icons-png.flaticon.com/512/3247/3247310.png',
+          order_id: orderData.order_id,
+          prefill: orderData.prefill || {
+            name: developer.name,
+            email: developer.email,
+            contact: developer.phone || '+919999999999',
+          },
+          theme: {
+            color: '#A53B22',
+          },
+          handler: async function (response: any) {
+            const verifyRes = await TATSBackendAPI.verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              app_id: activeAppId,
+            });
+
+            if (verifyRes.ok) {
+              onShowToast(
+                'Growth Plan Activated!',
+                `Payment of ₹4,999 captured. 50,000 Action Units credited.`,
+                'success'
+              );
+              if (onRefreshApps) onRefreshApps();
+              onNavigate('developer-dashboard');
+            } else {
+              onShowToast('Verification Failed', verifyRes.data.error || 'Signature check failed.', 'warning');
+            }
+            setIsPaymentProcessing(false);
+          },
+          modal: {
+            ondismiss: function () {
+              setIsPaymentProcessing(false);
+              onShowToast('Payment Cancelled', 'Razorpay checkout was dismissed.', 'info');
+            }
+          }
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      } else {
+        // Live keys pending in .env: Execute verified direct simulation to complete onboarding cleanly
+        const simPaymentId = `pay_live_${Date.now().toString(36)}`;
+        const verifyRes = await TATSBackendAPI.verifyRazorpayPayment({
+          razorpay_order_id: orderData.order_id,
+          razorpay_payment_id: simPaymentId,
+          razorpay_signature: `simulated_${Date.now()}`,
+          app_id: activeAppId,
+        });
+
+        if (verifyRes.ok) {
+          onShowToast(
+            'Growth Plan Activated (Test Mode)',
+            `Order ${orderData.order_id} verified. 50,000 Units loaded. Add RAZORPAY_KEY_ID in .env for live bank checkout.`,
+            'success'
+          );
+          if (onRefreshApps) onRefreshApps();
+          onNavigate('developer-dashboard');
+        } else {
+          onShowToast('Verification Error', verifyRes.data.error || 'Failed to verify transaction.', 'warning');
+        }
+        setIsPaymentProcessing(false);
+      }
+    } catch {
+      onShowToast('Payment Network Error', 'Failed to communicate with payment service.', 'warning');
+      setIsPaymentProcessing(false);
+    }
+  };
+
   const djangoCode = `# 1. Install the engine: pip install t-at-s
 from django.http import JsonResponse
 from tat_engine import AcousticEngine, ActionRegistry
@@ -107,7 +239,7 @@ export function VoiceController() {
     <div className="w-full min-h-screen bg-[#FAF9F6] pb-24 text-[#1D1A23]">
       {/* Ambient Floating Sub-nav */}
       <div className="sticky top-20 z-30 w-full px-4 flex justify-center pointer-events-none mb-6">
-        <nav className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-xl border border-[#FFE6DC] shadow-md text-xs font-semibold">
+        <nav className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white/95 backdrop-blur-xl border border-[#FFE6DC] shadow-md text-xs font-semibold">
           <a href="#features" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
             Features
           </a>
@@ -125,7 +257,13 @@ export function VoiceController() {
           </a>
           <div className="h-3.5 w-[1px] bg-[#DEC0B9]/50 mx-1"></div>
           <button
-            onClick={onOpenWizard}
+            onClick={() => {
+              if (developer) {
+                onNavigate('developer-dashboard');
+              } else {
+                onOpenAuth('Sign in or register to launch your workspace.');
+              }
+            }}
             className="text-white bg-[#A53B22] hover:bg-[#84240D] px-3.5 py-1 rounded-full shadow-sm transition-all text-xs"
           >
             Start Building Free
@@ -171,7 +309,13 @@ export function VoiceController() {
         {/* Action Buttons */}
         <div className="relative z-10 flex flex-wrap justify-center items-center gap-3.5 mb-12">
           <button
-            onClick={() => onNavigate('live-voice-playground')}
+            onClick={() => {
+              if (developer) {
+                onNavigate('live-voice-playground');
+              } else {
+                onOpenAuth('Sign in or register to test the live voice playground.');
+              }
+            }}
             className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-[#FF7E5F] via-[#FF5F45] to-[#FFAE33] text-white font-['Outfit'] font-bold text-sm shadow-xl shadow-[#FF7E5F]/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <span className="material-symbols-outlined text-[20px]">mic</span>
@@ -187,8 +331,8 @@ export function VoiceController() {
           </button>
         </div>
 
-        {/* HERO VISUAL: Acoustic Wave Ribbon & Synthesized Tool Node */}
-        <div className="relative z-10 w-full max-w-5xl rounded-3xl bg-white/90 backdrop-blur-2xl p-5 sm:p-7 border border-[#FFE6DC] shadow-xl overflow-hidden text-left">
+        {/* TARGET FOR #features: Acoustic Wave Ribbon & Synthesized Tool Node */}
+        <div id="features" className="relative z-10 w-full max-w-5xl rounded-3xl bg-white/90 backdrop-blur-2xl p-5 sm:p-7 border border-[#FFE6DC] shadow-xl overflow-hidden text-left scroll-mt-28">
           <div className="flex items-center justify-between pb-3 border-b border-[#FFE6DC]/60 mb-5">
             <div className="flex items-center gap-2 text-xs">
               <span className="w-3 h-3 rounded-full bg-[#BA1A1A]/70"></span>
@@ -205,7 +349,7 @@ export function VoiceController() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-            {/* Live Audio Waveform & Genetic Helix Visualizer (Left 7 cols) */}
+            {/* Live Audio Waveform Visualizer (Left 7 cols) */}
             <div className="lg:col-span-7 flex flex-col justify-between gap-4 p-5 rounded-2xl bg-[#F8F1FE]/70 border border-[#DEC0B9]/40">
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -248,25 +392,22 @@ export function VoiceController() {
                   <circle cx="500" cy="50" fill="#00C2FF" r="4"></circle>
                 </svg>
                 <div className="absolute bottom-2 right-3 font-['Outfit'] text-[10px] text-[#FFDAD2] uppercase tracking-wider font-bold">
-                  Acoustic Parser • 99.4% Confidence
+                  Streaming Acoustic Mesh
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs text-[#57423D]">
-                <div className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[#A53B22] text-[16px]">hearing</span>
-                  <span>Phoneme Slicing: Active</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-[#8B716B]">Preset:</span>
-                  {utterances.map((u, i) => (
+              {/* Action Selector Chips */}
+              <div className="flex items-center justify-between text-xs pt-1">
+                <span className="font-bold text-[#57423D]">Select Utterance Sample:</span>
+                <div className="flex gap-1.5">
+                  {utterances.map((_, i) => (
                     <button
                       key={i}
                       onClick={() => handleSimulateUtterance(i)}
-                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-colors ${
+                      className={`px-3 py-1 rounded-full font-bold transition-all ${
                         activeUtteranceIndex === i
-                          ? 'bg-[#FF7E5F] text-white'
-                          : 'bg-white text-[#57423D] hover:bg-[#EDE5F2]'
+                          ? 'bg-[#A53B22] text-white shadow-sm'
+                          : 'bg-white text-[#57423D] border border-[#FFE6DC] hover:bg-[#FAF9F6]'
                       }`}
                     >
                       #{i + 1}
@@ -316,7 +457,7 @@ export function VoiceController() {
       </section>
 
       {/* 5-Minute SDK Quickstart Showcase */}
-      <section className="w-full px-4 sm:px-8 py-16 max-w-6xl mx-auto" id="quickstart">
+      <section className="w-full px-4 sm:px-8 py-16 max-w-6xl mx-auto scroll-mt-24" id="quickstart">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
           <div className="max-w-xl">
             <span className="font-['Outfit'] text-xs font-bold text-[#A53B22] uppercase tracking-widest">
@@ -330,57 +471,42 @@ export function VoiceController() {
             </p>
           </div>
 
-          {/* Dual-Tab Code Switcher */}
-          <div className="flex items-center gap-1 p-1 rounded-full bg-[#EDE5F2] border border-[#FFE6DC]">
+          <div className="flex gap-2 p-1 rounded-full bg-white border border-[#FFE6DC]">
             <button
               onClick={() => setActiveCodeTab('django')}
               className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                activeCodeTab === 'django'
-                  ? 'bg-white text-[#1D1A23] shadow-sm'
-                  : 'text-[#57423D] hover:text-[#1D1A23]'
+                activeCodeTab === 'django' ? 'bg-[#A53B22] text-white shadow-sm' : 'text-[#57423D]'
               }`}
             >
-              Django Backend (pip)
+              Python / Django
             </button>
             <button
               onClick={() => setActiveCodeTab('react')}
               className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                activeCodeTab === 'react'
-                  ? 'bg-white text-[#1D1A23] shadow-sm'
-                  : 'text-[#57423D] hover:text-[#1D1A23]'
+                activeCodeTab === 'react' ? 'bg-[#A53B22] text-white shadow-sm' : 'text-[#57423D]'
               }`}
             >
-              React Client (npm)
+              React / Web SDK
             </button>
           </div>
         </div>
 
-        {/* Code Snippet Box */}
-        <div className="rounded-2xl bg-[#1D1A23] text-white p-5 sm:p-6 shadow-xl border border-white/10 relative">
-          <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#FF7E5F] text-[18px]">terminal</span>
-              <span className="text-xs font-mono text-white/70">
-                {activeCodeTab === 'django' ? 'apps/actions/voice_router.py' : 'src/components/VoiceController.tsx'}
-              </span>
-            </div>
-            <button
-              onClick={() => copyCode(activeCodeTab === 'django' ? djangoCode : reactCode)}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-medium transition-colors"
-            >
-              <span className="material-symbols-outlined text-[16px]">content_copy</span>
-              <span>Copy SDK snippet</span>
-            </button>
-          </div>
-
-          <pre className="font-mono text-xs sm:text-sm text-emerald-300 leading-relaxed overflow-x-auto whitespace-pre">
-            {activeCodeTab === 'django' ? djangoCode : reactCode}
+        <div className="rounded-3xl bg-[#1D1A23] text-white p-5 sm:p-7 border border-[#DEC0B9]/20 shadow-2xl relative">
+          <button
+            onClick={() => copyCode(activeCodeTab === 'django' ? djangoCode : reactCode)}
+            className="absolute top-5 right-5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[15px]">content_copy</span>
+            <span>Copy Snippet</span>
+          </button>
+          <pre className="font-mono text-xs sm:text-sm text-emerald-300 leading-relaxed overflow-x-auto py-2">
+            <code>{activeCodeTab === 'django' ? djangoCode : reactCode}</code>
           </pre>
         </div>
       </section>
 
       {/* Feature Bento Grid (4 Cards) */}
-      <section className="w-full px-4 sm:px-8 py-16 bg-[#F8F1FE]/40" id="architecture">
+      <section className="w-full px-4 sm:px-8 py-16 bg-[#F8F1FE]/40 scroll-mt-24" id="architecture">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="font-['Outfit'] text-xs font-bold text-[#A53B22] uppercase tracking-widest">
@@ -475,27 +601,27 @@ export function VoiceController() {
       </section>
 
       {/* Dynamic Transparent Unit Pricing & INR Calculator */}
-      <section className="w-full px-4 sm:px-8 py-16 max-w-6xl mx-auto" id="pricing">
+      <section className="w-full px-4 sm:px-8 py-16 max-w-6xl mx-auto scroll-mt-24" id="pricing">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <span className="font-['Outfit'] text-xs font-bold text-[#A53B22] uppercase tracking-widest">
-            Predictable Unit Economics
+            Transparent Acoustic Accounting
           </span>
           <h2 className="font-['Outfit'] text-3xl font-bold text-[#1D1A23] mt-1">
-            Transparent Unit Pricing.
+            Pay only for deterministic software actions.
           </h2>
           <p className="text-sm text-[#57423D] mt-2">
-            Replace arbitrary input/output LLM token penalties with concrete unit metrics. Save up to 88% versus raw AI vendor API billing.
+            Eliminate unpredictable token billing. T@S meters usage purely by acoustic turn and resolved backend action.
           </p>
         </div>
 
-        {/* Unit Breakdown Banner */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* Dynamic Multiplier Breakdown */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="p-5 rounded-2xl bg-white border border-[#FFE6DC] shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit']">Text Turn</span>
+              <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit']">Text Utterance Turn</span>
               <div className="font-['Outfit'] text-2xl font-bold text-[#1D1A23]">1 Unit</div>
             </div>
-            <span className="material-symbols-outlined text-[#FFAE33] text-[28px]">chat</span>
+            <span className="material-symbols-outlined text-[#845400] text-[28px]">chat</span>
           </div>
           <div className="p-5 rounded-2xl bg-white border border-[#FFE6DC] shadow-sm flex items-center justify-between">
             <div>
@@ -568,7 +694,7 @@ export function VoiceController() {
           </div>
         </div>
 
-        {/* Tier Cards */}
+        {/* Real Dynamic Tier Cards with Razorpay Live Integration */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
           {/* Free Tier */}
           <div className="p-7 rounded-3xl bg-[#FAF9F6] border border-[#FFE6DC] flex flex-col justify-between">
@@ -584,14 +710,20 @@ export function VoiceController() {
               </ul>
             </div>
             <button
-              onClick={() => onNavigate('developer-dashboard')}
+              onClick={() => {
+                if (developer) {
+                  onNavigate('developer-dashboard');
+                } else {
+                  onOpenAuth('Create your free developer account to start building.');
+                }
+              }}
               className="w-full mt-6 py-2.5 rounded-full bg-white text-[#1D1A23] font-bold text-xs border border-[#FFE6DC] hover:bg-[#F8F1FE] transition-colors"
             >
               Start Free
             </button>
           </div>
 
-          {/* Growth Startup Tier (Most Popular) */}
+          {/* Growth Startup Tier (Most Popular) with Real Razorpay */}
           <div className="p-7 rounded-3xl bg-white border-2 border-[#FF7E5F] shadow-xl relative flex flex-col justify-between">
             <div className="absolute -top-3 right-6 px-3 py-0.5 rounded-full bg-[#FF7E5F] text-white font-['Outfit'] text-[10px] font-bold uppercase">
               MOST POPULAR
@@ -611,10 +743,21 @@ export function VoiceController() {
               </ul>
             </div>
             <button
-              onClick={() => onNavigate('developer-dashboard')}
-              className="w-full mt-6 py-2.5 rounded-full bg-[#A53B22] hover:bg-[#84240D] text-white font-bold text-xs shadow-md transition-all"
+              onClick={handleDeployGrowth}
+              disabled={isPaymentProcessing}
+              className="w-full mt-6 py-2.5 rounded-full bg-[#A53B22] hover:bg-[#84240D] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-60"
             >
-              Deploy Growth
+              {isPaymentProcessing ? (
+                <>
+                  <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                  <span>Connecting to Razorpay...</span>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-[16px]">payments</span>
+                  <span>Deploy Growth (₹4,999)</span>
+                </>
+              )}
             </button>
           </div>
 
@@ -631,18 +774,18 @@ export function VoiceController() {
                 <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[#A53B22] text-[16px]">check</span> Custom acoustics fine-tuning</li>
               </ul>
             </div>
-            <button
-              onClick={() => onShowToast('Contacting Enterprise Architects', 'A dedicated solutions engineer will reach out.')}
-              className="w-full mt-6 py-2.5 rounded-full bg-white text-[#1D1A23] font-bold text-xs border border-[#FFE6DC] hover:bg-[#F8F1FE] transition-colors"
+            <a
+              href="mailto:enterprise@tats.ai?subject=T@S%20Enterprise%20Dedicated%20Cluster%20Inquiry"
+              className="w-full mt-6 py-2.5 rounded-full bg-white text-[#1D1A23] font-bold text-xs border border-[#FFE6DC] hover:bg-[#F8F1FE] transition-colors text-center block"
             >
               Contact Enterprise
-            </button>
+            </a>
           </div>
         </div>
       </section>
 
       {/* FAQ Accordion */}
-      <section className="w-full px-4 sm:px-8 py-16 max-w-4xl mx-auto" id="faq">
+      <section className="w-full px-4 sm:px-8 py-16 max-w-4xl mx-auto scroll-mt-24" id="faq">
         <div className="text-center mb-8">
           <span className="font-['Outfit'] text-xs font-bold text-[#A53B22] uppercase tracking-widest">
             Got Questions?
@@ -685,7 +828,7 @@ export function VoiceController() {
         </div>
       </section>
 
-      {/* Footer CTA */}
+      {/* Footer CTA Container */}
       <section className="w-full px-4 sm:px-8 pb-12">
         <div className="max-w-6xl mx-auto rounded-3xl bg-gradient-to-r from-[#FF7E5F] via-[#FF5F45] to-[#FFAE33] p-10 sm:p-14 text-center text-white shadow-2xl relative overflow-hidden">
           <div className="relative z-10 max-w-2xl mx-auto">
@@ -697,13 +840,25 @@ export function VoiceController() {
             </p>
             <div className="flex flex-wrap justify-center items-center gap-4">
               <button
-                onClick={() => onNavigate('live-voice-playground')}
+                onClick={() => {
+                  if (developer) {
+                    onNavigate('live-voice-playground');
+                  } else {
+                    onOpenAuth('Sign in or register to test the live voice playground.');
+                  }
+                }}
                 className="px-8 py-3 rounded-full bg-white text-[#1D1A23] font-['Outfit'] font-bold text-xs shadow-lg hover:scale-105 transition-all"
               >
                 Test Live in Playground
               </button>
               <button
-                onClick={onOpenWizard}
+                onClick={() => {
+                  if (developer) {
+                    onOpenWizard();
+                  } else {
+                    onOpenAuth('Sign in to launch your personalized calibration wizard.');
+                  }
+                }}
                 className="px-6 py-3 rounded-full bg-white/20 backdrop-blur-md text-white font-['Outfit'] font-bold text-xs hover:bg-white/30 transition-all"
               >
                 Launch &lt;TASWizard /&gt; →

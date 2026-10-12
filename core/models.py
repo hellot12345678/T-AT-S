@@ -7,11 +7,15 @@ class Developer(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=150, default="Developer")
     email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=20, blank=True, null=True, help_text="Indian mobile number e.g. +91 9876543210")
     password_hash = models.CharField(max_length=255)
+    is_admin = models.BooleanField(default=False, help_text="Designated platform administrator")
+    is_verified = models.BooleanField(default=False, help_text="Verified via email OTP")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.name} ({self.email})"
+        role_label = " [ADMIN]" if self.is_admin else ""
+        return f"{self.name} ({self.email}){role_label}"
 
     def set_password(self, raw_password: str):
         from django.contrib.auth.hashers import make_password
@@ -246,5 +250,149 @@ class PlatformConfig(models.Model):
 
     def __str__(self):
         return f"PlatformConfig (Free: {self.free_tier_units} units, Starter: INR {self.starter_price_inr})"
+
+
+class EmailOTPVerification(models.Model):
+    PURPOSE_CHOICES = [
+        ('REGISTER', 'Registration Verification'),
+        ('LOGIN', 'Login Verification'),
+        ('FORGOT_PASSWORD', 'Password Reset'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(db_index=True)
+    otp_hash = models.CharField(max_length=255)
+    purpose = models.CharField(max_length=30, choices=PURPOSE_CHOICES, default='REGISTER')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"OTP for {self.email} ({self.purpose}) - Used: {self.is_used}"
+
+    @classmethod
+    def create_and_send(cls, email: str, purpose: str = 'REGISTER'):
+        import random
+        from datetime import timedelta
+        from django.core.mail import send_mail
+        from django.conf import settings
+        from django.contrib.auth.hashers import make_password
+
+        # Generate 6-digit cryptographic-style OTP
+        raw_otp = f"{random.randint(100000, 999999)}"
+        otp_hash = make_password(raw_otp)
+        expires_at = timezone.now() + timedelta(minutes=10)
+
+        # Invalidate old unused OTPs for this email and purpose
+        cls.objects.filter(email=email.lower().strip(), purpose=purpose, is_used=False).update(is_used=True)
+
+        instance = cls.objects.create(
+            email=email.lower().strip(),
+            otp_hash=otp_hash,
+            purpose=purpose,
+            expires_at=expires_at,
+            is_used=False
+        )
+
+        subject_map = {
+            'REGISTER': 'Verify your T@S Account - OTP Code',
+            'LOGIN': 'Your T@S Login Verification Code',
+            'FORGOT_PASSWORD': 'Reset your T@S Password - OTP Code',
+        }
+        subject = subject_map.get(purpose, 'Your T@S Verification Code')
+        message = (
+            f"Hello,\n\n"
+            f"Your T@S 6-digit verification code is: {raw_otp}\n\n"
+            f"This code will expire in 10 minutes.\n"
+            f"If you did not request this verification, please disregard this email.\n\n"
+            f"— The T@S Engineering Team"
+        )
+
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@tats.ai'),
+                recipient_list=[email],
+                fail_silently=False
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                f"[T@S Email Notification] OTP Email delivery note ({e}). Verification OTP: {raw_otp} for {email}"
+            )
+
+        return instance, raw_otp
+
+    @classmethod
+    def verify_code(cls, email: str, raw_code: str, purpose: str = 'REGISTER') -> bool:
+        from django.contrib.auth.hashers import check_password
+        now = timezone.now()
+        records = cls.objects.filter(
+            email=email.lower().strip(),
+            purpose=purpose,
+            is_used=False,
+            expires_at__gte=now
+        ).order_by('-created_at')
+
+        for record in records:
+            if check_password(raw_code.strip(), record.otp_hash):
+                record.is_used = True
+                record.save()
+                return True
+        return False
+
+
+class Notification(models.Model):
+    TYPE_CHOICES = [
+        ('INFO', 'Information'),
+        ('SUCCESS', 'Success'),
+        ('WARNING', 'Warning'),
+        ('BILLING', 'Billing & Usage'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    developer = models.ForeignKey(Developer, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=150)
+    message = models.TextField()
+    notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='INFO')
+    is_read = models.BooleanField(default=False)
+    link = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.notification_type}] {self.title} for {self.developer.email}"
+
+
+class PaymentOrder(models.Model):
+    STATUS_CHOICES = [
+        ('CREATED', 'Order Created'),
+        ('PAID', 'Payment Captured & Verified'),
+        ('FAILED', 'Payment Failed'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    developer = models.ForeignKey(Developer, on_delete=models.CASCADE, related_name='payment_orders')
+    application = models.ForeignKey(Application, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    plan_tier = models.CharField(max_length=50, default='GROWTH_STARTUP')
+    razorpay_order_id = models.CharField(max_length=100, unique=True)
+    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_signature = models.CharField(max_length=255, blank=True, null=True)
+    amount = models.PositiveIntegerField(help_text="Amount in paise (e.g. 499900 = INR 4,999)")
+    currency = models.CharField(max_length=10, default='INR')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='CREATED')
+    units_credited = models.PositiveIntegerField(default=50000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Razorpay Order {self.razorpay_order_id} ({self.status}) - ₹{self.amount / 100}"
+
 
 

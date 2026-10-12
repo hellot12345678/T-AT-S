@@ -4,7 +4,12 @@ from api.views import (
     ChatExecutionView,
     ToolManagementView,
     AdminConfigView,
+    SystemStatusView,
     DeveloperRegisterView,
+    VerifyOTPView,
+    ResendOTPView,
+    ForgotPasswordView,
+    ResetPasswordView,
     DeveloperLoginView,
     DeveloperLogoutView,
     DeveloperMeView,
@@ -15,12 +20,23 @@ from api.views import (
     EndUserConfigView,
     ApplicationUsageView,
     ApplicationAddBonusView,
-    ApplicationUpgradeView
+    ApplicationUpgradeView,
+    NotificationListView,
+    NotificationMarkReadView,
+    NotificationMarkAllReadView,
+    RazorpayCreateOrderView,
+    RazorpayVerifyView,
+    RazorpayWebhookView
 )
 
 urlpatterns = [
     # Developer Authentication & Lifecycle
+    path('auth/system-status/', SystemStatusView.as_view(), name='api-auth-system-status'),
     path('auth/register/', DeveloperRegisterView.as_view(), name='api-auth-register'),
+    path('auth/verify-otp/', VerifyOTPView.as_view(), name='api-auth-verify-otp'),
+    path('auth/resend-otp/', ResendOTPView.as_view(), name='api-auth-resend-otp'),
+    path('auth/forgot-password/', ForgotPasswordView.as_view(), name='api-auth-forgot-password'),
+    path('auth/reset-password/', ResetPasswordView.as_view(), name='api-auth-reset-password'),
     path('auth/login/', DeveloperLoginView.as_view(), name='api-auth-login'),
     path('auth/logout/', DeveloperLogoutView.as_view(), name='api-auth-logout'),
     path('auth/me/', DeveloperMeView.as_view(), name='api-auth-me'),
@@ -36,6 +52,15 @@ urlpatterns = [
     path('apps/<uuid:app_id>/add-bonus/', ApplicationAddBonusView.as_view(), name='api-apps-add-bonus'),
     path('apps/<uuid:app_id>/upgrade/', ApplicationUpgradeView.as_view(), name='api-apps-upgrade'),
 
+    # Dynamic Real-Time Notifications
+    path('notifications/', NotificationListView.as_view(), name='api-notifications-list'),
+    path('notifications/<uuid:notification_id>/read/', NotificationMarkReadView.as_view(), name='api-notifications-read'),
+    path('notifications/mark-all-read/', NotificationMarkAllReadView.as_view(), name='api-notifications-mark-all-read'),
+
+    # Razorpay Live / Test Payments & Subscriptions
+    path('payments/create-order/', RazorpayCreateOrderView.as_view(), name='api-payments-create-order'),
+    path('payments/verify/', RazorpayVerifyView.as_view(), name='api-payments-verify'),
+    path('payments/webhook/', RazorpayWebhookView.as_view(), name='api-payments-webhook'),
 
     # End-User Voice Preferences & Security
     path('users/<str:client_user_id>/config/', EndUserConfigView.as_view(), name='api-user-config'),
@@ -53,5 +78,3 @@ urlpatterns = [
     # Super Admin Dynamic Config
     path('admin/config/', AdminConfigView.as_view(), name='api-admin-config'),
 ]
-
-
