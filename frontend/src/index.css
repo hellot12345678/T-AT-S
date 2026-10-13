@@ -57,3 +57,19 @@
 .animate-ripple {
   animation: rippleRing 2.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
 }
+
+@keyframes marqueeScroll {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marqueeScroll 22s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+

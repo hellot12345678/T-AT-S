@@ -198,7 +198,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+    <div className="max-w-4xl mx-auto px-2 sm:px-4 space-y-6 sm:space-y-8 animate-in fade-in duration-300">
       {/* View Header */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#FFE6DC] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
         <div className="flex items-start sm:items-center gap-4 z-10">
@@ -499,3 +499,4 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
     </div>
   );
 };
+

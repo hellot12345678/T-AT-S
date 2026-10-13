@@ -378,19 +378,20 @@ export class TATSBackendAPI {
     return await res.json();
   }
 
-  public static async registerTool(apiKey: string, toolData: {
+  public static async registerTool(apiKey?: string | null, toolData?: {
     name: string;
     description: string;
     endpoint: string;
     method?: string;
     parameters_schema?: Record<string, any>;
+    app_id?: string;
   }) {
     const res = await fetch(`${API_BASE}/tools/register/`, {
       method: 'POST',
-      headers: this.getHeaders(apiKey),
+      headers: this.getHeaders(apiKey || undefined),
       body: JSON.stringify(toolData),
     });
-    return { ok: res.ok, data: await res.json() };
+    return { ok: res.ok, status: res.status, data: await res.json() };
   }
 
   // ==========================================

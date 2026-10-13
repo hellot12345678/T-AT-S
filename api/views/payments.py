@@ -333,8 +333,9 @@ class RazorpayVerifyView(APIView):
             link='/dashboard'
         )
 
-        # Dispatch Branded Email Receipt to Developer
+        # Dispatch Branded Email Receipt to Developer in Background Thread
         try:
+            import threading
             from django.core.mail import send_mail
             email_subject = f"T-AT-S Billing Receipt: {notif_title}"
             email_html = f"""<!DOCTYPE html>
@@ -357,16 +358,22 @@ class RazorpayVerifyView(APIView):
       <p style="font-size:11px;color:#8B716B;text-align:center;">Unspent credits never decay. Thank you for building with T-AT-S.</p>
     </div>
   </div>
-</body>
+ </body>
 </html>"""
-            send_mail(
-                subject=email_subject,
-                message=notif_msg,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'T-AT-S Support <noreply@tats.ai>'),
-                recipient_list=[dev.email],
-                html_message=email_html,
-                fail_silently=True
-            )
+            def _dispatch_receipt():
+                try:
+                    send_mail(
+                        subject=email_subject,
+                        message=notif_msg,
+                        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'T-AT-S Support <noreply@tats.ai>'),
+                        recipient_list=[dev.email],
+                        html_message=email_html,
+                        fail_silently=True
+                    )
+                except Exception:
+                    pass
+
+            threading.Thread(target=_dispatch_receipt, daemon=True, name=f"ReceiptThread-{payment_id}").start()
         except Exception:
             pass
 

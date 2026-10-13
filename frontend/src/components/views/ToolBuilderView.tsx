@@ -95,13 +95,14 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
         parameters_schema: generatedSchema
       });
       if (res.ok) {
-        onShowToast('Tool Registered in Django DB', `Action "${toolId}" deployed to engine registry.`);
+        onShowToast('Tool Deployed & Registered in DB', `Action "${toolId}" compiled and active in cluster.`);
         setResponseMock({
           status: 'success',
           action: 'deployed_to_django_engine',
           tool_id: toolId,
           endpoint: webhookUrl,
           db_registered: true,
+          function_schema: res.data?.function_schema || generatedSchema,
           timestamp: new Date().toISOString()
         });
         setIsDeploying(false);

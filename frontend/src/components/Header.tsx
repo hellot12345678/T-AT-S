@@ -135,21 +135,67 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Global Quick Command Bar */}
-        <div className="hidden md:flex items-center flex-1 max-w-xs lg:max-w-md mx-2">
-          <button
-            onClick={onOpenCommand}
-            className="w-full flex items-center justify-between px-3.5 py-1.5 rounded-full bg-[#F3EBF8]/50 hover:bg-[#F3EBF8] border border-[#DEC0B9]/40 text-[#57423D] hover:text-[#1D1A23] transition-all text-xs font-medium group"
-          >
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px] text-[#A53B22]">search</span>
-              <span>Search tools, routes, or commands...</span>
-            </div>
-            <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-0.5 rounded bg-white/80 border border-[#DEC0B9]/60 text-[10px] font-mono text-[#57423D]">
-              ⌘K
-            </kbd>
-          </button>
-        </div>
+        {/* Header Center: Auto-scrolling T@S Ad on Landing/Public, or Quick Command Search when Logged-in */}
+        {developer && currentView !== 'landing' ? (
+          <div className="hidden md:flex items-center flex-1 max-w-xs lg:max-w-md mx-2">
+            <button
+              onClick={onOpenCommand}
+              className="w-full flex items-center justify-between px-3.5 py-1.5 rounded-full bg-[#F3EBF8]/50 hover:bg-[#F3EBF8] border border-[#DEC0B9]/40 text-[#57423D] hover:text-[#1D1A23] transition-all text-xs font-medium group"
+            >
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[16px] text-[#A53B22]">search</span>
+                <span>Search tools, routes, or commands...</span>
+              </div>
+              <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-0.5 rounded bg-white/80 border border-[#DEC0B9]/60 text-[10px] font-mono text-[#57423D]">
+                ⌘K
+              </kbd>
+            </button>
+          </div>
+        ) : (
+          <div className="hidden md:flex items-center flex-1 max-w-sm lg:max-w-lg mx-2 overflow-hidden">
+            <button
+              onClick={() => {
+                if (!developer) onOpenAuth();
+                else onNavigate('demo');
+              }}
+              title="Click to explore T@S Autonomous Telephony Engine"
+              className="w-full h-8 px-3 rounded-full bg-[#16141A] hover:bg-[#1E1B24] border border-[#2D2838] flex items-center gap-2.5 overflow-hidden transition-all shadow-inner group text-left cursor-pointer"
+            >
+              <div className="shrink-0 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#25202E] border border-[#3C344A] text-[#FAF9F6] text-[10px] font-mono font-bold tracking-wider uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF7E5F] animate-pulse"></span>
+                <span>T@S</span>
+              </div>
+
+              <div className="overflow-hidden whitespace-nowrap flex-1 relative">
+                <div className="animate-marquee flex items-center gap-6 text-[11px] text-[#A49BAF] font-medium group-hover:text-[#FAF9F6] transition-colors">
+                  <span>⚡ Sub-850ms Voice AI Telephony</span>
+                  <span className="text-[#3C344A]">&bull;</span>
+                  <span>🎙️ 6s Zero-Shot Voice Clones</span>
+                  <span className="text-[#3C344A]">&bull;</span>
+                  <span>⚙️ OpenAPI Function Tool Execution</span>
+                  <span className="text-[#3C344A]">&bull;</span>
+                  <span>🛡️ Multi-Tenant Isolated Sandboxes</span>
+                  <span className="text-[#3C344A]">&bull;</span>
+                  <span>📞 Real-Time SIP &amp; WebRTC Telephony</span>
+                  <span className="text-[#3C344A]">&bull;</span>
+                  <span>🚀 99.98% High-Throughput SLA</span>
+                  <span className="text-[#3C344A]">&bull;</span>
+                  <span>⚡ Sub-850ms Voice AI Telephony</span>
+                  <span className="text-[#3C344A]">&bull;</span>
+                  <span>🎙️ 6s Zero-Shot Voice Clones</span>
+                  <span className="text-[#3C344A]">&bull;</span>
+                  <span>⚙️ OpenAPI Function Tool Execution</span>
+                  <span className="text-[#3C344A]">&bull;</span>
+                  <span>🛡️ Multi-Tenant Isolated Sandboxes</span>
+                  <span className="text-[#3C344A]">&bull;</span>
+                  <span>📞 Real-Time SIP &amp; WebRTC Telephony</span>
+                  <span className="text-[#3C344A]">&bull;</span>
+                  <span>🚀 99.98% High-Throughput SLA</span>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* Status Indicators & Profile Controls */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">

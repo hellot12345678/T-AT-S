@@ -515,20 +515,25 @@ class EmailOTPVerification(models.Model):
 </body>
 </html>"""
 
-        try:
-            send_mail(
-                subject=subject,
-                message=plain_message,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'T-AT-S Support <noreply@tats.ai>'),
-                recipient_list=[email],
-                html_message=html_message,
-                fail_silently=False
-            )
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"[T@S Email Notification] OTP Email delivery note ({e}). Verification OTP: {raw_otp} for {email}"
-            )
+        import threading
+
+        def _dispatch_mail_async():
+            try:
+                send_mail(
+                    subject=subject,
+                    message=plain_message,
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'T-AT-S Support <noreply@tats.ai>'),
+                    recipient_list=[email],
+                    html_message=html_message,
+                    fail_silently=False
+                )
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"[T@S Email Notification] OTP Email delivery note ({e}). Verification OTP: {raw_otp} for {email}"
+                )
+
+        threading.Thread(target=_dispatch_mail_async, daemon=True, name=f"EmailOTPThread-{email}").start()
 
         return instance, raw_otp
 
