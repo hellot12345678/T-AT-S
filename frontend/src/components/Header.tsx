@@ -23,6 +23,15 @@ interface HeaderProps {
   onOpenCreateApp: () => void;
 }
 
+const AD_LINES = [
+  "⚡ Sub-850ms Voice AI Telephony Infrastructure",
+  "🎙️ 6s Zero-Shot Real-Time Voice Cloning",
+  "⚙️ Dynamic OpenAPI Function Tool Execution",
+  "🛡️ Isolated Multi-Tenant Enterprise Clusters",
+  "📞 Real-Time SIP & WebRTC Telephony Streaming",
+  "🚀 99.98% High-Throughput SLA Reliability"
+];
+
 export const Header: React.FC<HeaderProps> = ({
   currentView,
   onNavigate,
@@ -39,9 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
   const [showEnvDropdown, setShowEnvDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showTelemetry, setShowTelemetry] = useState(false);
   const [showQuickstartModal, setShowQuickstartModal] = useState(false);
-  const [isBackendConnected, setIsBackendConnected] = useState<boolean | null>(null);
+  const [adIndex, setAdIndex] = useState(0);
 
   // Dynamic Real Notifications State
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -53,6 +61,14 @@ export const Header: React.FC<HeaderProps> = ({
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const activeApp = applications.find((a) => a.id === activeAppId) || applications[0];
+
+  // Vertical ad autoscroll interval
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAdIndex((prev) => (prev + 1) % AD_LINES.length);
+    }, 3200);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchNotifications = async () => {
     if (!developer) {
@@ -66,16 +82,6 @@ export const Header: React.FC<HeaderProps> = ({
       setUnreadCount(res.unread_count || 0);
     }
   };
-
-  useEffect(() => {
-    const checkEngine = async () => {
-      const res = await TATSBackendAPI.checkHealth();
-      setIsBackendConnected(Boolean(res && res.status === 'healthy'));
-    };
-    checkEngine();
-    const interval = setInterval(checkEngine, 10000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     fetchNotifications();
@@ -152,45 +158,21 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
         ) : (
-          <div className="hidden md:flex items-center flex-1 max-w-sm lg:max-w-lg mx-2 overflow-hidden">
+          <div className="hidden md:flex items-center flex-1 max-w-sm lg:max-w-md mx-2 overflow-hidden">
             <button
               onClick={() => {
                 if (!developer) onOpenAuth();
                 else onNavigate('demo');
               }}
               title="Click to explore T@S Autonomous Telephony Engine"
-              className="w-full h-8 px-3 rounded-full bg-[#16141A] hover:bg-[#1E1B24] border border-[#2D2838] flex items-center gap-2.5 overflow-hidden transition-all shadow-inner group text-left cursor-pointer"
+              className="w-full h-8 px-1 bg-transparent border-0 shadow-none flex items-center overflow-hidden text-left cursor-pointer focus:outline-none"
             >
-              <div className="shrink-0 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#25202E] border border-[#3C344A] text-[#FAF9F6] text-[10px] font-mono font-bold tracking-wider uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#FF7E5F] animate-pulse"></span>
-                <span>T@S</span>
-              </div>
-
-              <div className="overflow-hidden whitespace-nowrap flex-1 relative">
-                <div className="animate-marquee flex items-center gap-6 text-[11px] text-[#A49BAF] font-medium group-hover:text-[#FAF9F6] transition-colors">
-                  <span>⚡ Sub-850ms Voice AI Telephony</span>
-                  <span className="text-[#3C344A]">&bull;</span>
-                  <span>🎙️ 6s Zero-Shot Voice Clones</span>
-                  <span className="text-[#3C344A]">&bull;</span>
-                  <span>⚙️ OpenAPI Function Tool Execution</span>
-                  <span className="text-[#3C344A]">&bull;</span>
-                  <span>🛡️ Multi-Tenant Isolated Sandboxes</span>
-                  <span className="text-[#3C344A]">&bull;</span>
-                  <span>📞 Real-Time SIP &amp; WebRTC Telephony</span>
-                  <span className="text-[#3C344A]">&bull;</span>
-                  <span>🚀 99.98% High-Throughput SLA</span>
-                  <span className="text-[#3C344A]">&bull;</span>
-                  <span>⚡ Sub-850ms Voice AI Telephony</span>
-                  <span className="text-[#3C344A]">&bull;</span>
-                  <span>🎙️ 6s Zero-Shot Voice Clones</span>
-                  <span className="text-[#3C344A]">&bull;</span>
-                  <span>⚙️ OpenAPI Function Tool Execution</span>
-                  <span className="text-[#3C344A]">&bull;</span>
-                  <span>🛡️ Multi-Tenant Isolated Sandboxes</span>
-                  <span className="text-[#3C344A]">&bull;</span>
-                  <span>📞 Real-Time SIP &amp; WebRTC Telephony</span>
-                  <span className="text-[#3C344A]">&bull;</span>
-                  <span>🚀 99.98% High-Throughput SLA</span>
+              <div className="h-7 overflow-hidden relative flex items-center w-full">
+                <div
+                  key={adIndex}
+                  className="text-xs font-semibold text-[#1D1A23] whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-500"
+                >
+                  {AD_LINES[adIndex]}
                 </div>
               </div>
             </button>
@@ -199,66 +181,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Status Indicators & Profile Controls */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
-          {/* Interactive Acoustic Telemetry Indicator with Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowTelemetry(!showTelemetry)}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all shadow-sm hover:scale-[1.02]"
-              style={{
-                backgroundColor: isBackendConnected ? '#E6F9EE' : '#FFF4E5',
-                borderColor: isBackendConnected ? '#6EE7B7' : '#FCD34D',
-                color: isBackendConnected ? '#065F46' : '#92400E'
-              }}
-              title="Click to view live acoustic telemetry metrics"
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${isBackendConnected ? 'bg-[#10B981] animate-pulse' : 'bg-[#F59E0B]'}`}
-              />
-              <span className="hidden sm:inline font-mono text-[11px]">
-                {isBackendConnected === null ? 'Engine: Checking...' : isBackendConnected ? 'Engine: Live (84ms)' : 'Engine: Offline'}
-              </span>
-            </button>
-
-            {showTelemetry && (
-              <div className="absolute right-0 mt-2 w-72 bg-[#1A1816] text-[#F4EFEA] rounded-2xl shadow-2xl border border-[#3A3530] p-3.5 z-50 animate-in fade-in zoom-in-95 text-xs">
-                <div className="flex items-center justify-between pb-2 border-b border-[#2E2A27] mb-2.5">
-                  <span className="font-['Outfit'] font-bold text-xs uppercase tracking-wider text-[#FF7E5F]">
-                    Acoustic Telemetry
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono text-[10px] font-bold">
-                    ONLINE
-                  </span>
-                </div>
-                <div className="space-y-2 font-mono text-[11px]">
-                  <div className="flex justify-between text-[#A8A29E]">
-                    <span>Voice Core:</span>
-                    <span className="text-white font-bold">Neural Acoustic Engine</span>
-                  </div>
-                  <div className="flex justify-between text-[#A8A29E]">
-                    <span>Action Router:</span>
-                    <span className="text-white">Deterministic Graph</span>
-                  </div>
-                  <div className="flex justify-between text-[#A8A29E]">
-                    <span>Target Latency:</span>
-                    <span className="text-white font-bold">84ms (p99)</span>
-                  </div>
-                  <div className="flex justify-between text-[#A8A29E]">
-                    <span>Capacity:</span>
-                    <span className="text-emerald-400 font-bold">10K+ ACID Ops/Day</span>
-                  </div>
-                  <div className="flex justify-between text-[#A8A29E]">
-                    <span>Cluster Node:</span>
-                    <span className="text-white">IN-MUM-1 (Primary)</span>
-                  </div>
-                  <div className="flex justify-between text-[#A8A29E]">
-                    <span>Availability:</span>
-                    <span className="text-emerald-400 font-bold">99.98% SLA</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Useful In-App SDK Quickstart Button (Visible only when not logged in) */}
           {!developer && (
             <button

@@ -283,32 +283,12 @@ export function VoiceController() {
       </div>
 
       {/* Hero Section */}
-      <section className="relative w-full px-4 sm:px-8 pb-16 overflow-hidden flex flex-col items-center text-center max-w-6xl mx-auto">
+      <section className="relative w-full px-4 sm:px-8 pt-14 sm:pt-20 pb-16 overflow-hidden flex flex-col items-center text-center max-w-6xl mx-auto">
         {/* Ambient Radial Coral Aura */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[720px] h-[340px] bg-gradient-to-b from-[#FF7E5F]/20 via-[#FFAE33]/15 to-transparent blur-3xl pointer-events-none rounded-full"></div>
 
-        {/* Proof Badges Row */}
-        <div className="relative z-10 flex flex-wrap justify-center items-center gap-2 mb-6">
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#FFE6DC] shadow-sm text-xs font-semibold text-[#57423D]">
-            <span className="w-2 h-2 rounded-full bg-[#00C2FF] animate-pulse"></span>
-            <span>Sub-850ms latency SLA</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#FFE6DC] shadow-sm text-xs font-semibold text-[#57423D]">
-            <span className="material-symbols-outlined text-[#845400] text-[15px]">database</span>
-            <span>Self-hosted pgvector</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#FFE6DC] shadow-sm text-xs font-semibold text-[#57423D]">
-            <span className="material-symbols-outlined text-[#A53B22] text-[15px]">bolt</span>
-            <span>Zero Cold-Start</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#FFE6DC] shadow-sm text-xs font-semibold text-[#57423D]">
-            <span className="material-symbols-outlined text-[#006688] text-[15px]">lock</span>
-            <span>bcrypt voice passphrases</span>
-          </div>
-        </div>
-
         {/* Main Headline & Subtitle */}
-        <div className="relative z-10 max-w-4xl mx-auto mb-6">
+        <div className="relative z-10 max-w-4xl mx-auto mb-6 mt-4 sm:mt-6">
           <h1 className="font-['Outfit'] text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#1D1A23] tracking-tight leading-tight mb-4">
             Voice-to-Execution Brain for Modern Apps.
           </h1>
