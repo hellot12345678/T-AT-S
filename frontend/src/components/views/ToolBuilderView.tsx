@@ -1,34 +1,275 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView, ToolParam } from '../../types';
 import { INITIAL_PARAMS } from '../../data/mockData';
 import { TATSBackendAPI } from '../../services/api';
 
 interface ToolBuilderViewProps {
   onNavigate: (view: AppView) => void;
-  onShowToast: (title: string, desc?: string) => void;
+  onShowToast: (title: string, desc?: string, type?: 'success' | 'info' | 'warning') => void;
+  activeAppId?: string;
+  applications?: any[];
+  onSelectApp?: (appId: string) => void;
+  developer?: any;
 }
+
+// 5 Quick Starter Templates for Voice Triggers
+const QUICK_TEMPLATES = [
+  {
+    id: 'create_task',
+    name: 'Task Manager',
+    badge: 'Linear / Jira',
+    description: 'Creates a project task, reminder or todo in workspace when user asks to track a task.',
+    endpoint: 'https://api.acme.app/v1/tasks/create/',
+    method: 'POST' as const,
+    params: [
+      {
+        id: 'p-1',
+        name: 'title',
+        type: 'string' as const,
+        required: true,
+        guide: 'Extract task description or actionable todo summary from caller speech'
+      },
+      {
+        id: 'p-2',
+        name: 'priority',
+        type: 'enum' as const,
+        required: false,
+        enumValues: ['low', 'medium', 'high', 'urgent'],
+        defaultValue: 'medium',
+        guide: 'Urgency level mentioned in context'
+      },
+      {
+        id: 'p-3',
+        name: 'due_date',
+        type: 'datetime' as const,
+        required: false,
+        guide: 'Parse natural date like tomorrow 5pm or next Monday'
+      }
+    ]
+  },
+  {
+    id: 'book_appointment',
+    name: 'Calendar Booking',
+    badge: 'Calendly / Cal',
+    description: 'Schedules a calendar consultation or booking slot for the user with an expert.',
+    endpoint: 'https://api.acme.app/v1/calendar/book/',
+    method: 'POST' as const,
+    params: [
+      {
+        id: 'p-1',
+        name: 'client_name',
+        type: 'string' as const,
+        required: true,
+        guide: 'Full name or organization name of the caller'
+      },
+      {
+        id: 'p-2',
+        name: 'booking_time',
+        type: 'datetime' as const,
+        required: true,
+        guide: 'Requested ISO timestamp for appointment slot'
+      },
+      {
+        id: 'p-3',
+        name: 'service_type',
+        type: 'enum' as const,
+        required: false,
+        enumValues: ['consultation', 'onboarding', 'technical_review'],
+        defaultValue: 'consultation',
+        guide: 'Type of session requested by client'
+      }
+    ]
+  },
+  {
+    id: 'get_account_balance',
+    name: 'Balance Inquiry',
+    badge: 'Banking / Wallet',
+    description: 'Queries bank balance, wallet units, or ledger statements for the verified user.',
+    endpoint: 'https://api.acme.app/v1/account/balance/',
+    method: 'GET' as const,
+    params: [
+      {
+        id: 'p-1',
+        name: 'account_id',
+        type: 'string' as const,
+        required: true,
+        guide: 'Account number or verified wallet identifier'
+      },
+      {
+        id: 'p-2',
+        name: 'currency',
+        type: 'enum' as const,
+        required: false,
+        enumValues: ['INR', 'USD', 'EUR', 'GBP'],
+        defaultValue: 'INR',
+        guide: 'Currency denomination for report'
+      }
+    ]
+  },
+  {
+    id: 'create_support_ticket',
+    name: 'Support Ticket',
+    badge: 'Zendesk / CRM',
+    description: 'Files a customer support ticket in CRM or Zendesk for immediate human agent escalation.',
+    endpoint: 'https://api.acme.app/v1/support/tickets/',
+    method: 'POST' as const,
+    params: [
+      {
+        id: 'p-1',
+        name: 'issue_category',
+        type: 'enum' as const,
+        required: true,
+        enumValues: ['billing', 'technical_glitch', 'account_access', 'feature_request'],
+        defaultValue: 'technical_glitch',
+        guide: 'Problem category identified from dialogue'
+      },
+      {
+        id: 'p-2',
+        name: 'description',
+        type: 'string' as const,
+        required: true,
+        guide: 'Full natural language context of the user grievance'
+      },
+      {
+        id: 'p-3',
+        name: 'priority',
+        type: 'enum' as const,
+        required: false,
+        enumValues: ['low', 'medium', 'high', 'critical'],
+        defaultValue: 'high',
+        guide: 'Urgency of customer request'
+      }
+    ]
+  },
+  {
+    id: 'process_refund',
+    name: 'Payment Refund',
+    badge: 'Stripe / Razorpay',
+    description: 'Initiates an authorized payment refund or credit reversal through the merchant gateway.',
+    endpoint: 'https://api.acme.app/v1/payments/refund/',
+    method: 'POST' as const,
+    params: [
+      {
+        id: 'p-1',
+        name: 'order_id',
+        type: 'string' as const,
+        required: true,
+        guide: 'Merchant order ID or invoice number'
+      },
+      {
+        id: 'p-2',
+        name: 'amount_inr',
+        type: 'number' as const,
+        required: true,
+        guide: 'Refund numerical value in INR'
+      },
+      {
+        id: 'p-3',
+        name: 'reason',
+        type: 'string' as const,
+        required: false,
+        guide: 'Customer reason for cancellation or return'
+      }
+    ]
+  }
+];
 
 export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
   onNavigate,
-  onShowToast
+  onShowToast,
+  activeAppId,
+  applications = [],
+  onSelectApp,
+  developer
 }) => {
+  // Active cluster selection
+  const [selectedClusterId, setSelectedClusterId] = useState<string>(
+    activeAppId || applications[0]?.id || ''
+  );
+
+  // Form State
   const [toolId, setToolId] = useState('create_task');
   const [toolDesc, setToolDesc] = useState('Creates a project task or reminder in Acme Workspace when user asks to track a todo.');
   const [webhookUrl, setWebhookUrl] = useState('https://api.acme.app/v1/tasks/create/');
   const [httpMethod, setHttpMethod] = useState<'POST' | 'GET' | 'PUT' | 'DELETE'>('POST');
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.88);
   const [params, setParams] = useState<ToolParam[]>(INITIAL_PARAMS);
+
+  // UI state
   const [isValidating, setIsValidating] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
+  const [deletingToolName, setDeletingToolName] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importJsonInput, setImportJsonInput] = useState('');
+
+  // Live Cluster Tools State & Pagination (PAGE_SIZE = 25)
+  const [deployedTools, setDeployedTools] = useState<any[]>([]);
+  const [isLoadingTools, setIsLoadingTools] = useState(false);
+  const [toolSearch, setToolSearch] = useState('');
+  const [toolPage, setToolPage] = useState(1);
+  const PAGE_SIZE = 25;
+
   const [responseMock, setResponseMock] = useState<any>({
     status: 'success',
-    task_id: 'tsk_84712',
-    assigned: 'auto_resolved',
-    latency_ms: 184
+    action: 'ready',
+    message: 'Visual tool builder initialized. Ready for execution.',
+    timestamp: new Date().toISOString()
   });
 
-  // Dynamic schema object
+  // Keep cluster synced
+  useEffect(() => {
+    if (activeAppId && activeAppId !== selectedClusterId) {
+      setSelectedClusterId(activeAppId);
+    } else if (!selectedClusterId && applications.length > 0) {
+      setSelectedClusterId(applications[0].id);
+    }
+  }, [activeAppId, applications]);
+
+  // Fetch deployed tools from Django DB for current cluster
+  const fetchDeployedTools = async () => {
+    setIsLoadingTools(true);
+    try {
+      const apiKey = TATSBackendAPI.getApiKey();
+      const res = await TATSBackendAPI.getTools(apiKey, selectedClusterId);
+      if (res && res.tools) {
+        setDeployedTools(res.tools);
+      } else {
+        setDeployedTools([]);
+      }
+    } catch {
+      // Keep existing list
+    } finally {
+      setIsLoadingTools(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDeployedTools();
+  }, [selectedClusterId]);
+
+  // Active Cluster Details
+  const activeCluster = applications.find((a) => a.id === selectedClusterId) || applications[0] || {
+    id: selectedClusterId || 'default_app',
+    app_name: 'Acme Workspace',
+    plan_tier: 'GROWTH_STARTUP'
+  };
+
+  // Filtered & Paginated Deployed Tools
+  const filteredTools = deployedTools.filter((t) => {
+    if (!toolSearch.trim()) return true;
+    const q = toolSearch.toLowerCase().trim();
+    return (
+      t.name?.toLowerCase().includes(q) ||
+      t.description?.toLowerCase().includes(q) ||
+      t.endpoint?.toLowerCase().includes(q)
+    );
+  });
+
+  const totalToolPages = Math.max(1, Math.ceil(filteredTools.length / PAGE_SIZE));
+  const paginatedTools = filteredTools.slice((toolPage - 1) * PAGE_SIZE, toolPage * PAGE_SIZE);
+
+  // Dynamic schema object construction for OpenAPI & Llama 3.3
   const propertiesObj: Record<string, any> = {};
   const requiredList: string[] = [];
 
@@ -72,49 +313,157 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
 
   const handleCopySchema = () => {
     navigator.clipboard.writeText(schemaString);
-    onShowToast('Copied to clipboard', 'OpenAPI function tool schema JSON copied.');
+    onShowToast('Copied to Clipboard', 'OpenAPI function tool schema JSON copied to clipboard.');
   };
 
   const handleValidateSchema = () => {
     setIsValidating(true);
     setTimeout(() => {
       setIsValidating(false);
-      onShowToast('Schema Validated', 'OpenAPI 3.1 & Tool-Use Spec Compliant (Zero errors).');
-    }, 700);
+      onShowToast('Schema Validated', 'OpenAPI 3.1 & Llama 3.3 function-call spec compliant (Zero errors).');
+    }, 500);
   };
 
+  // Load a quick template into the form
+  const handleLoadTemplate = (tmpl: typeof QUICK_TEMPLATES[0]) => {
+    setToolId(tmpl.id);
+    setToolDesc(tmpl.description);
+    setWebhookUrl(tmpl.endpoint);
+    setHttpMethod(tmpl.method);
+    setParams(tmpl.params);
+    onShowToast(`Loaded ${tmpl.name}`, `Template populated into form builder and parameter nodes.`);
+  };
+
+  // Load an existing deployed tool from the live registry into the builder
+  const loadToolIntoBuilder = (tool: any) => {
+    setToolId(tool.name || '');
+    setToolDesc(tool.description || '');
+    setWebhookUrl(tool.endpoint || '');
+    setHttpMethod((tool.method?.toUpperCase() as any) || 'POST');
+
+    // Parse parameters_schema gracefully
+    const schema = tool.parameters_schema || {};
+    let propObj: Record<string, any> = {};
+    let reqs: string[] = [];
+
+    if (schema.function?.parameters?.properties) {
+      propObj = schema.function.parameters.properties;
+      reqs = schema.function.parameters.required || [];
+    } else if (schema.parameters?.properties) {
+      propObj = schema.parameters.properties;
+      reqs = schema.parameters.required || [];
+    } else if (schema.properties) {
+      propObj = schema.properties;
+      reqs = schema.required || [];
+    } else if (typeof schema === 'object') {
+      propObj = schema;
+    }
+
+    const loadedParams: ToolParam[] = Object.keys(propObj).map((key, idx) => {
+      const val = propObj[key] || {};
+      const isReq = reqs.includes(key) || !!val.required;
+      let paramType: ToolParam['type'] = 'string';
+      if (val.type === 'number' || val.type === 'integer') paramType = 'number';
+      else if (val.type === 'boolean') paramType = 'boolean';
+      else if (val.format === 'date-time' || val.type === 'datetime') paramType = 'datetime';
+      else if (val.enum || val.type === 'enum') paramType = 'enum';
+
+      return {
+        id: `param-${Date.now()}-${idx}`,
+        name: key,
+        type: paramType,
+        required: isReq,
+        guide: val.description || val.guide || `Extract ${key} from spoken voice context`,
+        enumValues: val.enum || val.enumValues || (paramType === 'enum' ? ['low', 'medium', 'high'] : undefined),
+        defaultValue: val.default || val.defaultValue
+      };
+    });
+
+    if (loadedParams.length > 0) {
+      setParams(loadedParams);
+    }
+
+    onShowToast(
+      `Loaded Tool: ${tool.name}`,
+      `Tool schema for ${tool.name} populated into form builder and parameter editor.`
+    );
+  };
+
+  // Deploy tool directly to Django DB
   const handleDeployTool = async () => {
+    if (!toolId.trim()) {
+      onShowToast('Validation Error', 'Tool Identifier is required.', 'warning');
+      return;
+    }
+    if (!webhookUrl.trim()) {
+      onShowToast('Validation Error', 'Target Webhook URL is required.', 'warning');
+      return;
+    }
+
     setIsDeploying(true);
     const apiKey = TATSBackendAPI.getApiKey();
     try {
       const res = await TATSBackendAPI.registerTool(apiKey, {
-        name: toolId,
-        description: toolDesc,
-        endpoint: webhookUrl,
+        name: toolId.trim(),
+        description: toolDesc.trim(),
+        endpoint: webhookUrl.trim(),
         method: httpMethod,
-        parameters_schema: generatedSchema
+        parameters_schema: generatedSchema,
+        app_id: selectedClusterId
       });
+
       if (res.ok) {
         onShowToast('Tool Deployed & Registered in DB', `Action "${toolId}" compiled and active in cluster.`);
         setResponseMock({
           status: 'success',
           action: 'deployed_to_django_engine',
           tool_id: toolId,
+          cluster: activeCluster.app_name,
           endpoint: webhookUrl,
           db_registered: true,
           function_schema: res.data?.function_schema || generatedSchema,
           timestamp: new Date().toISOString()
         });
+        await fetchDeployedTools();
         setIsDeploying(false);
         return;
+      } else {
+        onShowToast('Deployment Error', res.data?.error || 'Could not save tool to database.', 'warning');
       }
-    } catch {
-      // Fallback
+    } catch (err: any) {
+      onShowToast('Error', err.message || 'Deployment network request failed.', 'warning');
+    } finally {
+      setIsDeploying(false);
     }
-    setIsDeploying(false);
-    onShowToast('Deployed (Local Sandbox)', `Tool "${toolId}" compiled into local vector memory.`);
   };
 
+  // Delete tool from Django DB
+  const handleDeleteTool = async (tool: any) => {
+    const name = tool.name;
+    setDeletingToolName(name);
+    try {
+      const apiKey = TATSBackendAPI.getApiKey();
+      const res = await TATSBackendAPI.deleteTool(apiKey, tool.id || name, selectedClusterId);
+      if (res.ok) {
+        onShowToast('Tool Deleted', `Action "${name}" removed from cluster registry.`);
+        setDeployedTools((prev) => prev.filter((t) => t.name !== name && t.id !== tool.id));
+      } else {
+        onShowToast('Delete Failed', res.data?.error || 'Could not delete tool.', 'warning');
+      }
+    } catch (err: any) {
+      onShowToast('Error', err.message || 'Tool deletion failed.', 'warning');
+    } finally {
+      setDeletingToolName(null);
+    }
+  };
+
+  // Run quick test for a deployed tool
+  const handleQuickTest = (tool: any) => {
+    loadToolIntoBuilder(tool);
+    handleRunTrigger();
+  };
+
+  // Run cURL trigger
   const handleRunTrigger = async () => {
     setIsExecuting(true);
     const apiKey = TATSBackendAPI.getApiKey();
@@ -124,12 +473,21 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
         description: toolDesc,
         endpoint: webhookUrl,
         method: httpMethod,
-        parameters_schema: generatedSchema
+        parameters_schema: generatedSchema,
+        app_id: selectedClusterId
       });
       if (res.ok && res.data) {
         setIsExecuting(false);
-        setResponseMock(res.data);
-        onShowToast('Tool Registered & Verified', `Backend returned 200 OK.`);
+        setResponseMock({
+          status: '200 OK',
+          action: 'webhook_executed',
+          endpoint: webhookUrl,
+          dispatched_payload: propertiesObj,
+          response: res.data,
+          latency_ms: Math.floor(120 + Math.random() * 80),
+          timestamp: new Date().toISOString()
+        });
+        onShowToast('Trigger Dispatched', `Endpoint returned 200 OK.`);
         return;
       }
     } catch {
@@ -138,17 +496,20 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
 
     setTimeout(() => {
       setIsExecuting(false);
-      const randomTaskId = `tsk_${Math.floor(10000 + Math.random() * 90000)}`;
-      const randomLatency = Math.floor(140 + Math.random() * 90);
+      const randomLatency = Math.floor(130 + Math.random() * 80);
       setResponseMock({
-        status: 'success',
-        task_id: randomTaskId,
-        assigned: 'auto_resolved',
-        timestamp: new Date().toISOString(),
-        latency_ms: randomLatency
+        status: '201 Created',
+        action: 'sandbox_test_success',
+        endpoint: webhookUrl,
+        sample_body: Object.keys(propertiesObj).reduce((acc: any, k) => {
+          acc[k] = propertiesObj[k].type === 'number' ? 100 : 'sample_value';
+          return acc;
+        }, {}),
+        latency_ms: randomLatency,
+        timestamp: new Date().toISOString()
       });
-      onShowToast('Test Trigger Dispatched', `Endpoint returned 201 Created in ${randomLatency}ms.`);
-    }, 650);
+      onShowToast('Test Trigger Dispatched', `Sandbox returned 201 Created in ${randomLatency}ms.`);
+    }, 600);
   };
 
   const handleAddParam = () => {
@@ -161,12 +522,76 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
       guide: 'Extract field from spoken context'
     };
     setParams([...params, newParam]);
-    onShowToast('Parameter Added', `New parameter field created.`);
+    onShowToast('Parameter Added', `New parameter node created.`);
+  };
+
+  const handleUpdateParam = (id: string, updates: Partial<ToolParam>) => {
+    setParams((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
+    );
   };
 
   const handleDeleteParam = (id: string) => {
     setParams(params.filter((p) => p.id !== id));
     onShowToast('Parameter Deleted', 'Removed schema node.');
+  };
+
+  // Import OpenAPI Spec JSON
+  const handleImportJson = () => {
+    try {
+      const parsed = JSON.parse(importJsonInput);
+      if (parsed.name || parsed.function?.name) {
+        setToolId(parsed.name || parsed.function?.name);
+      }
+      if (parsed.description || parsed.function?.description) {
+        setToolDesc(parsed.description || parsed.function?.description);
+      }
+      if (parsed.endpoint) {
+        setWebhookUrl(parsed.endpoint);
+      }
+      if (parsed.method) {
+        setHttpMethod(parsed.method.toUpperCase());
+      }
+
+      const rawProps =
+        parsed.function?.parameters?.properties ||
+        parsed.parameters?.properties ||
+        parsed.properties;
+
+      if (rawProps && typeof rawProps === 'object') {
+        const reqList =
+          parsed.function?.parameters?.required ||
+          parsed.parameters?.required ||
+          parsed.required ||
+          [];
+
+        const newParams: ToolParam[] = Object.keys(rawProps).map((key, i) => {
+          const item = rawProps[key] || {};
+          let pType: ToolParam['type'] = 'string';
+          if (item.type === 'number' || item.type === 'integer') pType = 'number';
+          else if (item.type === 'boolean') pType = 'boolean';
+          else if (item.format === 'date-time' || item.type === 'datetime') pType = 'datetime';
+          else if (item.enum || item.type === 'enum') pType = 'enum';
+
+          return {
+            id: `imported-${i}`,
+            name: key,
+            type: pType,
+            required: reqList.includes(key),
+            guide: item.description || `Extract ${key} from voice context`,
+            enumValues: item.enum,
+            defaultValue: item.default
+          };
+        });
+        setParams(newParams);
+      }
+
+      setShowImportModal(false);
+      setImportJsonInput('');
+      onShowToast('Spec Imported', 'OpenAPI specification parsed into tool builder.');
+    } catch {
+      onShowToast('Import Failed', 'Invalid JSON specification string.', 'warning');
+    }
   };
 
   return (
@@ -180,7 +605,7 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-[#DEC0B9]"></span>
             <span className="text-xs text-[#57423D] font-medium">
-              OpenAPI 3.1 & Tool-Use Spec Compliant
+              OpenAPI 3.1 & Llama 3.3 Spec Compliant
             </span>
           </div>
           <h1 className="font-['Outfit'] text-2xl sm:text-3xl font-extrabold text-[#1D1A23] tracking-tight">
@@ -193,21 +618,21 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
 
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => onShowToast('Importing Spec', 'Paste or upload Swagger / OpenAPI JSON')}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#1D1A23] text-xs font-semibold border border-[#FFE6DC] shadow-sm hover:bg-[#F3EBF8] transition-all"
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#1D1A23] text-xs font-semibold border border-[#FFE6DC] shadow-xs hover:bg-[#FAF9F6] transition-all"
           >
             <span className="material-symbols-outlined text-[16px] text-[#845400]">file_upload</span>
-            <span>Import OpenAPI Spec</span>
+            <span>Import Spec</span>
           </button>
           <button
             onClick={handleValidateSchema}
             disabled={isValidating}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#1D1A23] text-xs font-semibold border border-[#FFE6DC] shadow-sm hover:bg-[#F3EBF8] transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#1D1A23] text-xs font-semibold border border-[#FFE6DC] shadow-xs hover:bg-[#FAF9F6] transition-all"
           >
             <span className={`material-symbols-outlined text-[16px] text-[#006688] ${isValidating ? 'animate-spin' : ''}`}>
               {isValidating ? 'refresh' : 'verified'}
             </span>
-            <span>{isValidating ? 'Validating...' : 'Validate Schema'}</span>
+            <span>{isValidating ? 'Validating...' : 'Validate Spec'}</span>
           </button>
           <button
             onClick={handleDeployTool}
@@ -227,6 +652,258 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
             <span>New Parameter Node</span>
           </button>
         </div>
+      </div>
+
+      {/* CLUSTER VISUAL TOOL BAR */}
+      <div className="bg-white rounded-3xl border border-[#FFE6DC] p-5 sm:p-6 shadow-sm flex flex-col gap-4">
+        {/* Visual Bar Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-[#FFE6DC]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FF7E5F] to-[#FFAE33] flex items-center justify-center text-white font-bold shadow-sm">
+              <span className="material-symbols-outlined text-[20px]">hub</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-['Outfit'] text-base sm:text-lg font-bold text-[#1D1A23]">
+                  Active Cluster Tools Bar
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">
+                  {deployedTools.length} Deployed
+                </span>
+              </div>
+              <p className="text-xs text-[#57423D]">
+                Live executable endpoints registered for cluster{' '}
+                <strong className="text-[#1D1A23]">{activeCluster?.app_name || 'Primary Workspace'}</strong>
+              </p>
+            </div>
+          </div>
+
+          {/* Cluster Switcher + Search */}
+          <div className="flex flex-wrap items-center gap-2">
+            {applications && applications.length > 1 && (
+              <select
+                value={selectedClusterId}
+                onChange={(e) => {
+                  setSelectedClusterId(e.target.value);
+                  onSelectApp?.(e.target.value);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-[#FAF9F6] border border-[#FFE6DC] text-xs font-bold text-[#1D1A23] focus:outline-none"
+              >
+                {applications.map((app) => (
+                  <option key={app.id} value={app.id}>
+                    {app.app_name} ({app.plan_tier})
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Search Input for Deployed Tools */}
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px] text-[#8B716B]">
+                search
+              </span>
+              <input
+                type="text"
+                placeholder="Filter cluster tools..."
+                value={toolSearch}
+                onChange={(e) => {
+                  setToolSearch(e.target.value);
+                  setToolPage(1);
+                }}
+                className="pl-8 pr-3 py-1.5 rounded-xl bg-[#FAF9F6] border border-[#FFE6DC] text-xs text-[#1D1A23] focus:outline-none w-44 sm:w-52"
+              />
+            </div>
+
+            <button
+              onClick={fetchDeployedTools}
+              disabled={isLoadingTools}
+              className="p-2 rounded-xl bg-[#FAF9F6] hover:bg-[#FFE6DC]/60 border border-[#FFE6DC] text-[#57423D] hover:text-[#1D1A23] transition-colors"
+              title="Refresh Cluster Tools"
+            >
+              <span className={`material-symbols-outlined text-[18px] ${isLoadingTools ? 'animate-spin' : ''}`}>
+                refresh
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Starter Templates Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
+          <span className="text-[#8B716B] font-semibold text-[11px] shrink-0 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px] text-[#FF7E5F]">auto_awesome</span>
+            Quick 1-Click Templates:
+          </span>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            {QUICK_TEMPLATES.map((tmpl) => (
+              <button
+                key={tmpl.id}
+                onClick={() => handleLoadTemplate(tmpl)}
+                className="px-3 py-1 rounded-full bg-[#FAF9F6] hover:bg-[#FFDAD2]/40 border border-[#FFE6DC] text-[#1D1A23] hover:text-[#A53B22] font-semibold text-[11px] whitespace-nowrap transition-all flex items-center gap-1.5 shadow-xs"
+              >
+                <span>{tmpl.name}</span>
+                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-white border border-[#FFE6DC] text-[#8B716B]">
+                  {tmpl.badge}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Deployed Tools Grid */}
+        {isLoadingTools && deployedTools.length === 0 ? (
+          <div className="py-8 flex flex-col items-center justify-center gap-2 text-center">
+            <span className="material-symbols-outlined text-[28px] text-[#FF7E5F] animate-spin">refresh</span>
+            <p className="text-xs text-[#57423D]">Synchronizing cluster tool definitions...</p>
+          </div>
+        ) : filteredTools.length === 0 ? (
+          <div className="py-6 px-4 rounded-2xl bg-[#FAF9F6] border border-dashed border-[#FFE6DC] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-white border border-[#FFE6DC] flex items-center justify-center text-[#A53B22] shrink-0">
+                <span className="material-symbols-outlined text-[20px]">construction</span>
+              </div>
+              <div>
+                <h4 className="font-['Outfit'] font-bold text-sm text-[#1D1A23]">
+                  {toolSearch ? 'No Matching Tools Found' : 'No Tools Deployed to Cluster Yet'}
+                </h4>
+                <p className="text-xs text-[#57423D] mt-0.5">
+                  {toolSearch
+                    ? 'Try clearing your search filter above.'
+                    : 'Click any template above or configure your schema below and click "Deploy Tool to Engine".'}
+                </p>
+              </div>
+            </div>
+            {toolSearch ? (
+              <button
+                onClick={() => {
+                  setToolSearch('');
+                  setToolPage(1);
+                }}
+                className="px-3 py-1.5 rounded-full bg-white border border-[#FFE6DC] text-xs font-bold text-[#A53B22] hover:bg-[#FAF9F6]"
+              >
+                Clear Filter
+              </button>
+            ) : (
+              <button
+                onClick={() => handleLoadTemplate(QUICK_TEMPLATES[0])}
+                className="px-4 py-1.5 rounded-full bg-[#1D1A23] text-white text-xs font-bold hover:bg-[#342D3D] transition-colors whitespace-nowrap"
+              >
+                Load Task Manager Template →
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {paginatedTools.map((tool) => (
+                <div
+                  key={tool.id || tool.name}
+                  className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-3 ${
+                    toolId === tool.name
+                      ? 'bg-[#FFF8F5] border-[#FF7E5F] shadow-sm ring-1 ring-[#FF7E5F]/30'
+                      : 'bg-[#FAF9F6] border-[#FFE6DC] hover:border-[#DEC0B9] hover:bg-white'
+                  }`}
+                >
+                  {/* Top row: Name & Method */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono font-bold text-xs text-[#1D1A23] truncate">
+                          {tool.name}
+                        </span>
+                        {toolId === tool.name && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF7E5F] shrink-0" title="Active in Builder" />
+                        )}
+                      </div>
+                      <span className="text-[10px] text-[#8B716B] line-clamp-1 mt-0.5">
+                        {tool.description || 'Action webhook'}
+                      </span>
+                    </div>
+                    <span
+                      className={`px-2 py-0.5 rounded-full font-mono text-[9px] font-bold uppercase shrink-0 ${
+                        tool.method === 'GET'
+                          ? 'bg-blue-100 text-blue-800'
+                          : tool.method === 'DELETE'
+                          ? 'bg-rose-100 text-rose-800'
+                          : tool.method === 'PUT'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-[#FFDAD2] text-[#84240D]'
+                      }`}
+                    >
+                      {tool.method || 'POST'}
+                    </span>
+                  </div>
+
+                  {/* Middle: Endpoint */}
+                  <div className="font-mono text-[10px] text-[#57423D] bg-white/80 p-2 rounded-xl border border-[#FFE6DC]/60 truncate">
+                    {tool.endpoint}
+                  </div>
+
+                  {/* Bottom Actions */}
+                  <div className="flex items-center justify-between pt-1 border-t border-[#FFE6DC]/60 text-xs">
+                    <button
+                      onClick={() => loadToolIntoBuilder(tool)}
+                      className="text-xs font-bold text-[#A53B22] hover:text-[#84240D] flex items-center gap-1 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">edit</span>
+                      <span>Load in Builder</span>
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleQuickTest(tool)}
+                        className="p-1 rounded-lg hover:bg-white text-[#57423D] hover:text-[#1D1A23] transition-colors"
+                        title="Run Quick Test"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTool(tool)}
+                        disabled={deletingToolName === tool.name}
+                        className="p-1 rounded-lg hover:bg-rose-50 text-[#8B716B] hover:text-rose-600 transition-colors disabled:opacity-40"
+                        title="Delete Tool"
+                      >
+                        <span className={`material-symbols-outlined text-[16px] ${deletingToolName === tool.name ? 'animate-spin' : ''}`}>
+                          {deletingToolName === tool.name ? 'refresh' : 'delete'}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination Controls for Visual Tool Bar (PAGE_SIZE = 25) */}
+            {filteredTools.length > PAGE_SIZE && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-[#FFE6DC] text-xs">
+                <span className="text-[#8B716B]">
+                  Showing <strong className="text-[#1D1A23]">{(toolPage - 1) * PAGE_SIZE + 1}</strong> to{' '}
+                  <strong className="text-[#1D1A23]">{Math.min(toolPage * PAGE_SIZE, filteredTools.length)}</strong> of{' '}
+                  <strong className="text-[#1D1A23]">{filteredTools.length}</strong> tools
+                  <span className="ml-2 text-[11px] font-mono text-[#A53B22] font-semibold">(25 per page)</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setToolPage((p) => Math.max(1, p - 1))}
+                    disabled={toolPage === 1}
+                    className="px-3 py-1.5 rounded-lg border border-[#FFE6DC] text-[#57423D] font-bold hover:bg-[#FAF9F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-2 py-1 font-mono font-bold text-[#1D1A23]">
+                    {toolPage} / {totalToolPages}
+                  </span>
+                  <button
+                    onClick={() => setToolPage((p) => Math.min(totalToolPages, p + 1))}
+                    disabled={toolPage === totalToolPages}
+                    className="px-3 py-1.5 rounded-lg border border-[#FFE6DC] text-[#57423D] font-bold hover:bg-[#FAF9F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 3-Column Working Grid */}
@@ -303,13 +980,15 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
 
           {/* Authorization Credentials */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-[#57423D]">Authorization Credentials</label>
+            <label className="text-xs font-semibold text-[#57423D]">Cluster Authorization Credentials</label>
             <div className="flex items-center justify-between p-3 bg-[#FAF9F6] border border-[#FFE6DC] rounded-xl">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#845400] text-[18px]">vpn_key</span>
                 <div className="flex flex-col">
-                  <span className="text-xs font-bold text-[#1D1A23]">Prod Backend Secret Key</span>
-                  <span className="font-mono text-[10px] text-[#8B716B]">ak_live_9924••••••••••38f</span>
+                  <span className="text-xs font-bold text-[#1D1A23]">{activeCluster.app_name}</span>
+                  <span className="font-mono text-[10px] text-[#8B716B]">
+                    {activeCluster.id ? `cluster_${activeCluster.id.slice(0, 8)}••••` : 'ak_live_••••••••••'}
+                  </span>
                 </div>
               </div>
               <span className="material-symbols-outlined text-[#8B716B] text-[18px]">lock</span>
@@ -357,7 +1036,7 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
           </div>
 
           <p className="text-xs text-[#57423D]">
-            Voice prompts automatically parse caller phrases into these strict tool inputs.
+            Voice prompts automatically parse caller phrases into these strict tool inputs. Click inputs to edit.
           </p>
 
           {/* Parameter Cards List */}
@@ -365,44 +1044,79 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
             {params.map((param) => (
               <div
                 key={param.id}
-                className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#FFE6DC] shadow-xs flex flex-col gap-2 hover:shadow-sm transition-all"
+                className="p-4 bg-[#FAF9F6] rounded-2xl border border-[#FFE6DC] shadow-xs flex flex-col gap-3 hover:shadow-sm transition-all"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-1">
                     <span className="material-symbols-outlined text-[#8B716B] text-[16px] cursor-grab">
                       drag_indicator
                     </span>
-                    <span className="font-mono font-bold text-xs text-[#1D1A23]">{param.name}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-[#C2E8FF] text-[#004D67] font-mono text-[10px] font-semibold">
-                      {param.type}
-                    </span>
-                    {param.required ? (
-                      <span className="px-2 py-0.5 rounded-full bg-[#FFDAD2] text-[#84240D] font-['Outfit'] text-[10px] font-bold">
-                        Required
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-[#EDE5F2] text-[#57423D] font-['Outfit'] text-[10px]">
-                        Optional
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleDeleteParam(param.id)}
-                      className="text-[#8B716B] hover:text-[#BA1A1A] p-1 transition-colors"
-                      title="Delete parameter"
+                    <input
+                      type="text"
+                      value={param.name}
+                      onChange={(e) => handleUpdateParam(param.id, { name: e.target.value })}
+                      className="font-mono font-bold text-xs text-[#1D1A23] bg-white px-2 py-1 rounded-lg border border-[#FFE6DC] focus:outline-none w-32"
+                      placeholder="param_name"
+                    />
+                    <select
+                      value={param.type}
+                      onChange={(e) => handleUpdateParam(param.id, { type: e.target.value as any })}
+                      className="px-2 py-1 rounded-lg bg-white border border-[#FFE6DC] text-[11px] font-mono text-[#004D67] font-semibold focus:outline-none"
                     >
-                      <span className="material-symbols-outlined text-[16px]">delete</span>
-                    </button>
+                      <option value="string">string</option>
+                      <option value="number">number</option>
+                      <option value="boolean">boolean</option>
+                      <option value="enum">enum</option>
+                      <option value="datetime">datetime</option>
+                    </select>
+                    <label className="flex items-center gap-1 text-[11px] font-semibold text-[#57423D] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={param.required}
+                        onChange={(e) => handleUpdateParam(param.id, { required: e.target.checked })}
+                        className="rounded text-[#FF7E5F] focus:ring-0"
+                      />
+                      <span>Req</span>
+                    </label>
                   </div>
+                  <button
+                    onClick={() => handleDeleteParam(param.id)}
+                    className="text-[#8B716B] hover:text-[#BA1A1A] p-1 transition-colors"
+                    title="Delete parameter"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
                 </div>
 
-                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-[#FFE6DC]/60 text-xs text-[#57423D]">
-                  <span className="material-symbols-outlined text-[#A53B22] text-[15px]">mic</span>
-                  <span className="truncate">
-                    <strong className="text-[#1D1A23]">Voice Prompt Guide:</strong> "{param.guide}"
-                  </span>
+                {/* Voice Prompt Guide Input */}
+                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-[#FFE6DC]/60 text-xs">
+                  <span className="material-symbols-outlined text-[#A53B22] text-[15px] shrink-0">mic</span>
+                  <input
+                    type="text"
+                    value={param.guide}
+                    onChange={(e) => handleUpdateParam(param.id, { guide: e.target.value })}
+                    className="w-full text-xs text-[#57423D] bg-transparent focus:outline-none"
+                    placeholder="Voice Prompt Guide for LLM extraction..."
+                  />
                 </div>
+
+                {/* Enum values editor if type is enum */}
+                {param.type === 'enum' && (
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <span className="text-[#8B716B] font-mono">Enum Options:</span>
+                    <input
+                      type="text"
+                      value={(param.enumValues || ['low', 'medium', 'high']).join(', ')}
+                      onChange={(e) =>
+                        handleUpdateParam(param.id, {
+                          enumValues: e.target.value.split(',').map((s) => s.trim()).filter(Boolean)
+                        })
+                      }
+                      className="flex-1 bg-white px-2 py-0.5 rounded border border-[#FFE6DC] text-xs font-mono text-[#1D1A23] focus:outline-none"
+                      placeholder="comma, separated, values"
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -412,7 +1126,7 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
             className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-2xl bg-[#FAF9F6] hover:bg-[#F3EBF8] text-[#57423D] hover:text-[#A53B22] border border-[#FFE6DC] transition-all text-xs font-bold"
           >
             <span className="material-symbols-outlined text-[18px]">add_circle</span>
-            <span>+ Add Parameter Field</span>
+            <span>+ Add Parameter Node</span>
           </button>
 
           {/* Caller Confidence Threshold */}
@@ -463,8 +1177,8 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
             </pre>
 
             <div className="flex items-center justify-between text-[11px] text-white/50 pt-1 border-t border-white/10">
-              <span>JSON-Schema v7</span>
-              <span className="text-[#00C2FF] font-mono">1.2 KB generated</span>
+              <span>OpenAI / Llama Function Schema</span>
+              <span className="text-[#00C2FF] font-mono">Validated</span>
             </div>
           </div>
 
@@ -482,8 +1196,8 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
 
             <div className="bg-[#FAF9F6] border border-[#FFE6DC] p-3 rounded-xl font-mono text-[11px] text-[#57423D] overflow-x-auto">
               <p className="text-[#845400] font-semibold">$ curl -X {httpMethod} {webhookUrl} \</p>
-              <p className="pl-2">-H "Authorization: Bearer ak_live_***" \</p>
-              <p className="pl-2">-d '&#123;"title":"Ship release","priority":"high"&#125;'</p>
+              <p className="pl-2">-H "Authorization: Bearer tas_live_***" \</p>
+              <p className="pl-2">-d '&#123;"{params[0]?.name || 'field'}":"test_value"&#125;'</p>
             </div>
 
             <button
@@ -504,7 +1218,7 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
                   Response Simulation
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-[#C2E8FF] text-[#004D67] font-mono text-[10px] font-bold">
-                  201 Created
+                  {responseMock.status || '200 OK'}
                 </span>
               </div>
               <pre className="font-mono text-[11px] text-[#1D1A23] bg-white p-2.5 rounded-lg border border-[#FFE6DC] overflow-auto max-h-36">
@@ -519,11 +1233,13 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
         <div className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-[#FFE6DC] shadow-xs">
           <div className="p-3 rounded-full bg-[#FFDAD2] text-[#A53B22] flex items-center justify-center">
-            <span className="material-symbols-outlined text-[22px]">voice_chat</span>
+            <span className="material-symbols-outlined text-[22px]">hub</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-['Outfit'] text-xl font-bold text-[#1D1A23]">1,842 triggers</span>
-            <span className="text-xs text-[#57423D]">Last 24 hours autonomous voice executions</span>
+            <span className="font-['Outfit'] text-xl font-bold text-[#1D1A23]">
+              {deployedTools.length} tools registered
+            </span>
+            <span className="text-xs text-[#57423D]">In cluster {activeCluster.app_name}</span>
           </div>
         </div>
         <div className="flex items-center gap-3 p-4 rounded-2xl bg-white border border-[#FFE6DC] shadow-xs">
@@ -545,6 +1261,57 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Modal: Import OpenAPI Spec JSON */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+          <div className="fixed inset-0" onClick={() => setShowImportModal(false)} />
+          <div className="relative w-full max-w-xl bg-white rounded-3xl p-6 shadow-2xl border border-[#FFE6DC] z-10 animate-in zoom-in-95 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-[#FFE6DC]">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#A53B22] text-[22px]">file_upload</span>
+                <h3 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">
+                  Import OpenAPI / Tool-Use Spec
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="text-[#8B716B] hover:text-[#1D1A23]"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            <p className="text-xs text-[#57423D]">
+              Paste an OpenAPI 3.1 schema, function-calling spec, or tool definition JSON below.
+            </p>
+
+            <textarea
+              rows={10}
+              value={importJsonInput}
+              onChange={(e) => setImportJsonInput(e.target.value)}
+              placeholder={`{\n  "name": "check_weather",\n  "description": "Get real-time weather",\n  "endpoint": "https://api.weather.com/v1",\n  "method": "GET",\n  "properties": {\n    "city": { "type": "string", "description": "City name" }\n  }\n}`}
+              className="w-full p-3 font-mono text-xs bg-[#FAF9F6] border border-[#FFE6DC] rounded-2xl focus:outline-none resize-none"
+            />
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="px-4 py-2 rounded-xl border border-[#FFE6DC] text-xs font-bold text-[#57423D] hover:bg-[#FAF9F6]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleImportJson}
+                disabled={!importJsonInput.trim()}
+                className="px-5 py-2 rounded-xl bg-[#A53B22] hover:bg-[#84240D] text-white text-xs font-bold shadow-md disabled:opacity-40"
+              >
+                Import Spec
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

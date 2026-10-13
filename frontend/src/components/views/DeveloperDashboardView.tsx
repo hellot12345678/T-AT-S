@@ -93,12 +93,18 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
     fetchLiveData();
   }, [activeApiKey]);
 
+  const PAGE_SIZE = 25;
+  const [telemetryPage, setTelemetryPage] = useState(1);
+
   const filteredTelemetry = telemetry.filter((t) => {
     if (filter === 'voice') return t.authStatus === 'verified';
     if (filter === 'failed') return t.authStatus === 'rejected';
     if (filter === 'webhook') return t.status >= 400 || t.actionName.includes('refund');
     return true;
   });
+
+  const totalTelemetryPages = Math.max(1, Math.ceil(filteredTelemetry.length / PAGE_SIZE));
+  const paginatedTelemetry = filteredTelemetry.slice((telemetryPage - 1) * PAGE_SIZE, telemetryPage * PAGE_SIZE);
 
   const handleTestTool = async (toolName: string) => {
     if (isLiveConnected) {
@@ -407,7 +413,10 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
               ].map((pill) => (
                 <button
                   key={pill.id}
-                  onClick={() => setFilter(pill.id as any)}
+                  onClick={() => {
+                    setFilter(pill.id as any);
+                    setTelemetryPage(1);
+                  }}
                   className={`px-3 py-1 rounded-full font-semibold transition-all ${
                     filter === pill.id
                       ? 'bg-white text-[#1D1A23] shadow-sm font-bold'
@@ -433,7 +442,7 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#FFE6DC]/60 text-xs">
-                {filteredTelemetry.map((item) => (
+                {paginatedTelemetry.map((item) => (
                   <React.Fragment key={item.id}>
                     <tr
                       onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
@@ -550,6 +559,37 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
               </tbody>
             </table>
           </div>
+
+          {/* Telemetry Pagination Controls */}
+          {filteredTelemetry.length > PAGE_SIZE && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2 border-t border-[#FFE6DC]/60 text-xs">
+              <span className="text-[#8B716B]">
+                Showing <strong className="text-[#1D1A23]">{(telemetryPage - 1) * PAGE_SIZE + 1}</strong> to{' '}
+                <strong className="text-[#1D1A23]">{Math.min(telemetryPage * PAGE_SIZE, filteredTelemetry.length)}</strong> of{' '}
+                <strong className="text-[#1D1A23]">{filteredTelemetry.length}</strong> calls
+                <span className="ml-2 text-[11px] font-mono text-[#A53B22] font-semibold">(25 per page)</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setTelemetryPage((p) => Math.max(1, p - 1))}
+                  disabled={telemetryPage === 1}
+                  className="px-3 py-1 rounded-lg border border-[#FFE6DC] text-[#57423D] font-bold hover:bg-[#FAF9F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Previous
+                </button>
+                <span className="px-2 py-0.5 font-mono font-bold text-[#1D1A23]">
+                  {telemetryPage} / {totalTelemetryPages}
+                </span>
+                <button
+                  onClick={() => setTelemetryPage((p) => Math.min(totalTelemetryPages, p + 1))}
+                  disabled={telemetryPage === totalTelemetryPages}
+                  className="px-3 py-1 rounded-lg border border-[#FFE6DC] text-[#57423D] font-bold hover:bg-[#FAF9F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between pt-3 border-t border-[#FFE6DC]/60 text-xs text-[#57423D]">
             <div className="flex items-center gap-2">

@@ -141,6 +141,12 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
   const [userStatusFilter, setUserStatusFilter] = useState<'All' | 'Active' | 'Suspended'>('All');
   const [togglingDevId, setTogglingDevId] = useState<string | null>(null);
 
+  // Pagination Settings (Page Size = 25 rows)
+  const PAGE_SIZE = 25;
+  const [txPage, setTxPage] = useState<number>(1);
+  const [devPage, setDevPage] = useState<number>(1);
+  const [appPage, setAppPage] = useState<number>(1);
+
   // Pricing & units state
   const [baseTierPrice, setBaseTierPrice] = useState<number>(1999);
   const [growthTierUnits, setGrowthTierUnits] = useState<number>(50000);
@@ -386,6 +392,16 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
 
     return matchesSearch && matchesStatus && matchesPlan;
   });
+
+  // Paginated Data Sets (Page Size = 25)
+  const totalDevPages = Math.max(1, Math.ceil(filteredDevelopers.length / PAGE_SIZE));
+  const paginatedDevelopers = filteredDevelopers.slice((devPage - 1) * PAGE_SIZE, devPage * PAGE_SIZE);
+
+  const totalTxPages = Math.max(1, Math.ceil(filteredTransactions.length / PAGE_SIZE));
+  const paginatedTransactions = filteredTransactions.slice((txPage - 1) * PAGE_SIZE, txPage * PAGE_SIZE);
+
+  const totalAppPages = Math.max(1, Math.ceil(applications.length / PAGE_SIZE));
+  const paginatedApplications = applications.slice((appPage - 1) * PAGE_SIZE, appPage * PAGE_SIZE);
 
   // Dynamic financial projections based on real cluster counts
   const liveClusterCount = Math.max(metrics.total_applications, 1);
@@ -831,7 +847,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                     </td>
                   </tr>
                 ) : (
-                  filteredDevelopers.map((dev) => (
+                  paginatedDevelopers.map((dev) => (
                     <tr key={dev.id} className="hover:bg-[#FAF9F6] transition-colors">
                       <td className="py-3.5 px-3">
                         <div className="flex flex-col">
@@ -913,6 +929,36 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
               </tbody>
             </table>
           </div>
+
+          {/* Developers Table Pagination Controls */}
+          {totalDevPages > 1 && (
+            <div className="pt-3 border-t border-[#FFE6DC] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#57423D]">
+              <span className="text-[11px] font-medium">
+                Showing <strong className="text-[#1D1A23]">{(devPage - 1) * PAGE_SIZE + 1}</strong> to{' '}
+                <strong className="text-[#1D1A23]">{Math.min(devPage * PAGE_SIZE, filteredDevelopers.length)}</strong> of{' '}
+                <strong className="text-[#1D1A23]">{filteredDevelopers.length}</strong> developers (Page size: 25)
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setDevPage((p) => Math.max(1, p - 1))}
+                  disabled={devPage === 1}
+                  className="px-3 py-1 rounded-lg bg-[#FAF9F6] border border-[#FFE6DC] hover:bg-white disabled:opacity-40 disabled:pointer-events-none transition-all font-bold text-xs"
+                >
+                  Prev
+                </button>
+                <span className="px-2.5 py-1 font-mono text-[11px] font-bold text-[#1D1A23] bg-[#FAF9F6] border border-[#FFE6DC] rounded-lg">
+                  {devPage} / {totalDevPages}
+                </span>
+                <button
+                  onClick={() => setDevPage((p) => Math.min(totalDevPages, p + 1))}
+                  disabled={devPage === totalDevPages}
+                  className="px-3 py-1 rounded-lg bg-[#FAF9F6] border border-[#FFE6DC] hover:bg-white disabled:opacity-40 disabled:pointer-events-none transition-all font-bold text-xs"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1040,7 +1086,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                     </td>
                   </tr>
                 ) : (
-                  filteredTransactions.map((tx) => {
+                  paginatedTransactions.map((tx) => {
                     const isPaid = tx.status === 'PAID';
                     const isCreated = tx.status === 'CREATED';
 
@@ -1149,6 +1195,37 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
               </tbody>
             </table>
           </div>
+
+          {/* Transactions Pagination Controls */}
+          {filteredTransactions.length > PAGE_SIZE && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-[#FFE6DC] text-xs">
+              <span className="text-[#8B716B]">
+                Showing <strong className="text-[#1D1A23]">{(txPage - 1) * PAGE_SIZE + 1}</strong> to{' '}
+                <strong className="text-[#1D1A23]">{Math.min(txPage * PAGE_SIZE, filteredTransactions.length)}</strong> of{' '}
+                <strong className="text-[#1D1A23]">{filteredTransactions.length}</strong> transactions
+                <span className="ml-2 text-[11px] font-mono text-[#A53B22] font-semibold">(25 per page)</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setTxPage((p) => Math.max(1, p - 1))}
+                  disabled={txPage === 1}
+                  className="px-3 py-1.5 rounded-lg border border-[#FFE6DC] text-[#57423D] font-bold hover:bg-[#FAF9F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Previous
+                </button>
+                <span className="px-2 py-1 font-mono font-bold text-[#1D1A23]">
+                  {txPage} / {totalTxPages}
+                </span>
+                <button
+                  onClick={() => setTxPage((p) => Math.min(totalTxPages, p + 1))}
+                  disabled={txPage === totalTxPages}
+                  className="px-3 py-1.5 rounded-lg border border-[#FFE6DC] text-[#57423D] font-bold hover:bg-[#FAF9F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -2085,7 +2162,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                     </td>
                   </tr>
                 ) : (
-                  applications.map((app) => (
+                  paginatedApplications.map((app) => (
                     <tr key={app.id} className="hover:bg-[#FAF9F6] transition-colors">
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-2.5">
@@ -2143,6 +2220,37 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
               </tbody>
             </table>
           </div>
+
+          {/* Application Partitions Pagination Controls */}
+          {applications.length > PAGE_SIZE && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-[#FFE6DC] text-xs">
+              <span className="text-[#8B716B]">
+                Showing <strong className="text-[#1D1A23]">{(appPage - 1) * PAGE_SIZE + 1}</strong> to{' '}
+                <strong className="text-[#1D1A23]">{Math.min(appPage * PAGE_SIZE, applications.length)}</strong> of{' '}
+                <strong className="text-[#1D1A23]">{applications.length}</strong> clusters
+                <span className="ml-2 text-[11px] font-mono text-[#A53B22] font-semibold">(25 per page)</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setAppPage((p) => Math.max(1, p - 1))}
+                  disabled={appPage === 1}
+                  className="px-3 py-1.5 rounded-lg border border-[#FFE6DC] text-[#57423D] font-bold hover:bg-[#FAF9F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Previous
+                </button>
+                <span className="px-2 py-1 font-mono font-bold text-[#1D1A23]">
+                  {appPage} / {totalAppPages}
+                </span>
+                <button
+                  onClick={() => setAppPage((p) => Math.min(totalAppPages, p + 1))}
+                  disabled={appPage === totalAppPages}
+                  className="px-3 py-1.5 rounded-lg border border-[#FFE6DC] text-[#57423D] font-bold hover:bg-[#FAF9F6] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

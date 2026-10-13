@@ -366,16 +366,23 @@ export class TATSBackendAPI {
   // ==========================================
   // Tool Registry
   // ==========================================
-  public static async getTools(apiKey?: string) {
-    const key = apiKey || this.getApiKey();
-    if (!key) return null;
-
-    const res = await fetch(`${API_BASE}/tools/`, {
+  public static async getTools(apiKey?: string | null, appId?: string) {
+    const url = appId ? `${API_BASE}/tools/?app_id=${encodeURIComponent(appId)}` : `${API_BASE}/tools/`;
+    const res = await fetch(url, {
       method: 'GET',
-      headers: this.getHeaders(key),
+      headers: this.getHeaders(apiKey || undefined),
     });
     if (!res.ok) return null;
     return await res.json();
+  }
+
+  public static async deleteTool(apiKey?: string | null, toolIdOrName?: string, appId?: string) {
+    const res = await fetch(`${API_BASE}/tools/`, {
+      method: 'DELETE',
+      headers: this.getHeaders(apiKey || undefined),
+      body: JSON.stringify({ id: toolIdOrName, name: toolIdOrName, app_id: appId }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
   }
 
   public static async registerTool(apiKey?: string | null, toolData?: {

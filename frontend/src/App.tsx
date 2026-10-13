@@ -288,6 +288,10 @@ export default function App() {
               <ToolBuilderView
                 onNavigate={handleNavigate}
                 onShowToast={addToast}
+                activeAppId={activeAppId}
+                applications={applications}
+                onSelectApp={handleSelectApp}
+                developer={developer}
               />
             )}
 

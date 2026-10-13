@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import models
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from core.auth import APIKeyAuthentication, DeveloperTokenAuthentication
 from tools.models import RegisteredTool
@@ -121,3 +122,32 @@ class ToolManagementView(APIView):
             'tool': ToolRegisterSerializer(tool).data,
             'function_schema': tool.to_function_schema()
         }, status=status.HTTP_201_CREATED)
+
+    def delete(self, request):
+        app = self._resolve_application(request)
+        if not app:
+            return Response({'error': 'Application not found or unauthorized.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        tool_id = None
+        if hasattr(request, 'data') and isinstance(request.data, dict):
+            tool_id = request.data.get('id') or request.data.get('name')
+        if not tool_id and hasattr(request, 'query_params'):
+            tool_id = request.query_params.get('id') or request.query_params.get('name')
+
+        if not tool_id:
+            return Response({'error': 'Tool ID or name is required for deletion.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Lookup by UUID id or unique name within application
+        tool = RegisteredTool.objects.filter(application=app).filter(
+            models.Q(id=tool_id) if len(str(tool_id)) > 30 else models.Q(name=tool_id)
+        ).first()
+
+        if not tool:
+            return Response({'error': 'Tool not found in this application cluster.'}, status=status.HTTP_404_NOT_FOUND)
+
+        tool_name = tool.name
+        tool.delete()
+        return Response({
+            'success': True,
+            'message': f"Tool '{tool_name}' deleted from engine registry."
+        }, status=status.HTTP_200_OK)

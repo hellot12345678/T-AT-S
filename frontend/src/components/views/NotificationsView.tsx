@@ -23,6 +23,8 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showClearAllModal, setShowClearAllModal] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const PAGE_SIZE = 25;
+  const [notifPage, setNotifPage] = useState<number>(1);
 
   const fetchNotifications = async () => {
     if (!developer) return;
@@ -142,6 +144,12 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
 
     return true;
   });
+
+  const totalNotifPages = Math.max(1, Math.ceil(filteredNotifications.length / PAGE_SIZE));
+  const paginatedNotifications = filteredNotifications.slice(
+    (notifPage - 1) * PAGE_SIZE,
+    notifPage * PAGE_SIZE
+  );
 
   const getCategoryMeta = (type?: string) => {
     const t = String(type || 'INFO').toUpperCase();
@@ -269,12 +277,18 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
             type="text"
             placeholder="Search notifications by title or keyword..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setNotifPage(1);
+            }}
             className="w-full pl-9 pr-8 py-2 rounded-xl bg-[#FAF9F6] border border-[#FFE6DC] text-xs text-[#1D1A23] focus:outline-none focus:border-[#FF7E5F] transition-all"
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery('')}
+              onClick={() => {
+                setSearchQuery('');
+                setNotifPage(1);
+              }}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8B716B] hover:text-[#1D1A23]"
             >
               <span className="material-symbols-outlined text-[16px]">close</span>
@@ -295,7 +309,10 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
             ].map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => {
+                  setSelectedCategory(cat.id);
+                  setNotifPage(1);
+                }}
                 className={`px-3 py-1 rounded-lg text-xs font-['Outfit'] font-bold transition-all ${
                   selectedCategory === cat.id
                     ? 'bg-[#1D1A23] text-white shadow-xs'
@@ -312,7 +329,10 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
             {(['all', 'unread', 'read'] as const).map((st) => (
               <button
                 key={st}
-                onClick={() => setFilterReadStatus(st)}
+                onClick={() => {
+                  setFilterReadStatus(st);
+                  setNotifPage(1);
+                }}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold capitalize transition-all ${
                   filterReadStatus === st
                     ? 'bg-[#FF7E5F] text-white shadow-xs'
@@ -356,6 +376,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
                   setSearchQuery('');
                   setSelectedCategory('ALL');
                   setFilterReadStatus('all');
+                  setNotifPage(1);
                 }}
                 className="mt-2 px-4 py-1.5 rounded-full bg-[#FAF9F6] border border-[#FFE6DC] text-xs font-bold text-[#A53B22] hover:bg-[#FFE6DC]/60 transition-colors"
               >
@@ -364,8 +385,9 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
             )}
           </div>
         ) : (
-          <div className="divide-y divide-[#FFE6DC]/60">
-            {filteredNotifications.map((notif) => {
+          <div>
+            <div className="divide-y divide-[#FFE6DC]/60">
+              {paginatedNotifications.map((notif) => {
               const meta = getCategoryMeta(notif.notification_type);
               const isDeleting = deletingId === notif.id;
 
@@ -455,8 +477,40 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({
               );
             })}
           </div>
-        )}
-      </div>
+
+          {/* Pagination Controls */}
+          {filteredNotifications.length > PAGE_SIZE && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-[#FFE6DC] bg-[#FAF9F6]/50 text-xs">
+              <span className="text-[#8B716B]">
+                Showing <strong className="text-[#1D1A23]">{(notifPage - 1) * PAGE_SIZE + 1}</strong> to{' '}
+                <strong className="text-[#1D1A23]">{Math.min(notifPage * PAGE_SIZE, filteredNotifications.length)}</strong> of{' '}
+                <strong className="text-[#1D1A23]">{filteredNotifications.length}</strong> notifications
+                <span className="ml-2 text-[11px] font-mono text-[#A53B22] font-semibold">(25 per page)</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setNotifPage((p) => Math.max(1, p - 1))}
+                  disabled={notifPage === 1}
+                  className="px-3 py-1.5 rounded-lg border border-[#FFE6DC] text-[#57423D] font-bold hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Previous
+                </button>
+                <span className="px-2 py-1 font-mono font-bold text-[#1D1A23]">
+                  {notifPage} / {totalNotifPages}
+                </span>
+                <button
+                  onClick={() => setNotifPage((p) => Math.min(totalNotifPages, p + 1))}
+                  disabled={notifPage === totalNotifPages}
+                  className="px-3 py-1.5 rounded-lg border border-[#FFE6DC] text-[#57423D] font-bold hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
 
       {/* Confirmation Modal for Clearing All Notifications */}
       {showClearAllModal && (
