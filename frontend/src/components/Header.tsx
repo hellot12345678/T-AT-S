@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AppView } from '../types';
 import { TATSBackendAPI } from '../services/api';
 
@@ -47,6 +47,11 @@ export const Header: React.FC<HeaderProps> = ({
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
 
+  // Click Outside References
+  const envDropdownRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
   const activeApp = applications.find((a) => a.id === activeAppId) || applications[0];
 
   const fetchNotifications = async () => {
@@ -80,10 +85,34 @@ export const Header: React.FC<HeaderProps> = ({
     }
   }, [developer]);
 
+  // Click outside listener: Automatically closes header dropdowns when user clicks anywhere else
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (showEnvDropdown && envDropdownRef.current && !envDropdownRef.current.contains(target)) {
+        setShowEnvDropdown(false);
+      }
+      if (showNotifications && notificationsRef.current && !notificationsRef.current.contains(target)) {
+        setShowNotifications(false);
+      }
+      if (showUserMenu && userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEnvDropdown, showNotifications, showUserMenu]);
+
   const handleMarkAllRead = async () => {
     await TATSBackendAPI.markAllNotificationsRead();
     setUnreadCount(0);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    setTimeout(() => {
+      setShowNotifications(false);
+    }, 300);
   };
 
   return (
@@ -198,7 +227,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Real Application Cluster Selector Dropdown (When Logged In) */}
           {developer && (
-            <div className="relative">
+            <div ref={envDropdownRef} className="relative">
               <button
                 onClick={() => setShowEnvDropdown(!showEnvDropdown)}
                 className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F8F1FE] hover:bg-[#EDE5F2] border border-[#DEC0B9]/30 text-[#1D1A23] text-xs font-semibold transition-all shadow-[0_1px_4px_rgba(255,126,95,0.04)]"
@@ -273,9 +302,9 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Dynamic Real Notifications Dropdown */}
+          {/* Dynamic Real Notifications Dropdown (Top 10 Notifications) */}
           {developer && (
-            <div className="relative">
+            <div ref={notificationsRef} className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2 rounded-full text-[#57423D] hover:text-[#1D1A23] hover:bg-[#F3EBF8] transition-colors"
@@ -304,19 +333,36 @@ export const Header: React.FC<HeaderProps> = ({
                       </button>
                     )}
                   </div>
-                  <div className="space-y-2 text-xs max-h-64 overflow-y-auto">
+                  <div className="space-y-2 text-xs max-h-72 overflow-y-auto">
                     {notifications.length === 0 ? (
                       <div className="py-6 text-center text-xs text-[#8B716B]">
                         No notifications yet.
                       </div>
                     ) : (
-                      notifications.map((notif) => (
+                      notifications.slice(0, 10).map((notif) => (
                         <div
                           key={notif.id}
-                          className={`p-2.5 rounded-xl border transition-colors ${
+                          onClick={() => {
+                            if (!notif.is_read) {
+                              TATSBackendAPI.markNotificationRead(notif.id);
+                              setNotifications((prev) =>
+                                prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n))
+                              );
+                              setUnreadCount((c) => Math.max(0, c - 1));
+                            }
+                            if (notif.link) {
+                              setShowNotifications(false);
+                              if (notif.link.includes('billing') || notif.link.includes('pricing')) {
+                                onNavigate('subscription-pricing');
+                              } else {
+                                onNavigate('developer-dashboard');
+                              }
+                            }
+                          }}
+                          className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
                             notif.is_read
-                              ? 'bg-[#FAF9F6] border-[#FFE6DC]/40 text-[#57423D]'
-                              : 'bg-[#FFF8EB] border-[#FDE047] text-[#1D1A23]'
+                              ? 'bg-[#FAF9F6] border-[#FFE6DC]/40 text-[#57423D] hover:bg-[#FAF9F6]/80'
+                              : 'bg-[#FFF8EB] border-[#FDE047] text-[#1D1A23] hover:bg-[#FEF3C7]'
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2 mb-1">
@@ -325,10 +371,27 @@ export const Header: React.FC<HeaderProps> = ({
                               {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                          <p className="text-[11px] leading-relaxed">{notif.message}</p>
+                          <p className="text-[11px] leading-relaxed line-clamp-2">{notif.message}</p>
                         </div>
                       ))
                     )}
+                  </div>
+
+                  {/* Complete History Link Footer */}
+                  <div className="pt-2.5 border-t border-[#FFE6DC]/60 mt-2 flex items-center justify-between">
+                    <span className="text-[10px] text-[#8B716B]">
+                      Showing top {Math.min(10, notifications.length)} of {notifications.length}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setShowNotifications(false);
+                        onNavigate('notifications');
+                      }}
+                      className="text-xs text-[#A53B22] hover:text-[#84240D] font-bold flex items-center gap-1 hover:underline"
+                    >
+                      <span>View All History</span>
+                      <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -337,7 +400,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* User Profile or Sign In Button */}
           {developer ? (
-            <div className="relative">
+            <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 pl-1.5 focus:outline-none group"
@@ -367,6 +430,23 @@ export const Header: React.FC<HeaderProps> = ({
                     )}
                   </div>
                   <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onNavigate('notifications');
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-[#1D1A23] hover:bg-[#F8F1FE] rounded-lg flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[15px] text-[#A53B22]">notifications</span>
+                        <span>Notifications History</span>
+                      </div>
+                      {unreadCount > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-[#FF5F45] text-white text-[9px] font-bold font-mono">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </button>
                     <button
                       onClick={() => {
                         setShowUserMenu(false);

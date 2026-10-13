@@ -39,7 +39,9 @@ from .usage import (
 from .notifications import (
     NotificationListView,
     NotificationMarkReadView,
-    NotificationMarkAllReadView
+    NotificationMarkAllReadView,
+    NotificationDeleteView,
+    NotificationClearAllView
 )
 from .payments import (
     RazorpayCreateOrderView,

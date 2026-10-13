@@ -32,6 +32,8 @@ from api.views import (
     NotificationListView,
     NotificationMarkReadView,
     NotificationMarkAllReadView,
+    NotificationDeleteView,
+    NotificationClearAllView,
     RazorpayCreateOrderView,
     RazorpayVerifyView,
     RazorpayWebhookView
@@ -66,7 +68,9 @@ urlpatterns = [
     # Dynamic Real-Time Notifications
     path('notifications/', NotificationListView.as_view(), name='api-notifications-list'),
     path('notifications/<uuid:notification_id>/read/', NotificationMarkReadView.as_view(), name='api-notifications-read'),
+    path('notifications/<uuid:notification_id>/delete/', NotificationDeleteView.as_view(), name='api-notifications-delete'),
     path('notifications/mark-all-read/', NotificationMarkAllReadView.as_view(), name='api-notifications-mark-all-read'),
+    path('notifications/clear-all/', NotificationClearAllView.as_view(), name='api-notifications-clear-all'),
 
     # Razorpay Live / Test Payments & Subscriptions
     path('payments/create-order/', RazorpayCreateOrderView.as_view(), name='api-payments-create-order'),

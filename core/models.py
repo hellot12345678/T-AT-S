@@ -398,26 +398,130 @@ class EmailOTPVerification(models.Model):
             is_used=False
         )
 
-        subject_map = {
-            'REGISTER': 'Verify your T@S Account - OTP Code',
-            'LOGIN': 'Your T@S Login Verification Code',
-            'FORGOT_PASSWORD': 'Reset your T@S Password - OTP Code',
+        purpose_labels = {
+            'REGISTER': ('Developer Account Activation', 'Verify and activate your new developer workspace on T-AT-S.'),
+            'LOGIN': ('Developer Portal Authentication', 'Authorize your secure sign-in to the T-AT-S developer portal.'),
+            'FORGOT_PASSWORD': ('Password Recovery Request', 'Reset your password and restore access to your account.'),
+            'ADMIN_ACCESS': ('Platform Governance Authorization', 'Verify your SuperAdmin credential to unlock governance.'),
         }
-        subject = subject_map.get(purpose, 'Your T@S Verification Code')
-        message = (
-            f"Hello,\n\n"
-            f"Your T@S 6-digit verification code is: {raw_otp}\n\n"
-            f"This code will expire in 10 minutes.\n"
-            f"If you did not request this verification, please disregard this email.\n\n"
-            f"— The T@S Engineering Team"
+        purpose_title, purpose_desc = purpose_labels.get(purpose, ('Developer Verification Code', 'Authenticate your session on T-AT-S.'))
+
+        subject_map = {
+            'REGISTER': 'Verify your T-AT-S Account - Verification Code',
+            'LOGIN': 'Your T-AT-S Login Verification Code',
+            'FORGOT_PASSWORD': 'Reset your T-AT-S Password - Verification Code',
+        }
+        subject = subject_map.get(purpose, f'T-AT-S Verification Code: {raw_otp}')
+
+        plain_message = (
+            f"T-AT-S (Talk. Decide. Solve.) — Autonomous Telephony System\n"
+            f"===========================================================\n\n"
+            f"{purpose_title}\n"
+            f"{purpose_desc}\n\n"
+            f"Your 6-Digit Verification Code is:\n"
+            f">>>  {raw_otp}  <<<\n\n"
+            f"• This code will expire in 10 minutes.\n"
+            f"• For security, never share this code with anyone.\n"
+            f"• If you did not request this, please disregard this email.\n\n"
+            f"Account: {email}\n"
+            f"Generated: {timezone.now().strftime('%d %b %Y, %H:%M UTC')}\n\n"
+            f"— The T-AT-S Platform Engineering Team\n"
+            f"Support: ts.help2407@gmail.com\n"
         )
+
+        formatted_otp_spaced = " ".join(list(raw_otp))
+
+        html_message = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{subject}</title>
+  <style>
+    body {{ margin: 0; padding: 0; background-color: #FAF9F6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1D1A23; }}
+    .wrapper {{ width: 100%; max-width: 600px; margin: 30px auto; background-color: #FFFFFF; border-radius: 24px; overflow: hidden; border: 1px solid #FFE6DC; box-shadow: 0 10px 30px rgba(165,59,34,0.06); }}
+    .header {{ background: linear-gradient(135deg, #FF7E5F 0%, #FF5F45 50%, #A53B22 100%); padding: 36px 32px 32px; text-align: center; color: #FFFFFF; }}
+    .logo-badge {{ display: inline-block; padding: 6px 14px; background: rgba(255, 255, 255, 0.2); border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.35); }}
+    .brand-title {{ margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }}
+    .brand-tagline {{ margin: 6px 0 0; font-size: 12px; font-weight: 500; opacity: 0.92; letter-spacing: 0.5px; }}
+    .body-content {{ padding: 36px 32px; }}
+    .greeting {{ font-size: 17px; font-weight: 700; color: #1D1A23; margin-top: 0; }}
+    .intro-text {{ font-size: 14px; line-height: 1.6; color: #57423D; margin: 10px 0 24px; }}
+    .otp-card {{ background: #FAF9F6; border: 2px solid #FF7E5F; border-radius: 20px; padding: 28px 20px; text-align: center; margin: 24px 0; }}
+    .otp-label {{ font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #845400; margin-bottom: 8px; }}
+    .otp-digits {{ font-family: 'SF Mono', Consolas, Monaco, 'Courier New', monospace; font-size: 38px; font-weight: 800; letter-spacing: 10px; color: #A53B22; margin: 6px 0; }}
+    .otp-expiry {{ font-size: 12px; color: #8B716B; margin-top: 8px; font-weight: 500; }}
+    .security-note {{ background: #FFF8EB; border-left: 4px solid #FFAE33; border-radius: 8px; padding: 14px 16px; margin: 24px 0 10px; font-size: 12px; line-height: 1.5; color: #854D0E; }}
+    .meta-table {{ width: 100%; margin-top: 24px; border-top: 1px solid #FFE6DC; padding-top: 18px; font-size: 12px; color: #8B716B; }}
+    .meta-row {{ padding: 3px 0; }}
+    .footer {{ background: #FAF9F6; padding: 24px 32px; text-align: center; font-size: 11px; color: #8B716B; border-top: 1px solid #FFE6DC; line-height: 1.6; }}
+    .footer-links a {{ color: #A53B22; text-decoration: none; font-weight: 600; margin: 0 8px; }}
+  </style>
+</head>
+<body>
+  <div style="padding: 20px 10px;">
+    <div class="wrapper">
+      <div class="header">
+        <div class="logo-badge">Autonomous Telephony Platform</div>
+        <h1 class="brand-title">T · AT · S</h1>
+        <p class="brand-tagline">Talk. Decide. Solve. &middot; Voice Agentic Intelligence</p>
+      </div>
+
+      <div class="body-content">
+        <h2 class="greeting">Hello Developer,</h2>
+        <p class="intro-text">
+          A request was initiated for <strong>{purpose_title}</strong> on your account. Use the secure 6-digit one-time verification passcode below to complete authentication:
+        </p>
+
+        <div class="otp-card">
+          <div class="otp-label">One-Time Verification Code</div>
+          <div class="otp-digits">{formatted_otp_spaced}</div>
+          <div class="otp-expiry">&#9201; Expires in <strong>10 minutes</strong> &middot; Single use only</div>
+        </div>
+
+        <div class="security-note">
+          <strong>Security Notice:</strong> Never share this code with anyone. T-AT-S engineers and platform operators will never request your verification passcode via email, telephone, or Discord.
+        </div>
+
+        <table class="meta-table" cellpadding="0" cellspacing="0">
+          <tr>
+            <td class="meta-row"><strong>Target Account:</strong></td>
+            <td class="meta-row" align="right"><code>{email}</code></td>
+          </tr>
+          <tr>
+            <td class="meta-row"><strong>Purpose:</strong></td>
+            <td class="meta-row" align="right">{purpose_title}</td>
+          </tr>
+          <tr>
+            <td class="meta-row"><strong>Timestamp:</strong></td>
+            <td class="meta-row" align="right">{timezone.now().strftime('%d %b %Y, %H:%M UTC')}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="footer">
+        <div class="footer-links">
+          <a href="https://tats.ai">Developer Portal</a> &bull;
+          <a href="https://tats.ai/docs">API Documentation</a> &bull;
+          <a href="mailto:ts.help2407@gmail.com">Engineering Support</a>
+        </div>
+        <p style="margin: 10px 0 0;">
+          T-AT-S (Talk. Decide. Solve.) &middot; High-Throughput Sub-850ms Voice AI Infrastructure<br>
+          Sent to {email} &middot; If you did not initiate this request, you can safely ignore this email.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>"""
 
         try:
             send_mail(
                 subject=subject,
-                message=message,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@tats.ai'),
+                message=plain_message,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'T-AT-S Support <noreply@tats.ai>'),
                 recipient_list=[email],
+                html_message=html_message,
                 fail_silently=False
             )
         except Exception as e:

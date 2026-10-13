@@ -333,6 +333,43 @@ class RazorpayVerifyView(APIView):
             link='/dashboard'
         )
 
+        # Dispatch Branded Email Receipt to Developer
+        try:
+            from django.core.mail import send_mail
+            email_subject = f"T-AT-S Billing Receipt: {notif_title}"
+            email_html = f"""<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:20px;background:#FAF9F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:560px;margin:auto;background:#FFF;border-radius:20px;border:1px solid #FFE6DC;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#FF7E5F,#A53B22);padding:28px;text-align:center;color:#FFF;">
+      <h2 style="margin:0;font-size:24px;font-weight:800;">T &middot; AT &middot; S</h2>
+      <p style="margin:4px 0 0;font-size:12px;opacity:0.9;">Autonomous Telephony System &middot; Billing Receipt</p>
+    </div>
+    <div style="padding:28px;">
+      <h3 style="margin-top:0;color:#1D1A23;">{notif_title}</h3>
+      <p style="color:#57423D;font-size:13px;line-height:1.6;">{notif_msg}</p>
+      <div style="background:#FAF9F6;border:1px solid #FFE6DC;border-radius:12px;padding:16px;margin:20px 0;font-size:12px;">
+        <div style="margin-bottom:6px;"><strong>Amount Paid:</strong> &#8377;{order.amount / 100:,.2f}</div>
+        <div style="margin-bottom:6px;"><strong>Units Credited:</strong> {order.units_credited:,} Action Units</div>
+        <div style="margin-bottom:6px;"><strong>Cluster:</strong> {target_app.app_name if target_app else 'Active Cluster'}</div>
+        <div><strong>Payment Reference:</strong> <code>{payment_id}</code></div>
+      </div>
+      <p style="font-size:11px;color:#8B716B;text-align:center;">Unspent credits never decay. Thank you for building with T-AT-S.</p>
+    </div>
+  </div>
+</body>
+</html>"""
+            send_mail(
+                subject=email_subject,
+                message=notif_msg,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'T-AT-S Support <noreply@tats.ai>'),
+                recipient_list=[dev.email],
+                html_message=email_html,
+                fail_silently=True
+            )
+        except Exception:
+            pass
+
         return Response({
             'success': True,
             'message': resp_message,

@@ -265,12 +265,18 @@ export class TATSBackendAPI {
   // ==========================================
   // Dynamic Real Notifications
   // ==========================================
-  public static async getNotifications() {
+  public static async getNotifications(params?: { limit?: number; type?: string; unread?: boolean; q?: string }) {
     const token = this.getToken();
     if (!token) return { unread_count: 0, notifications: [] };
 
     try {
-      const res = await fetch(`${API_BASE}/notifications/`, {
+      const url = new URL(`${API_BASE}/notifications/`);
+      if (params?.limit) url.searchParams.append('limit', String(params.limit));
+      if (params?.type && params.type !== 'ALL') url.searchParams.append('type', params.type);
+      if (params?.unread) url.searchParams.append('unread', 'true');
+      if (params?.q) url.searchParams.append('q', params.q);
+
+      const res = await fetch(url.toString(), {
         method: 'GET',
         headers: this.getHeaders(),
       });
@@ -292,6 +298,22 @@ export class TATSBackendAPI {
   public static async markAllNotificationsRead() {
     const res = await fetch(`${API_BASE}/notifications/mark-all-read/`, {
       method: 'POST',
+      headers: this.getHeaders(),
+    });
+    return { ok: res.ok, data: await res.json() };
+  }
+
+  public static async deleteNotification(id: string) {
+    const res = await fetch(`${API_BASE}/notifications/${id}/delete/`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+    return { ok: res.ok, data: await res.json() };
+  }
+
+  public static async clearAllNotifications() {
+    const res = await fetch(`${API_BASE}/notifications/clear-all/`, {
+      method: 'DELETE',
       headers: this.getHeaders(),
     });
     return { ok: res.ok, data: await res.json() };

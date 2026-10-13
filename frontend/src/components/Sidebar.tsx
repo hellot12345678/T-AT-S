@@ -20,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isMic
           { path: 'subscription-pricing' as AppView, label: 'Subscription & Plans', icon: 'payments' },
         ]
       : [{ path: 'subscription-pricing' as AppView, label: 'Subscription & Plans', icon: 'payments' }]),
+    { path: 'notifications' as AppView, label: 'Notifications & Alerts', icon: 'notifications' },
     { path: 'settings' as AppView, label: 'Account & Settings', icon: 'settings' },
   ];
 

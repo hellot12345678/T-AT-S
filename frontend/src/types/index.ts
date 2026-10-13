@@ -7,7 +7,8 @@ export type AppView =
   | 'component-wizard'
   | 'subscription-pricing'
   | 'auth'
-  | 'settings';
+  | 'settings'
+  | 'notifications';
 
 export interface TelemetrySession {
   id: string;

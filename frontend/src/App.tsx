@@ -17,6 +17,7 @@ import { PlaygroundView } from './components/views/PlaygroundView';
 import { SuperAdminView } from './components/views/SuperAdminView';
 import { SubscriptionView } from './components/views/SubscriptionView';
 import { SettingsView } from './components/views/SettingsView';
+import { NotificationsView } from './components/views/NotificationsView';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
@@ -337,6 +338,14 @@ export default function App() {
                 onUpdateDeveloperProfile={(updatedDev) => {
                   setDeveloper(updatedDev);
                 }}
+              />
+            )}
+
+            {currentView === 'notifications' && developer && (
+              <NotificationsView
+                onNavigate={handleNavigate}
+                onShowToast={addToast}
+                developer={developer}
               />
             )}
           </ErrorBoundary>
