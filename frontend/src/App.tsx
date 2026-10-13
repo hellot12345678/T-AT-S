@@ -46,12 +46,18 @@ export default function App() {
   const [activeAppId, setActiveAppId] = useState<string>(() => localStorage.getItem('tats_active_app_id') || '');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+  const MAX_TOASTS = 5;
+
   const addToast = (title: string, description?: string, type: 'success' | 'info' | 'warning' = 'success') => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
-    setToasts((prev) => [...prev, { id, title, description, type }]);
+    setToasts((prev) => {
+      // Keep strictly the latest (MAX_TOASTS - 1) before appending the new toast so count never exceeds 5
+      const trimmed = prev.length >= MAX_TOASTS ? prev.slice(prev.length - (MAX_TOASTS - 1)) : prev;
+      return [...trimmed, { id, title, description, type }];
+    });
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4200);
+    }, 3600);
   };
 
   const dismissToast = (id: string) => {
