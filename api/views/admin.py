@@ -83,7 +83,7 @@ class AdminGovernanceDataView(APIView):
 
         applications_data = []
         for app in apps_qs:
-            monthly_meter = app.usage_meters.order_by('-created_at').first()
+            monthly_meter = app.usage_meters.order_by('-month_year').first()
             applications_data.append({
                 'id': str(app.id),
                 'app_name': app.app_name,
@@ -101,15 +101,15 @@ class AdminGovernanceDataView(APIView):
         total_revenue_paise = PaymentOrder.objects.filter(status='PAID').aggregate(Sum('amount'))['amount__sum'] or 0
 
         end_users_data = []
-        for conf in EndUserConfig.objects.all().order_by('-created_at')[:50]:
+        for conf in EndUserConfig.objects.all().order_by('-last_active')[:50]:
             end_users_data.append({
                 'id': str(conf.id),
                 'client_user_id': conf.client_user_id,
                 'wake_word': conf.wake_word,
-                'passphrase': conf.passphrase,
+                'passphrase': '••••••••' if conf.passphrase_hash else 'None',
                 'voice_tier': conf.voice_tier,
-                'is_active': conf.is_active,
-                'created_at': conf.created_at.isoformat()
+                'is_active': True,
+                'created_at': conf.last_active.isoformat() if conf.last_active else ''
             })
 
         return Response({

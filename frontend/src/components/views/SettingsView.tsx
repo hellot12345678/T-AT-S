@@ -179,9 +179,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setIsRegeneratingKey(true);
     try {
       const res = await TATSBackendAPI.regenerateAppKey(activeApp.id);
-      if (res.ok) {
+      if (res.ok && res.data?.api_key) {
+        const newKey = typeof res.data.api_key === 'string' ? res.data.api_key : (res.data.api_key?.key || String(res.data.api_key));
+        TATSBackendAPI.setApiKey(newKey);
         await onRefreshApps();
-        onShowToast('New API Key Generated', `New Key: ${res.data.api_key.substring(0, 16)}••••`, 'success');
+        onShowToast('New API Key Generated', `New Key: ${newKey.substring(0, 16)}••••`, 'success');
       } else {
         onShowToast('Regeneration Failed', res.data?.error || 'Could not regenerate key.', 'warning');
       }

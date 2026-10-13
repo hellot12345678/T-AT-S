@@ -696,7 +696,7 @@ export function VoiceController() {
             <div>
               <span className="font-bold text-[#845400]">Standard LLM Token Equivalent:</span>
               <span className="text-[#1D1A23] font-mono ml-2">
-                ~₹{competitorCost.toLocaleString('en-IN')} / mo on OpenAI GPT-4o Realtime
+                ~₹{competitorCost.toLocaleString('en-IN')} / mo on standard realtime token billing
               </span>
             </div>
             <div className="px-3.5 py-1.5 rounded-full bg-[#FFDDB6] text-[#643F00] font-bold font-['Outfit']">

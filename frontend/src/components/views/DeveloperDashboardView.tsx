@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { AppView, TelemetrySession } from '../../types';
-import { INITIAL_TELEMETRY } from '../../data/mockData';
 import { TATSBackendAPI } from '../../services/api';
 
 interface DeveloperDashboardViewProps {
@@ -27,38 +26,50 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
   const [monthlyQuota, setMonthlyQuota] = useState(2000);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
 
-
   useEffect(() => {
     const fetchLiveData = async () => {
       const health = await TATSBackendAPI.checkHealth();
       if (health && health.status === 'healthy') {
         setIsLiveConnected(true);
         const appsRes = await TATSBackendAPI.getApplications();
+        const platformCfg = await TATSBackendAPI.getPlatformConfig();
+        const freeQuota = platformCfg?.free_tier_units || 2000;
+        const growthQuota = platformCfg?.growth_tier_units || 50000;
+
         if (appsRes && appsRes.applications && appsRes.applications.length > 0) {
           const mainApp = appsRes.applications[0];
           setAppName(mainApp.app_name);
           setAppId(mainApp.id);
-          setToolsCount(mainApp.tools_count || 18);
+          setToolsCount(mainApp.tools_count || 0);
           setMonthlyUnitsUsed(mainApp.monthly_units_used || 0);
+          setMonthlyQuota(
+            mainApp.plan_tier === 'GROWTH' || mainApp.plan_tier === 'GROWTH_STARTUP'
+              ? growthQuota
+              : freeQuota
+          );
 
           // Fetch real telemetry sessions for this app
           try {
             const teleRes = await TATSBackendAPI.getSessionTelemetry(mainApp.id);
             if (teleRes && teleRes.sessions && teleRes.sessions.length > 0) {
-              const mapped = teleRes.sessions.map((s: any) => ({
+              const mapped: TelemetrySession[] = teleRes.sessions.map((s: any) => ({
                 id: s.id,
-                timestamp: new Date(s.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                caller: s.client_user_id || 'voice_caller',
+                sessionId: s.session_id || s.client_user_id || 'voice_session',
                 wakeWord: 'Hey Acme',
-                userTranscript: s.content,
-                actionName: s.tool_name || 'dialogue_turn',
-                authStatus: 'verified',
+                transcript: s.content || 'Voice command',
+                authStatus: 'verified' as const,
+                timeAgo: new Date(s.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                actionName: s.tool_name ? `${s.tool_name}()` : 'dialogue_turn()',
+                endpoint: s.tool_name ? `/api/v1/tools/${s.tool_name}/` : 'POST /api/v1/chat/',
+                method: 'POST' as const,
                 totalLatency: 480,
-                speedBreakdown: '480ms',
+                asrLatency: 150,
+                llmLatency: 210,
+                actLatency: 120,
                 status: 200,
                 statusText: '200 OK',
                 voiceConfidence: 0.98,
-                taskPayload: s.tool_payload || { text: s.content }
+                taskPayload: s.tool_payload || { message: s.content }
               }));
               setTelemetry(mapped);
             }
@@ -115,10 +126,10 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
     if (appId) {
       const res = await TATSBackendAPI.regenerateAppKey(appId);
       if (res.ok && res.data.api_key) {
-        const newKey = res.data.api_key.key;
+        const newKey = typeof res.data.api_key === 'string' ? res.data.api_key : (res.data.api_key?.key || String(res.data.api_key));
         setActiveApiKey(newKey);
         TATSBackendAPI.setApiKey(newKey);
-        onShowToast('API Key Rotated in Django DB', `New Key: ${res.data.api_key.key_prefix}...`);
+        onShowToast('API Key Rotated in Django DB', `New Key: ${res.data.key_prefix || newKey.substring(0, 14)}...`);
         return;
       }
     }
@@ -135,7 +146,7 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
       });
       onShowToast('Tool Schema Deployed', 'Schema nodes compiled and saved into Django engine memory.');
     } else {
-      onShowToast('Tool Schema Deployed', '18 active tool nodes compiled into agent vector memory.');
+      onShowToast('Tool Schema Deployed', `${toolsCount} active tool nodes compiled into agent vector memory.`);
     }
   };
 
@@ -339,10 +350,22 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
           </div>
 
           <div className="mt-5 pt-3 border-t border-[#FFE6DC]/60 flex flex-wrap gap-1 text-[11px] font-mono">
-            <span className="px-2 py-0.5 rounded-md bg-[#FAF9F6] text-[#57423D] border border-[#FFE6DC]">create_task</span>
-            <span className="px-2 py-0.5 rounded-md bg-[#FAF9F6] text-[#57423D] border border-[#FFE6DC]">refund_order</span>
-            <span className="px-2 py-0.5 rounded-md bg-[#FAF9F6] text-[#57423D] border border-[#FFE6DC]">lookup_crm</span>
-            <span className="px-2 py-0.5 rounded-md bg-[#FFDAD2] text-[#84240D] font-bold">+15 more</span>
+            {activeToolsList.length > 0 ? (
+              <>
+                {activeToolsList.slice(0, 3).map((t) => (
+                  <span key={t.name} className="px-2 py-0.5 rounded-md bg-[#FAF9F6] text-[#57423D] border border-[#FFE6DC]">
+                    {t.name}
+                  </span>
+                ))}
+                {activeToolsList.length > 3 && (
+                  <span className="px-2 py-0.5 rounded-md bg-[#FFDAD2] text-[#84240D] font-bold">
+                    +{activeToolsList.length - 3} more
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-[#8B716B] text-[10px]">No custom tools registered yet</span>
+            )}
           </div>
         </div>
       </div>
@@ -666,17 +689,17 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-[#00C2FF] shadow-[0_0_8px_rgba(0,194,255,0.6)]"></span>
-            <span className="font-bold text-[#1D1A23]">Gemini Live Multimodal Core</span>
+            <span className="font-bold text-[#1D1A23]">T@S Acoustic Action Core</span>
           </div>
           <span className="text-[#DEC0B9] font-mono">|</span>
           <div className="flex items-center gap-1.5 text-[#57423D]">
             <span className="material-symbols-outlined text-[#A53B22] text-[16px]">mic_double</span>
-            <span>Whisper ASR: <strong className="text-[#1D1A23]">190ms stream-flush</strong></span>
+            <span>Neural Acoustic ASR: <strong className="text-[#1D1A23]">190ms stream-flush</strong></span>
           </div>
           <span className="hidden lg:inline text-[#DEC0B9] font-mono">|</span>
           <div className="hidden lg:flex items-center gap-1.5 text-[#57423D]">
             <span className="material-symbols-outlined text-[#845400] text-[16px]">terminal</span>
-            <span>Tool Execution Runtime: <strong className="text-[#1D1A23]">Node.js V8 isolates</strong></span>
+            <span>Deterministic Action Runtime: <strong className="text-[#1D1A23]">Micro-second isolates</strong></span>
           </div>
         </div>
 

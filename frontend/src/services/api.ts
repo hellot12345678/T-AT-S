@@ -44,6 +44,11 @@ export class TATSBackendAPI {
       const devToken = this.getToken();
       if (devToken) {
         headers['Authorization'] = `Bearer ${devToken}`;
+      } else {
+        const apiKey = this.getApiKey();
+        if (apiKey) {
+          headers['Authorization'] = apiKey.startsWith('Bearer ') ? apiKey : `Bearer ${apiKey}`;
+        }
       }
     }
 
