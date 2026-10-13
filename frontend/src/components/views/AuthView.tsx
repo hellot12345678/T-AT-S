@@ -744,7 +744,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   {otp.map((digit, i) => (
                     <input
                       key={i}
-                      ref={(el) => (otpInputsRef.current[i] = el)}
+                      ref={(el) => {
+                        otpInputsRef.current[i] = el;
+                      }}
                       type="text"
                       inputMode="numeric"
                       maxLength={1}

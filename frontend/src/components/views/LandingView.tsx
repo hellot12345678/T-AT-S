@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView } from '../../types';
 import { TATSBackendAPI } from '../../services/api';
 
@@ -14,7 +14,7 @@ interface LandingViewProps {
     is_admin?: boolean;
     is_verified?: boolean;
   } | null;
-  onOpenAuth: (notice?: string) => void;
+  onOpenAuth: (notice?: string, targetView?: AppView) => void;
   activeAppId?: string;
   onRefreshApps?: () => void;
 }

@@ -169,7 +169,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({
             onShowToast('Microphone Standby', 'Microphone stream idle.');
           };
           rec.onend = () => {
-            if (micState === 'listening') setMicState('idle');
+            setMicState('idle');
           };
           rec.start();
           return;
