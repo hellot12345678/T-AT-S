@@ -212,4 +212,8 @@ RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', '')
 RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', '')
 RAZORPAY_WEBHOOK_SECRET = os.getenv('RAZORPAY_WEBHOOK_SECRET', '')
 
+# Session History Storage Limit (Auto-delete older sessions beyond 300 per application)
+MAX_SESSION_HISTORY_PER_APP = int(os.getenv('MAX_SESSION_HISTORY_PER_APP', 300))
+
+
 

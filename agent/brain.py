@@ -176,6 +176,9 @@ class AgentBrain:
             tool_payload=tool_dispatch_result
         )
 
+        # Auto-prune old sessions beyond retention limit (keep newest 300)
+        SessionHistory.prune_old_sessions(application=self.application)
+
         # 6. Increment Usage Meter with Dynamic Accounting
         units_consumed = meter.record_usage(
             is_voice=is_voice,

@@ -239,6 +239,47 @@ class SessionHistory(models.Model):
     def __str__(self):
         return f"[{self.session_id}] {self.role}: {self.content[:40]}"
 
+    @classmethod
+    def prune_old_sessions(cls, application=None, max_keep: int = 300):
+        """
+        Keeps only the newest `max_keep` session history entries for the specified application
+        (or across all applications if application is None),
+        automatically purging older records to conserve database storage.
+        """
+        if max_keep is None or max_keep <= 0:
+            from django.conf import settings
+            max_keep = getattr(settings, 'MAX_SESSION_HISTORY_PER_APP', 300)
+
+        deleted_total = 0
+        try:
+            if application:
+                total_count = cls.objects.filter(application=application).count()
+                if total_count > max_keep:
+                    excess_ids = list(
+                        cls.objects.filter(application=application)
+                        .order_by('-created_at')
+                        .values_list('id', flat=True)[max_keep:]
+                    )
+                    if excess_ids:
+                        cnt, _ = cls.objects.filter(id__in=excess_ids).delete()
+                        deleted_total += cnt
+            else:
+                from core.models import Application
+                for app in Application.objects.all():
+                    deleted_total += cls.prune_old_sessions(application=app, max_keep=max_keep)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Error auto-pruning SessionHistory: {e}")
+        return deleted_total
+
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+        if is_new and self.application_id:
+            from django.conf import settings
+            max_keep = getattr(settings, 'MAX_SESSION_HISTORY_PER_APP', 300)
+            SessionHistory.prune_old_sessions(application=self.application, max_keep=max_keep)
+
 
 class UsageMeter(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

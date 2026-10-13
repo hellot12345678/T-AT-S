@@ -249,7 +249,9 @@ class ApplicationSessionsView(APIView):
             return Response({'error': 'Application not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         from core.models import SessionHistory
-        sessions = SessionHistory.objects.filter(application=app).order_by('-created_at')[:40]
+        from django.conf import settings
+        max_limit = getattr(settings, 'MAX_SESSION_HISTORY_PER_APP', 300)
+        sessions = SessionHistory.objects.filter(application=app).order_by('-created_at')[:max_limit]
         serialized = [
             {
                 'id': str(s.id),
