@@ -1623,41 +1623,64 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                 })()}
               </div>
 
-              {/* Slider 2: Monthly Free Voice Units */}
-              <div className="flex flex-col gap-2 bg-[#FAF9F6] p-4 rounded-2xl border border-[#FFE6DC]">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-[#1D1A23] flex items-center gap-1.5">
+              {/* Slider 2: Monthly Free Voice Units (Slider + Custom Input + Presets) */}
+              <div className="flex flex-col gap-2 bg-[#FAF9F6] p-4 sm:p-5 rounded-2xl border border-[#FFE6DC]">
+                <div className="flex justify-between items-center text-xs">
+                  <label className="font-bold text-[#1D1A23] flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-[16px] text-[#845400]">token</span>
                     Monthly Free Units Included
                   </label>
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-['Outfit'] text-xl font-bold text-[#845400]">
-                      {freeAllowance.toLocaleString('en-IN')}
-                    </span>
-                    <span className="text-xs text-[#57423D]">Free units</span>
+                  <div className="flex items-center gap-1 bg-white border border-[#FFE6DC] rounded-xl px-2.5 py-1 shadow-xs">
+                    <input
+                      type="number"
+                      min={100}
+                      max={100000}
+                      step={250}
+                      value={freeAllowance}
+                      onChange={(e) => setFreeAllowance(Math.max(0, Number(e.target.value)))}
+                      className="w-20 font-['Outfit'] text-base font-extrabold text-[#845400] focus:outline-none bg-transparent"
+                      title="Type custom free units"
+                    />
+                    <span className="text-[11px] text-[#57423D]">units</span>
                   </div>
                 </div>
                 <input
                   type="range"
                   min={500}
-                  max={10000}
+                  max={25000}
                   step={250}
                   value={freeAllowance}
                   onChange={(e) => setFreeAllowance(Number(e.target.value))}
                   className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#FFAE33]"
                 />
-                <div className="flex justify-between text-[11px] text-[#8B716B] font-mono">
+                <div className="flex items-center justify-between text-[10px] text-[#8B716B] font-mono flex-wrap gap-1">
                   <span>500 Units</span>
-                  <span>2,000 Units (Default)</span>
-                  <span>10,000 Units</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[9px] uppercase font-bold text-[#8B716B]">Presets:</span>
+                    {[500, 1000, 2000, 5000, 10000].map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setFreeAllowance(p)}
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+                          freeAllowance === p
+                            ? 'bg-[#845400] text-white shadow-xs'
+                            : 'bg-white text-[#57423D] hover:bg-[#FFE6DC]'
+                        }`}
+                      >
+                        {p.toLocaleString('en-IN')}
+                      </button>
+                    ))}
+                  </div>
+                  <span>25,000 Units (Max)</span>
                 </div>
               </div>
 
-              {/* Slider 3: Grace Buffer */}
-              <div className="flex flex-col gap-2 bg-[#FAF9F6] p-4 rounded-2xl border border-[#FFE6DC]">
-                <div className="flex justify-between items-center">
+              {/* Slider 3: Grace Buffer (Slider + Custom Input + Presets) */}
+              <div className="flex flex-col gap-2 bg-[#FAF9F6] p-4 sm:p-5 rounded-2xl border border-[#FFE6DC]">
+                <div className="flex justify-between items-center text-xs">
                   <div className="flex items-center gap-2">
-                    <label className="text-xs font-bold text-[#1D1A23] flex items-center gap-1.5">
+                    <label className="font-bold text-[#1D1A23] flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-[16px] text-[#006688]">shield</span>
                       Grace Buffer Before Pause
                     </label>
@@ -1665,54 +1688,106 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                       Prevents Disruption
                     </span>
                   </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-['Outfit'] text-xl font-bold text-[#006688]">{gracePercent}%</span>
-                    <span className="text-xs text-[#57423D]">(+{Math.round((freeAllowance * gracePercent) / 100)} buffer)</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-[#57423D] hidden sm:inline">(+{Math.round((freeAllowance * gracePercent) / 100)} buffer)</span>
+                    <div className="flex items-center gap-1 bg-white border border-[#FFE6DC] rounded-xl px-2.5 py-1 shadow-xs">
+                      <input
+                        type="number"
+                        min={0}
+                        max={50}
+                        step={1}
+                        value={gracePercent}
+                        onChange={(e) => setGracePercent(Math.max(0, Math.min(100, Number(e.target.value))))}
+                        className="w-14 font-['Outfit'] text-base font-extrabold text-[#006688] focus:outline-none bg-transparent"
+                        title="Type custom grace percentage"
+                      />
+                      <span className="text-[11px] text-[#57423D] font-bold">%</span>
+                    </div>
                   </div>
                 </div>
                 <input
                   type="range"
                   min={0}
-                  max={30}
+                  max={40}
                   step={1}
                   value={gracePercent}
                   onChange={(e) => setGracePercent(Number(e.target.value))}
                   className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#00C2FF]"
                 />
-                <div className="flex justify-between text-[11px] text-[#8B716B]">
+                <div className="flex items-center justify-between text-[10px] text-[#8B716B] font-mono flex-wrap gap-1">
                   <span className="text-[#006688] font-semibold">Safe: 0-15%</span>
-                  <span className="text-[#845400] font-semibold">Warn: 16-25%</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[9px] uppercase font-bold text-[#8B716B]">Presets:</span>
+                    {[0, 5, 10, 15, 20, 25, 30].map((gp) => (
+                      <button
+                        key={gp}
+                        type="button"
+                        onClick={() => setGracePercent(gp)}
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+                          gracePercent === gp
+                            ? 'bg-[#006688] text-white shadow-xs'
+                            : 'bg-white text-[#57423D] hover:bg-[#C2E8FF]/60'
+                        }`}
+                      >
+                        {gp}%
+                      </button>
+                    ))}
+                  </div>
                   <span className="text-[#A53B22] font-semibold">Throttling: &gt;25%</span>
                 </div>
               </div>
 
-              {/* Slider 4: Cost per Extra Unit */}
-              <div className="flex flex-col gap-2 bg-[#FAF9F6] p-4 rounded-2xl border border-[#FFE6DC]">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-[#1D1A23] flex items-center gap-1.5">
+              {/* Slider 4: Cost per Extra Unit (Slider + Custom Input + Presets) */}
+              <div className="flex flex-col gap-2 bg-[#FAF9F6] p-4 sm:p-5 rounded-2xl border border-[#FFE6DC]">
+                <div className="flex justify-between items-center text-xs">
+                  <label className="font-bold text-[#1D1A23] flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-[16px] text-[#A53B22]">add_shopping_cart</span>
                     Cost per Extra Unit Above Limit
                   </label>
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-['Outfit'] text-xl font-bold text-[#1D1A23]">
-                      ₹{Number(overageUnitCost || 0.35).toFixed(2)}
-                    </span>
-                    <span className="text-xs text-[#57423D]">/ unit</span>
+                  <div className="flex items-center gap-1 bg-white border border-[#FFE6DC] rounded-xl px-2.5 py-1 shadow-xs">
+                    <span className="text-xs font-bold text-[#1D1A23]">₹</span>
+                    <input
+                      type="number"
+                      min={0.01}
+                      max={5.00}
+                      step={0.01}
+                      value={overageUnitCost}
+                      onChange={(e) => setOverageUnitCost(Math.max(0.01, Number(e.target.value)))}
+                      className="w-16 font-['Outfit'] text-base font-extrabold text-[#1D1A23] focus:outline-none bg-transparent"
+                      title="Type custom cost per extra unit"
+                    />
+                    <span className="text-[11px] text-[#57423D]">/ unit</span>
                   </div>
                 </div>
                 <input
                   type="range"
-                  min={0.10}
-                  max={1.50}
+                  min={0.05}
+                  max={2.00}
                   step={0.05}
                   value={overageUnitCost}
                   onChange={(e) => setOverageUnitCost(Number(e.target.value))}
                   className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#FF7E5F]"
                 />
-                <div className="flex justify-between text-[11px] text-[#8B716B] font-mono">
-                  <span>₹0.10 (Wholesale)</span>
-                  <span>₹0.35 (Target)</span>
-                  <span>₹1.50 (Peak)</span>
+                <div className="flex items-center justify-between text-[10px] text-[#8B716B] font-mono flex-wrap gap-1">
+                  <span>₹0.05 (Wholesale)</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[9px] uppercase font-bold text-[#8B716B]">Presets:</span>
+                    {[0.10, 0.20, 0.35, 0.50, 0.75, 1.00].map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setOverageUnitCost(c)}
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+                          Math.abs(overageUnitCost - c) < 0.001
+                            ? 'bg-[#FF7E5F] text-white shadow-xs'
+                            : 'bg-white text-[#57423D] hover:bg-[#FFE6DC]'
+                        }`}
+                      >
+                        ₹{c.toFixed(2)}
+                      </button>
+                    ))}
+                  </div>
+                  <span>₹2.00 (Peak)</span>
                 </div>
               </div>
 
@@ -1789,7 +1864,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
             </div>
           </div>
 
-          {/* Right 5 Cols: Platform Profit & Cost Forecast */}
+          {/* Right 5 Cols: Platform Profit & Cost Forecast + Informative Engines (Populating Blank Space) */}
           <div className="lg:col-span-5 flex flex-col gap-6">
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#FFE6DC] shadow-sm flex flex-col gap-5">
               <div className="flex items-center justify-between">
@@ -1835,6 +1910,129 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
 
               <div className="p-3 rounded-xl bg-[#FAF9F6] border border-[#FFE6DC] text-[11px] text-[#57423D]">
                 Formula: <code className="font-bold text-[#A53B22]">Units = (Text × {textMultiplier}) + (Voice × {voiceMultiplier}) + (Actions × {toolMultiplier})</code>
+              </div>
+            </div>
+
+            {/* INFORMATIVE CONTAINER 1: DEVELOPER CREDIT ISOLATION & GRANDFATHERING ENGINE */}
+            <div className="bg-white p-6 sm:p-7 rounded-3xl border border-[#FFE6DC] shadow-sm flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-[#FFF8EB] border border-[#FDE047] flex items-center justify-center text-[#845400]">
+                    <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                  </div>
+                  <div>
+                    <h3 className="font-['Outfit'] font-bold text-sm text-[#1D1A23]">
+                      Credit Protection & Grandfathering Engine
+                    </h3>
+                    <p className="text-[11px] text-[#8B716B]">
+                      Zero Retroactive Deductions · Balance Integrity Policy
+                    </p>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-bold uppercase font-mono">
+                  ACID Sealed
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC] text-xs text-[#57423D] space-y-2.5">
+                <div className="font-bold text-[#1D1A23] flex items-center gap-1.5 text-xs">
+                  <span className="material-symbols-outlined text-[#006688] text-[16px]">info</span>
+                  <span>What happens when you adjust prices or units above?</span>
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  If a developer subscribed when <strong>Growth</strong> was ₹499 for 10,000 units, and you increase the price to ₹1,499 or adjust units:
+                </p>
+                <div className="grid grid-cols-1 gap-2 pt-1">
+                  <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white border border-[#FFE6DC]/80">
+                    <span className="material-symbols-outlined text-emerald-600 text-[16px] shrink-0 mt-0.5">check_circle</span>
+                    <div className="text-[11px] leading-relaxed">
+                      <strong className="text-[#1D1A23]">Purchased Balance Never Shrinks:</strong>
+                      <span className="text-[#57423D]"> All 10,000 units remain permanently credited in the developer's ledger (<code className="text-[#A53B22] font-mono text-[10px]">UsageMeter.bonus_units</code>) until fully consumed.</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white border border-[#FFE6DC]/80">
+                    <span className="material-symbols-outlined text-emerald-600 text-[16px] shrink-0 mt-0.5">check_circle</span>
+                    <div className="text-[11px] leading-relaxed">
+                      <strong className="text-[#1D1A23]">Zero Retroactive Charges:</strong>
+                      <span className="text-[#57423D]"> Razorpay payment was settled at checkout. The developer is never charged extra ₹1,000 retroactively.</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white border border-[#FFE6DC]/80">
+                    <span className="material-symbols-outlined text-emerald-600 text-[16px] shrink-0 mt-0.5">check_circle</span>
+                    <div className="text-[11px] leading-relaxed">
+                      <strong className="text-[#1D1A23]">Continuous Uninterrupted SLA:</strong>
+                      <span className="text-[#57423D]"> The application cluster continues running with active tier throughput. Updates apply exclusively to new checkout orders.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* INFORMATIVE CONTAINER 2: ANNUAL COMMITMENT & DEVELOPER RETENTION ENGINE */}
+            <div className="bg-white p-6 sm:p-7 rounded-3xl border border-[#FFE6DC] shadow-sm flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-[#FAF4FB] border border-purple-200 flex items-center justify-center text-purple-700">
+                    <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                  </div>
+                  <div>
+                    <h3 className="font-['Outfit'] font-bold text-sm text-[#1D1A23]">
+                      Annual Commitment & Perks Engine
+                    </h3>
+                    <p className="text-[11px] text-[#8B716B]">
+                      2 Months Free (~17% Discount) · 10x Upfront Cashflow
+                    </p>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 text-[9px] font-bold uppercase font-mono">
+                  LTV Booster
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-3 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC] flex flex-col gap-1">
+                  <span className="text-[10px] text-[#8B716B] uppercase font-bold">Growth Annual</span>
+                  <div className="font-['Outfit'] font-bold text-base text-[#1D1A23]">
+                    ₹{(baseTierPrice * 10).toLocaleString('en-IN')}<span className="text-[10px] text-[#57423D] font-normal">/yr</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-700 font-bold">
+                    Saves ₹{(baseTierPrice * 2).toLocaleString('en-IN')} (2 Mo Free)
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC] flex flex-col gap-1">
+                  <span className="text-[10px] text-[#8B716B] uppercase font-bold">Enterprise Annual</span>
+                  <div className="font-['Outfit'] font-bold text-base text-purple-900">
+                    ₹{(enterpriseTierPrice * 10).toLocaleString('en-IN')}<span className="text-[10px] text-[#57423D] font-normal">/yr</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-700 font-bold">
+                    Saves ₹{(enterpriseTierPrice * 2).toLocaleString('en-IN')} (2 Mo Free)
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-gradient-to-r from-[#FAF9F6] to-[#FFF8EB] border border-[#FFE6DC] flex flex-col gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#8B716B]">
+                  Configured Annual Perks for Developers
+                </span>
+                <ul className="text-[11px] text-[#57423D] space-y-1.5 list-none">
+                  <li className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[15px] text-[#A53B22]">check</span>
+                    <span><strong>Credit Rollover:</strong> Unspent monthly credits carry over without expiration</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[15px] text-[#A53B22]">check</span>
+                    <span><strong>Voice Clones:</strong> 3 Neural Voice Clone slots included (vs 1 on monthly)</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[15px] text-[#A53B22]">check</span>
+                    <span><strong>Concurrency:</strong> 50 concurrent channels (2x monthly limit)</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[15px] text-[#A53B22]">check</span>
+                    <span><strong>Priority Queue:</strong> Sub-650ms low-latency dedicated inference routing</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>

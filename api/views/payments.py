@@ -78,7 +78,10 @@ class RazorpayCreateOrderView(APIView):
         else:
             # Active Subscription Conflict Guard:
             current_tier = (app.plan_tier or 'FREE').upper()
-            if current_tier in ['GROWTH', 'GROWTH_STARTUP', 'STARTER'] and plan_tier in ['GROWTH_STARTUP', 'GROWTH', 'STARTER']:
+            is_growth_target = plan_tier in ['GROWTH_STARTUP', 'GROWTH', 'STARTER', 'GROWTH_STARTUP_ANNUAL']
+            is_enterprise_target = plan_tier in ['SCALE_ENTERPRISE', 'ENTERPRISE', 'SCALE_ENTERPRISE_ANNUAL']
+
+            if current_tier in ['GROWTH', 'GROWTH_STARTUP', 'STARTER'] and is_growth_target:
                 return Response({
                     'error': f"Application '{app.app_name}' is already actively subscribed to the Growth Startup plan. You cannot run duplicate subscriptions at the same time. You can either purchase immediate credit booster packs to expand quota, or upgrade to Scale Enterprise.",
                     'code': 'ALREADY_SUBSCRIBED',
@@ -88,7 +91,7 @@ class RazorpayCreateOrderView(APIView):
                     'can_upgrade': True,
                     'upgrade_target': 'SCALE_ENTERPRISE'
                 }, status=status.HTTP_400_BAD_REQUEST)
-            elif current_tier in ['ENTERPRISE', 'SCALE_ENTERPRISE'] and plan_tier in ['SCALE_ENTERPRISE', 'ENTERPRISE']:
+            elif current_tier in ['ENTERPRISE', 'SCALE_ENTERPRISE'] and is_enterprise_target:
                 return Response({
                     'error': f"Application '{app.app_name}' is already actively provisioned on the Scale Enterprise plan. To add more actions, please purchase a credit booster pack.",
                     'code': 'ALREADY_SUBSCRIBED',
@@ -98,13 +101,23 @@ class RazorpayCreateOrderView(APIView):
                     'can_upgrade': False
                 }, status=status.HTTP_400_BAD_REQUEST)
 
+            growth_annual_price = int(growth_price * 10)
+            enterprise_annual_price = int(enterprise_price * 10)
+
             plan_configs = {
                 'GROWTH_STARTUP': {
-                    'name': 'Growth Startup',
+                    'name': 'Growth Startup (Monthly)',
                     'price_inr': growth_price,
                     'amount_paise': int(growth_price * 100),
                     'units_credited': growth_units,
                     'description': f'{growth_units:,} units, {platform_config.grace_buffer_pct}% grace buffer, sub-850ms latency guarantee'
+                },
+                'GROWTH_STARTUP_ANNUAL': {
+                    'name': 'Growth Startup (Annual - 2 Mo Free)',
+                    'price_inr': growth_annual_price,
+                    'amount_paise': int(growth_annual_price * 100),
+                    'units_credited': growth_units * 12,
+                    'description': f'{growth_units * 12:,} units/yr (2 Mo Free), unspent rollover guarantee, 3 voice clones'
                 },
                 'STARTER': {
                     'name': 'Starter Tier',
@@ -114,11 +127,18 @@ class RazorpayCreateOrderView(APIView):
                     'description': f'{growth_units:,} units, community support'
                 },
                 'SCALE_ENTERPRISE': {
-                    'name': 'Scale Enterprise',
+                    'name': 'Scale Enterprise (Monthly)',
                     'price_inr': enterprise_price,
                     'amount_paise': int(enterprise_price * 100),
                     'units_credited': enterprise_units,
                     'description': f'{enterprise_units:,} units, air-gapped clusters, SLA guarantee'
+                },
+                'SCALE_ENTERPRISE_ANNUAL': {
+                    'name': 'Scale Enterprise (Annual - 2 Mo Free)',
+                    'price_inr': enterprise_annual_price,
+                    'amount_paise': int(enterprise_annual_price * 100),
+                    'units_credited': enterprise_units * 12,
+                    'description': f'{enterprise_units * 12:,} units/yr (2 Mo Free), air-gapped clusters, unlimited clones, 99.99% SLA'
                 }
             }
             plan_meta = plan_configs.get(plan_tier, plan_configs['GROWTH_STARTUP'])
@@ -262,9 +282,9 @@ class RazorpayVerifyView(APIView):
 
         if target_app:
             if not is_topup_order:
-                if order.plan_tier == 'SCALE_ENTERPRISE':
+                if order.plan_tier in ['SCALE_ENTERPRISE', 'SCALE_ENTERPRISE_ANNUAL']:
                     target_app.plan_tier = 'ENTERPRISE'
-                elif order.plan_tier in ['GROWTH_STARTUP', 'GROWTH', 'STARTER']:
+                elif order.plan_tier in ['GROWTH_STARTUP', 'GROWTH_STARTUP_ANNUAL', 'GROWTH', 'STARTER']:
                     target_app.plan_tier = 'GROWTH'
                 target_app.save()
 
@@ -286,8 +306,9 @@ class RazorpayVerifyView(APIView):
                 f"Payment ID: {payment_id}"
             )
             resp_message = f"Credit top-up successful! Added {order.units_credited:,} action units."
-        elif order.plan_tier == 'SCALE_ENTERPRISE':
-            notif_title = "Scale Enterprise Plan Activated!"
+        elif order.plan_tier in ['SCALE_ENTERPRISE', 'SCALE_ENTERPRISE_ANNUAL']:
+            is_annual = 'ANNUAL' in order.plan_tier
+            notif_title = f"Scale Enterprise {'(Annual)' if is_annual else ''} Plan Activated!"
             notif_msg = (
                 f"Your payment of ₹{order.amount / 100:,.2f} has been verified. "
                 f"Application '{target_app.app_name if target_app else 'Active Cluster'}' upgraded to Scale Enterprise with {order.units_credited:,} units credited. "
@@ -295,7 +316,8 @@ class RazorpayVerifyView(APIView):
             )
             resp_message = f"Scale Enterprise Plan activated! Application upgraded successfully."
         else:
-            notif_title = "Payment Successful - Growth Plan Activated!"
+            is_annual = 'ANNUAL' in order.plan_tier
+            notif_title = f"Growth Startup {'(Annual)' if is_annual else ''} Plan Activated!"
             notif_msg = (
                 f"Your payment of ₹{order.amount / 100:,.2f} has been verified successfully. "
                 f"{order.units_credited:,} units have been credited to application '{target_app.app_name if target_app else 'Active Cluster'}'. "
@@ -355,7 +377,10 @@ class RazorpayWebhookView(APIView):
                 order.razorpay_payment_id = payment_entity.get('id', '')
                 order.save()
                 if order.application:
-                    order.application.plan_tier = 'GROWTH'
+                    if order.plan_tier in ['SCALE_ENTERPRISE', 'SCALE_ENTERPRISE_ANNUAL']:
+                        order.application.plan_tier = 'ENTERPRISE'
+                    else:
+                        order.application.plan_tier = 'GROWTH'
                     order.application.save()
 
         return Response({'status': 'webhook received'}, status=status.HTTP_200_OK)

@@ -43,14 +43,17 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   // In-App Small Screen Popup for Free Plan Switch (replaces window.confirm)
   const [showFreeDowngradeModal, setShowFreeDowngradeModal] = useState<boolean>(false);
 
+  // Billing commitment cycle: Monthly vs Annual (2 Months Free / 20% discount)
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+
   const activeApp = applications.find((a) => a.id === activeAppId) || applications[0];
 
   // Helper to normalize tier representations
   const normalizeTier = (tier?: string): 'FREE' | 'GROWTH' | 'ENTERPRISE' => {
     if (!tier) return 'FREE';
     const t = String(tier).toUpperCase();
-    if (t === 'ENTERPRISE' || t === 'SCALE_ENTERPRISE') return 'ENTERPRISE';
-    if (t === 'GROWTH' || t === 'GROWTH_STARTUP' || t === 'STARTER') return 'GROWTH';
+    if (t.includes('ENTERPRISE')) return 'ENTERPRISE';
+    if (t.includes('GROWTH') || t.includes('STARTER')) return 'GROWTH';
     return 'FREE';
   };
 
@@ -291,6 +294,10 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   const voiceMultiplierVal = Number(platformConfig?.voice_multiplier || 2.0);
   const toolMultiplierVal = Number(platformConfig?.tool_multiplier || 3.0);
 
+  const isAnnual = billingCycle === 'annual';
+  const growthAnnualPrice = Math.round(growthPrice * 10);
+  const enterpriseAnnualPrice = Math.round(enterprisePrice * 10);
+
   const plans = [
     {
       id: 'FREE',
@@ -311,42 +318,73 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       cta: 'Free Tier',
     },
     {
-      id: 'GROWTH_STARTUP',
-      name: 'Growth Startup',
+      id: isAnnual ? 'GROWTH_STARTUP_ANNUAL' : 'GROWTH_STARTUP',
+      name: isAnnual ? 'Growth Startup (Annual)' : 'Growth Startup',
       normalizedTier: 'GROWTH',
-      price: growthPrice,
-      priceLabel: `₹${growthPrice.toLocaleString('en-IN')}`,
-      period: '/mo',
-      description: 'Engineered for production apps needing reliability, instant action dispatch, and sub-850ms latency.',
-      features: [
-        `${growthUnits.toLocaleString('en-IN')} units included / month`,
-        `${gracePct}% Grace Unit Buffer (Never Drops Callers)`,
-        '25 Concurrent Voice Channels',
-        'Sub-850ms end-to-end latency guarantee',
-        '6-Second Instant Neural Voice Clone',
-        'Priority WhatsApp & Slack Bridge',
-      ],
+      price: isAnnual ? growthAnnualPrice : growthPrice,
+      priceLabel: isAnnual ? `₹${growthAnnualPrice.toLocaleString('en-IN')}` : `₹${growthPrice.toLocaleString('en-IN')}`,
+      period: isAnnual ? '/ year' : '/ mo',
+      effectiveMonthly: isAnnual ? `₹${Math.round(growthAnnualPrice / 12).toLocaleString('en-IN')} / mo (billed annually)` : undefined,
+      savingsBadge: isAnnual ? `Save ₹${(growthPrice * 2).toLocaleString('en-IN')} (2 Months Free)` : undefined,
+      description: isAnnual
+        ? 'Best value for production applications. Annual commitment with unspent credits rollover and 3 neural voice clones.'
+        : 'Engineered for production apps needing reliability, instant action dispatch, and sub-850ms latency.',
+      features: isAnnual
+        ? [
+            `${(growthUnits * 12).toLocaleString('en-IN')} units / year included`,
+            '🎁 2 Full Months Free (~17% Immediate Savings)',
+            '🔄 Unspent Credit Rollover Guarantee (Never expires)',
+            '🎙️ 3 Instant Neural Voice Clone Slots (vs 1 on monthly)',
+            '⚡ Sub-650ms Priority Speech Pipeline Guarantee',
+            '📞 50 Concurrent Channels (2x monthly limit)',
+            `${gracePct}% Grace Unit Buffer (Never Drops Callers)`,
+            'Priority WhatsApp & Slack Bridge Support',
+          ]
+        : [
+            `${growthUnits.toLocaleString('en-IN')} units included / month`,
+            `${gracePct}% Grace Unit Buffer (Never Drops Callers)`,
+            '25 Concurrent Voice Channels',
+            'Sub-850ms end-to-end latency guarantee',
+            '6-Second Instant Neural Voice Clone',
+            'Priority WhatsApp & Slack Bridge',
+          ],
       popular: true,
-      cta: 'Deploy Growth Plan',
+      cta: isAnnual ? 'Deploy Annual Growth' : 'Deploy Growth Plan',
     },
     {
-      id: 'SCALE_ENTERPRISE',
-      name: 'Scale Enterprise',
+      id: isAnnual ? 'SCALE_ENTERPRISE_ANNUAL' : 'SCALE_ENTERPRISE',
+      name: isAnnual ? 'Scale Enterprise (Annual)' : 'Scale Enterprise',
       normalizedTier: 'ENTERPRISE',
-      price: enterprisePrice,
-      priceLabel: `₹${enterprisePrice.toLocaleString('en-IN')}`,
-      period: '/mo',
-      description: 'Dedicated air-gapped clusters for scaled customer support and high-throughput voice actions.',
-      features: [
-        `${enterpriseUnits.toLocaleString('en-IN')} units included / month`,
-        'Unlimited Concurrent Voice Channels',
-        '99.98% High Availability SLA Guarantee',
-        'Dedicated isolated SQLite/pgvector DB',
-        'Custom Webhook & CRM Integrations',
-        '24/7 Dedicated Engineering Lead Support',
-      ],
+      price: isAnnual ? enterpriseAnnualPrice : enterprisePrice,
+      priceLabel: isAnnual ? `₹${enterpriseAnnualPrice.toLocaleString('en-IN')}` : `₹${enterprisePrice.toLocaleString('en-IN')}`,
+      period: isAnnual ? '/ year' : '/ mo',
+      effectiveMonthly: isAnnual ? `₹${Math.round(enterpriseAnnualPrice / 12).toLocaleString('en-IN')} / mo (billed annually)` : undefined,
+      savingsBadge: isAnnual ? `Save ₹${(enterprisePrice * 2).toLocaleString('en-IN')} (2 Months Free)` : undefined,
+      description: isAnnual
+        ? 'Dedicated high-throughput voice clusters with maximum SLA guarantees, custom DPAs, and unlimited clones.'
+        : 'Dedicated air-gapped clusters for scaled customer support and high-throughput voice actions.',
+      features: isAnnual
+        ? [
+            `${(enterpriseUnits * 12).toLocaleString('en-IN')} units / year included`,
+            `🎁 Save ₹${(enterprisePrice * 2).toLocaleString('en-IN')} with 2 Months Free`,
+            '🔄 100% Unspent Quota Rollover into next year',
+            '🎙️ Unlimited Instant Neural Voice Clones',
+            '📞 Unlimited Concurrent Voice Channels',
+            '⚡ 99.99% High Availability SLA Guarantee',
+            '🛡️ Dedicated isolated SQLite / pgvector Cluster',
+            '👨‍💻 24/7 Dedicated Engineering Lead + Private Slack',
+            '📑 Custom Enterprise DPA & Invoice GST Billing',
+          ]
+        : [
+            `${enterpriseUnits.toLocaleString('en-IN')} units included / month`,
+            'Unlimited Concurrent Voice Channels',
+            '99.98% High Availability SLA Guarantee',
+            'Dedicated isolated SQLite/pgvector DB',
+            'Custom Webhook & CRM Integrations',
+            '24/7 Dedicated Engineering Lead Support',
+          ],
       popular: false,
-      cta: 'Deploy Enterprise Plan',
+      cta: isAnnual ? 'Deploy Annual Enterprise' : 'Deploy Enterprise Plan',
     },
   ];
 
@@ -507,6 +545,48 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         </div>
       )}
 
+      {/* Billing Cycle Switcher (Monthly vs Annual with 2 Months Free / 20% discount badge) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:p-5 rounded-3xl bg-white border border-[#FFE6DC] shadow-xs">
+        <div>
+          <span className="font-['Outfit'] font-bold text-sm sm:text-base text-[#1D1A23] block">
+            Select Billing Commitment
+          </span>
+          <p className="text-xs text-[#57423D]">
+            Switch to annual billing to unlock <strong className="text-[#A53B22]">2 months free</strong> (~17% discount) and credit rollover protection.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1.5 p-1 bg-[#FAF9F6] border border-[#FFE6DC] rounded-full shrink-0">
+          <button
+            type="button"
+            onClick={() => setBillingCycle('monthly')}
+            className={`px-4 py-2 rounded-full text-xs font-bold font-['Outfit'] transition-all ${
+              billingCycle === 'monthly'
+                ? 'bg-[#1D1A23] text-white shadow-xs'
+                : 'text-[#57423D] hover:text-[#1D1A23]'
+            }`}
+          >
+            Monthly Billing
+          </button>
+          <button
+            type="button"
+            onClick={() => setBillingCycle('annual')}
+            className={`px-4 py-2 rounded-full text-xs font-bold font-['Outfit'] transition-all flex items-center gap-1.5 ${
+              billingCycle === 'annual'
+                ? 'bg-gradient-to-r from-[#FF7E5F] to-[#FF5F45] text-white shadow-sm'
+                : 'text-[#A53B22] hover:text-[#84240D]'
+            }`}
+          >
+            <span>Annual Billing</span>
+            <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase font-mono ${
+              billingCycle === 'annual' ? 'bg-white/20 text-white' : 'bg-[#FFDAD2] text-[#84240D]'
+            }`}>
+              2 Mo Free 🎁
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* Pricing Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
         {plans.map((plan) => {
@@ -544,6 +624,19 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                   </span>
                   <span className="text-xs text-[#8B716B]">{plan.period}</span>
                 </div>
+
+                {(plan as any).effectiveMonthly && (
+                  <div className="mb-3 -mt-1 flex flex-col gap-1">
+                    <span className="text-[11px] font-semibold text-[#845400]">
+                      {(plan as any).effectiveMonthly}
+                    </span>
+                    {(plan as any).savingsBadge && (
+                      <span className="inline-flex self-start px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">
+                        {(plan as any).savingsBadge}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <p className="text-xs text-[#57423D] mb-6 leading-relaxed">
                   {plan.description}
