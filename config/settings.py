@@ -202,9 +202,9 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '').strip().replace(' ', 
 
 _default_from = os.getenv('DEFAULT_FROM_EMAIL', '').strip()
 if EMAIL_HOST_USER and ('gmail' in _email_host.lower() or not _default_from):
-    DEFAULT_FROM_EMAIL = f"T-AT-S Telephony <{EMAIL_HOST_USER}>"
+    DEFAULT_FROM_EMAIL = f"T @ S <{EMAIL_HOST_USER}>"
 else:
-    DEFAULT_FROM_EMAIL = _default_from or 'T-AT-S Telephony <noreply@tats.ai>'
+    DEFAULT_FROM_EMAIL = _default_from or 'T @ S <noreply@tats.ai>'
 
 # Razorpay Payment Gateway Settings
 RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', '')

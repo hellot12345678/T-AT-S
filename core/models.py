@@ -407,14 +407,14 @@ class EmailOTPVerification(models.Model):
         purpose_title, purpose_desc = purpose_labels.get(purpose, ('Developer Verification Code', 'Authenticate your session on T-AT-S.'))
 
         subject_map = {
-            'REGISTER': 'Verify your T-AT-S Account - Verification Code',
-            'LOGIN': 'Your T-AT-S Login Verification Code',
-            'FORGOT_PASSWORD': 'Reset your T-AT-S Password - Verification Code',
+            'REGISTER': 'Verify your T @ S Account - Verification Code',
+            'LOGIN': 'Your T @ S Login Verification Code',
+            'FORGOT_PASSWORD': 'Reset your T @ S Password - Verification Code',
         }
-        subject = subject_map.get(purpose, f'T-AT-S Verification Code: {raw_otp}')
+        subject = subject_map.get(purpose, f'T @ S Verification Code: {raw_otp}')
 
         plain_message = (
-            f"T-AT-S (Talk. Decide. Solve.) — Autonomous Telephony System\n"
+            f"T @ S (Talk. Decide. Solve.) — Autonomous Telephony System\n"
             f"===========================================================\n\n"
             f"{purpose_title}\n"
             f"{purpose_desc}\n\n"
@@ -425,7 +425,7 @@ class EmailOTPVerification(models.Model):
             f"• If you did not request this, please disregard this email.\n\n"
             f"Account: {email}\n"
             f"Generated: {timezone.now().strftime('%d %b %Y, %H:%M UTC')}\n\n"
-            f"— The T-AT-S Platform Engineering Team\n"
+            f"— The T @ S Platform Engineering Team\n"
             f"Support: ts.help2407@gmail.com\n"
         )
 
@@ -463,7 +463,7 @@ class EmailOTPVerification(models.Model):
     <div class="wrapper">
       <div class="header">
         <div class="logo-badge">Autonomous Telephony Platform</div>
-        <h1 class="brand-title">T · AT · S</h1>
+        <h1 class="brand-title">T @ S</h1>
         <p class="brand-tagline">Talk. Decide. Solve. &middot; Voice Agentic Intelligence</p>
       </div>
 
@@ -480,7 +480,7 @@ class EmailOTPVerification(models.Model):
         </div>
 
         <div class="security-note">
-          <strong>Security Notice:</strong> Never share this code with anyone. T-AT-S engineers and platform operators will never request your verification passcode via email, telephone, or Discord.
+          <strong>Security Notice:</strong> Never share this code with anyone. T @ S engineers and platform operators will never request your verification passcode via email, telephone, or Discord.
         </div>
 
         <table class="meta-table" cellpadding="0" cellspacing="0">
@@ -506,7 +506,7 @@ class EmailOTPVerification(models.Model):
           <a href="mailto:ts.help2407@gmail.com">Engineering Support</a>
         </div>
         <p style="margin: 10px 0 0;">
-          T-AT-S (Talk. Decide. Solve.) &middot; High-Throughput Sub-850ms Voice AI Infrastructure<br>
+          T @ S (Talk. Decide. Solve.) &middot; High-Throughput Sub-850ms Voice AI Infrastructure<br>
           Sent to {email} &middot; If you did not initiate this request, you can safely ignore this email.
         </p>
       </div>
@@ -522,7 +522,7 @@ class EmailOTPVerification(models.Model):
                 send_mail(
                     subject=subject,
                     message=plain_message,
-                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'T-AT-S Support <noreply@tats.ai>'),
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'T @ S <noreply@tats.ai>'),
                     recipient_list=[email],
                     html_message=html_message,
                     fail_silently=False
