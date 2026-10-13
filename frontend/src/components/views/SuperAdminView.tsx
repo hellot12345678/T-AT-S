@@ -143,7 +143,9 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
 
   // Pricing & units state
   const [baseTierPrice, setBaseTierPrice] = useState<number>(1999);
+  const [growthTierUnits, setGrowthTierUnits] = useState<number>(50000);
   const [enterpriseTierPrice, setEnterpriseTierPrice] = useState<number>(14999);
+  const [enterpriseTierUnits, setEnterpriseTierUnits] = useState<number>(250000);
   const [freeAllowance, setFreeAllowance] = useState<number>(2000);
   const [gracePercent, setGracePercent] = useState<number>(10);
   const [overageUnitCost, setOverageUnitCost] = useState<number>(0.35);
@@ -185,7 +187,9 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
       if (config) {
         if (config.growth_price_inr) setBaseTierPrice(Number(config.growth_price_inr));
         else if (config.starter_price_inr) setBaseTierPrice(Number(config.starter_price_inr));
+        if (config.growth_tier_units) setGrowthTierUnits(Number(config.growth_tier_units));
         if (config.enterprise_price_inr) setEnterpriseTierPrice(Number(config.enterprise_price_inr));
+        if (config.enterprise_tier_units) setEnterpriseTierUnits(Number(config.enterprise_tier_units));
         if (config.free_tier_units) setFreeAllowance(Number(config.free_tier_units));
         if (config.grace_buffer_pct) setGracePercent(Number(config.grace_buffer_pct));
         if (config.cost_per_extra_unit) setOverageUnitCost(Number(config.cost_per_extra_unit));
@@ -202,7 +206,9 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
     const payload = {
       starter_price_inr: baseTierPrice,
       growth_price_inr: baseTierPrice,
+      growth_tier_units: growthTierUnits,
       enterprise_price_inr: enterpriseTierPrice,
+      enterprise_tier_units: enterpriseTierUnits,
       free_tier_units: freeAllowance,
       grace_buffer_pct: gracePercent,
       cost_per_extra_unit: overageUnitCost,
@@ -1270,65 +1276,288 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                 </div>
               </div>
 
-              {/* Slider 1: Growth Startup Monthly Plan Fee */}
-              <div className="flex flex-col gap-2 bg-[#FAF9F6] p-4 rounded-2xl border border-[#FFE6DC]">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-[#1D1A23] flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[16px] text-[#A53B22]">payments</span>
-                    Growth Startup Plan Fee (Base App Tier)
-                  </label>
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-['Outfit'] text-xl font-bold text-[#A53B22]">
-                      ₹{baseTierPrice.toLocaleString('en-IN')}
-                    </span>
-                    <span className="text-xs text-[#57423D]">/ mo per app</span>
+              {/* 1. GROWTH STARTUP PLAN CONTROLS (FEE + UNITS QUOTA ENGINE) */}
+              <div className="flex flex-col gap-3 bg-[#FAF9F6] p-4 sm:p-5 rounded-2xl border border-[#FFE6DC]">
+                <div className="flex items-center justify-between pb-2 border-b border-[#FFE6DC]">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-[#A53B22]">payments</span>
+                    <span className="font-['Outfit'] font-bold text-sm text-[#1D1A23]">Growth Startup Plan Tuning</span>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#FFDAD2] text-[#84240D] font-mono text-[10px] font-bold uppercase">
+                    Tier 2 Cluster
+                  </span>
+                </div>
+
+                {/* Growth Fee Slider */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold text-[#57423D]">Monthly Base Plan Fee</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-['Outfit'] text-xl font-extrabold text-[#A53B22]">
+                        ₹{baseTierPrice.toLocaleString('en-IN')}
+                      </span>
+                      <span className="text-xs text-[#57423D]">/ mo</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min={499}
+                    max={14999}
+                    step={250}
+                    value={baseTierPrice}
+                    onChange={(e) => setBaseTierPrice(Number(e.target.value))}
+                    className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#FF7E5F]"
+                  />
+                  <div className="flex justify-between text-[10px] text-[#8B716B] font-mono">
+                    <span>₹499 (Min Base)</span>
+                    <span>₹1,999 (Current)</span>
+                    <span>₹4,999 (Default)</span>
+                    <span>₹14,999 (Max)</span>
                   </div>
                 </div>
-                <input
-                  type="range"
-                  min={499}
-                  max={14999}
-                  step={250}
-                  value={baseTierPrice}
-                  onChange={(e) => setBaseTierPrice(Number(e.target.value))}
-                  className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#FF7E5F]"
-                />
-                <div className="flex justify-between text-[11px] text-[#8B716B] font-mono">
-                  <span>₹499 (Min)</span>
-                  <span>₹1,999 (Current Tier)</span>
-                  <span>₹4,999 (Default)</span>
-                  <span>₹14,999 (Max)</span>
+
+                {/* Growth Included Units Quota Slider */}
+                <div className="flex flex-col gap-1.5 pt-2 border-t border-[#FFE6DC]/60">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold text-[#57423D] flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[15px] text-[#845400]">token</span>
+                      Included Action Units Quota
+                    </span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-['Outfit'] text-xl font-extrabold text-[#845400]">
+                        {growthTierUnits.toLocaleString('en-IN')}
+                      </span>
+                      <span className="text-xs text-[#57423D]">units / mo</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min={5000}
+                    max={150000}
+                    step={2500}
+                    value={growthTierUnits}
+                    onChange={(e) => setGrowthTierUnits(Number(e.target.value))}
+                    className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#FFAE33]"
+                  />
+                  <div className="flex justify-between text-[10px] text-[#8B716B] font-mono">
+                    <span>5,000 units</span>
+                    <span>25,000 units</span>
+                    <span>50,000 units (Standard)</span>
+                    <span>150,000 units</span>
+                  </div>
                 </div>
+
+                {/* Dynamic Affordability & Unit Economics Diagnostic Box */}
+                {(() => {
+                  const effectiveRate = baseTierPrice / Math.max(1, growthTierUnits);
+                  const isUnviable = effectiveRate < 0.025; // Less than 2.5 paise per unit
+                  const isModerate = effectiveRate >= 0.025 && effectiveRate < 0.045;
+                  const suggestedUnits = Math.max(5000, Math.round((baseTierPrice / 0.04) / 2500) * 2500);
+
+                  return (
+                    <div
+                      className={`p-3 rounded-xl border flex flex-col gap-2 transition-all ${
+                        isUnviable
+                          ? 'bg-rose-50/80 border-rose-200 text-rose-950'
+                          : isModerate
+                          ? 'bg-amber-50/80 border-amber-200 text-amber-950'
+                          : 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-xs font-bold font-['Outfit']">
+                          <span className="material-symbols-outlined text-[16px]">
+                            {isUnviable ? 'warning' : isModerate ? 'info' : 'verified'}
+                          </span>
+                          <span>Unit Economics Check</span>
+                        </div>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase font-mono ${
+                            isUnviable
+                              ? 'bg-rose-200 text-rose-900'
+                              : isModerate
+                              ? 'bg-amber-200 text-amber-900'
+                              : 'bg-emerald-200 text-emerald-900'
+                          }`}
+                        >
+                          {isUnviable ? 'Unviable Quota' : isModerate ? 'Tight Margin' : 'Sustainable Margin'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[11px]">Effective Pay per Unit:</span>
+                        <span className="font-mono font-bold text-xs">
+                          ₹{effectiveRate.toFixed(4)} / unit
+                        </span>
+                      </div>
+
+                      {isUnviable ? (
+                        <div className="flex flex-col gap-2 pt-1 border-t border-rose-200/80 text-[11px] leading-relaxed">
+                          <p>
+                            ⚠️ <strong>Affordability Alert:</strong> At ₹{baseTierPrice} base pay, offering {growthTierUnits.toLocaleString('en-IN')} units yields only ₹{effectiveRate.toFixed(4)}/unit. Since platform speech AI inference costs ~₹0.035/unit, this quota cannot be afforded without losses.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setGrowthTierUnits(suggestedUnits)}
+                              className="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] transition-all flex items-center gap-1 shadow-sm"
+                            >
+                              <span className="material-symbols-outlined text-[13px]">auto_fix_high</span>
+                              <span>Auto-Align to ₹{baseTierPrice} (Set {suggestedUnits.toLocaleString('en-IN')} Units)</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between pt-1 border-t border-emerald-200/60 text-[11px]">
+                          <span>Quota is viable and commercially sustainable.</span>
+                          <button
+                            type="button"
+                            onClick={() => setGrowthTierUnits(suggestedUnits)}
+                            className="text-[10px] font-bold text-emerald-800 hover:underline flex items-center gap-0.5"
+                          >
+                            <span>Align to ₹0.04/unit target ({suggestedUnits.toLocaleString('en-IN')} units)</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Quick Quota Preset Chips */}
+                      <div className="flex items-center gap-1.5 pt-1.5 border-t border-current/10 flex-wrap">
+                        <span className="text-[10px] font-bold uppercase text-[#8B716B]">Presets:</span>
+                        {[10000, 25000, 50000, 75000, 100000].map((presetUnits) => (
+                          <button
+                            key={presetUnits}
+                            type="button"
+                            onClick={() => setGrowthTierUnits(presetUnits)}
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold transition-all ${
+                              growthTierUnits === presetUnits
+                                ? 'bg-[#1D1A23] text-white shadow-xs'
+                                : 'bg-white/80 hover:bg-white text-[#57423D] border border-current/20'
+                            }`}
+                          >
+                            {(presetUnits / 1000)}k units
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
-              {/* Slider 1b: Scale Enterprise Plan Fee */}
-              <div className="flex flex-col gap-2 bg-[#FAF9F6] p-4 rounded-2xl border border-[#FFE6DC]">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-[#1D1A23] flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[16px] text-[#1D1A23]">apartment</span>
-                    Scale Enterprise Plan Fee
-                  </label>
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-['Outfit'] text-xl font-bold text-[#1D1A23]">
-                      ₹{enterpriseTierPrice.toLocaleString('en-IN')}
-                    </span>
-                    <span className="text-xs text-[#57423D]">/ mo</span>
+              {/* 2. SCALE ENTERPRISE PLAN CONTROLS (FEE + UNITS QUOTA ENGINE) */}
+              <div className="flex flex-col gap-3 bg-[#FAF9F6] p-4 sm:p-5 rounded-2xl border border-[#FFE6DC]">
+                <div className="flex items-center justify-between pb-2 border-b border-[#FFE6DC]">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-[#1D1A23]">apartment</span>
+                    <span className="font-['Outfit'] font-bold text-sm text-[#1D1A23]">Scale Enterprise Plan Tuning</span>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-900 font-mono text-[10px] font-bold uppercase">
+                    Tier 3 High-Volume
+                  </span>
+                </div>
+
+                {/* Enterprise Fee Slider */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold text-[#57423D]">Monthly Enterprise Plan Fee</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-['Outfit'] text-xl font-extrabold text-[#1D1A23]">
+                        ₹{enterpriseTierPrice.toLocaleString('en-IN')}
+                      </span>
+                      <span className="text-xs text-[#57423D]">/ mo</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min={4999}
+                    max={49999}
+                    step={1000}
+                    value={enterpriseTierPrice}
+                    onChange={(e) => setEnterpriseTierPrice(Number(e.target.value))}
+                    className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#1D1A23]"
+                  />
+                  <div className="flex justify-between text-[10px] text-[#8B716B] font-mono">
+                    <span>₹4,999 (Min Base)</span>
+                    <span>₹14,999 (Standard)</span>
+                    <span>₹49,999 (Dedicated)</span>
                   </div>
                 </div>
-                <input
-                  type="range"
-                  min={4999}
-                  max={49999}
-                  step={1000}
-                  value={enterpriseTierPrice}
-                  onChange={(e) => setEnterpriseTierPrice(Number(e.target.value))}
-                  className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#1D1A23]"
-                />
-                <div className="flex justify-between text-[11px] text-[#8B716B] font-mono">
-                  <span>₹4,999 (Min)</span>
-                  <span>₹14,999 (Standard Enterprise)</span>
-                  <span>₹49,999 (Custom Air-Gap)</span>
+
+                {/* Enterprise Included Units Quota Slider */}
+                <div className="flex flex-col gap-1.5 pt-2 border-t border-[#FFE6DC]/60">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold text-[#57423D] flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[15px] text-purple-700">token</span>
+                      Enterprise Action Units Quota
+                    </span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-['Outfit'] text-xl font-extrabold text-purple-900">
+                        {enterpriseTierUnits.toLocaleString('en-IN')}
+                      </span>
+                      <span className="text-xs text-[#57423D]">units / mo</span>
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min={50000}
+                    max={1000000}
+                    step={25000}
+                    value={enterpriseTierUnits}
+                    onChange={(e) => setEnterpriseTierUnits(Number(e.target.value))}
+                    className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-purple-800"
+                  />
+                  <div className="flex justify-between text-[10px] text-[#8B716B] font-mono">
+                    <span>50,000 units</span>
+                    <span>250,000 units (Standard)</span>
+                    <span>500,000 units</span>
+                    <span>1,000,000 units</span>
+                  </div>
                 </div>
+
+                {/* Enterprise Unit Economics Diagnostic Box */}
+                {(() => {
+                  const effectiveEntRate = enterpriseTierPrice / Math.max(1, enterpriseTierUnits);
+                  const suggestedEntUnits = Math.max(50000, Math.round((enterpriseTierPrice / 0.05) / 25000) * 25000);
+
+                  return (
+                    <div className="p-3 rounded-xl bg-purple-50/70 border border-purple-200 text-purple-950 flex flex-col gap-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[11px] font-bold">Enterprise Effective Rate:</span>
+                        <span className="font-mono font-bold text-xs">
+                          ₹{effectiveEntRate.toFixed(4)} / unit
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span>High-volume SLA with air-gapped cluster guarantees.</span>
+                        <button
+                          type="button"
+                          onClick={() => setEnterpriseTierUnits(suggestedEntUnits)}
+                          className="text-[10px] font-bold text-purple-800 hover:underline flex items-center gap-0.5"
+                        >
+                          <span>Auto-Align to Price ({suggestedEntUnits.toLocaleString('en-IN')} units)</span>
+                        </button>
+                      </div>
+
+                      {/* Quick Presets */}
+                      <div className="flex items-center gap-1.5 pt-1.5 border-t border-purple-200/60 flex-wrap">
+                        <span className="text-[10px] font-bold uppercase text-[#8B716B]">Presets:</span>
+                        {[100000, 250000, 500000, 1000000].map((presetUnits) => (
+                          <button
+                            key={presetUnits}
+                            type="button"
+                            onClick={() => setEnterpriseTierUnits(presetUnits)}
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold transition-all ${
+                              enterpriseTierUnits === presetUnits
+                                ? 'bg-purple-900 text-white shadow-xs'
+                                : 'bg-white hover:bg-purple-100 text-[#57423D] border border-purple-200'
+                            }`}
+                          >
+                            {presetUnits >= 1000000 ? '1M units' : `${presetUnits / 1000}k units`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Slider 2: Monthly Free Voice Units */}

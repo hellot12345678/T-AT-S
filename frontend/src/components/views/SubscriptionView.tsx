@@ -691,7 +691,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                     </div>
                     <h4 className="font-bold text-sm text-[#1D1A23]">Upgrade to Scale Enterprise</h4>
                     <p className="text-[11px] text-[#57423D] mt-1.5 leading-relaxed">
-                      Transition immediately to Enterprise throughput (250,000 units/mo, air-gapped isolation). All unspent Growth credits roll forward seamlessly into your new balance.
+                      Transition immediately to Enterprise throughput ({enterpriseUnits.toLocaleString('en-IN')} units/mo, air-gapped isolation). All unspent Growth credits roll forward seamlessly into your new balance.
                     </p>
                   </div>
                   <button

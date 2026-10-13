@@ -110,8 +110,8 @@ class RazorpayCreateOrderView(APIView):
                     'name': 'Starter Tier',
                     'price_inr': growth_price,
                     'amount_paise': int(growth_price * 100),
-                    'units_credited': 10000,
-                    'description': '10,000 units, community support'
+                    'units_credited': growth_units,
+                    'description': f'{growth_units:,} units, community support'
                 },
                 'SCALE_ENTERPRISE': {
                     'name': 'Scale Enterprise',

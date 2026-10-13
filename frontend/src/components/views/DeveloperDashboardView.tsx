@@ -179,32 +179,43 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
             </p>
           </div>
 
-          {/* Quick Header Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2 self-start lg:self-center">
+          {/* Quick Header Action Shortcuts (2x2 Grid on Right Side - Image 1) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 lg:ml-auto lg:self-center shrink-0">
+            {/* 1. Regenerate API Key */}
             <button
+              type="button"
               onClick={handleRegenerateKey}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] text-[#1D1A23] text-xs font-semibold border border-[#FFE6DC] transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white hover:bg-[#FAF9F6] text-[#1D1A23] text-xs font-semibold border border-[#FFE6DC] shadow-sm hover:border-[#FFDAD2] transition-all"
             >
-              <span className="material-symbols-outlined text-[16px] text-[#A53B22]">key</span>
+              <span className="material-symbols-outlined text-[17px] text-[#A53B22]">key</span>
               <span>Regenerate API Key</span>
             </button>
+
+            {/* 2. Deploy Tool Schema */}
             <button
+              type="button"
               onClick={handleDeploySchema}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] text-[#1D1A23] text-xs font-semibold border border-[#FFE6DC] transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white hover:bg-[#FAF9F6] text-[#1D1A23] text-xs font-semibold border border-[#FFE6DC] shadow-sm hover:border-[#FFDAD2] transition-all"
             >
-              <span className="material-symbols-outlined text-[16px] text-[#006688]">data_object</span>
+              <span className="material-symbols-outlined text-[17px] text-[#006688]">data_object</span>
               <span>Deploy Tool Schema</span>
             </button>
+
+            {/* 3. Tool Builder */}
             <button
+              type="button"
               onClick={() => onNavigate('visual-tool-builder')}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] text-[#1D1A23] text-xs font-semibold border border-[#FFE6DC] transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white hover:bg-[#FAF9F6] text-[#1D1A23] text-xs font-semibold border border-[#FFE6DC] shadow-sm hover:border-[#FFDAD2] transition-all"
             >
-              <span className="material-symbols-outlined text-[16px] text-[#845400]">account_tree</span>
+              <span className="material-symbols-outlined text-[17px] text-[#845400]">account_tree</span>
               <span>Tool Builder</span>
             </button>
+
+            {/* 4. Test in Playground (Coral Gradient Pill) */}
             <button
+              type="button"
               onClick={() => onNavigate('live-voice-playground')}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FF5F45] text-white text-xs font-bold shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FF543E] hover:from-[#FF543E] hover:to-[#FFAE33] text-white text-xs font-bold shadow-md shadow-[#FF543E]/25 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <span className="material-symbols-outlined text-[18px]">mic</span>
               <span>Test in Playground</span>

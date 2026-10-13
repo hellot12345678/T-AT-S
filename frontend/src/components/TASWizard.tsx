@@ -119,7 +119,7 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
     const voiceTier = selectedPersona === 'clone' ? 'CLONED' : selectedPersona === 'aura' ? 'LIBRARY' : 'BROWSER';
     const updatedConfig = {
       wakeWord: wakeWord.trim() || 'Hey Acme',
-      passphrase: passphrase.trim() || 'Blue Phoenix Alpha',
+      passphrase: passphrase.trim() || (hasExistingConfig ? '' : 'Blue Phoenix Alpha'),
       selectedPersona,
       savedAt: new Date().toISOString()
     };
@@ -128,11 +128,14 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
     } catch {}
 
     try {
-      await TATSBackendAPI.saveUserConfig('default_user', {
+      const payload: any = {
         wake_word: updatedConfig.wakeWord,
-        passphrase: updatedConfig.passphrase,
         voice_tier: voiceTier
-      });
+      };
+      if (passphrase.trim()) {
+        payload.passphrase = passphrase.trim();
+      }
+      await TATSBackendAPI.saveUserConfig('default_user', payload);
       if (onSuccessToast) {
         onSuccessToast(`Acoustic settings updated! Wake phrase "${updatedConfig.wakeWord}" active.`);
       }
@@ -162,7 +165,7 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
     }
 
     if (currentStep === 3) {
-      if (!passphrase.trim() || passphrase.trim().length < 4) {
+      if (!hasExistingConfig && (!passphrase.trim() || passphrase.trim().length < 4)) {
         if (onSuccessToast) onSuccessToast('Please enter a secure biometric passphrase (at least 4 characters).');
         return;
       }
@@ -189,7 +192,7 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/45 backdrop-blur-md animate-in fade-in duration-200">
       <div className="fixed inset-0" onClick={onClose} />
 
       {/* Modal Card Shell */}
@@ -224,63 +227,64 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
         </div>
 
         {showConfiguredOverview ? (
-          /* CONFIGURATION ACTIVE & OVERVIEW SCREEN */
-          <div className="p-6 sm:p-10 flex flex-col items-center text-center gap-6 animate-in fade-in zoom-in-95 duration-200">
-            {/* Status Icon */}
-            <div className="relative">
-              <div className="w-20 h-20 rounded-3xl bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center text-emerald-600 shadow-lg shadow-emerald-500/10">
-                <span className="material-symbols-outlined text-[42px]">verified</span>
+          /* CONFIGURATION ACTIVE & OVERVIEW SCREEN (Matches Image 2) */
+          <div className="p-6 sm:p-10 flex flex-col items-center text-center gap-6 animate-in fade-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto">
+            {/* Status Icon with Glowing Dot */}
+            <div className="relative my-1">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-emerald-50 border-2 border-emerald-300 flex items-center justify-center text-emerald-600 shadow-md shadow-emerald-500/10">
+                <span className="material-symbols-outlined text-[36px] sm:text-[42px]">verified</span>
               </div>
               <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
               </span>
             </div>
 
             {/* Headline & Description */}
-            <div className="max-w-md">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/70 text-emerald-800 text-[11px] font-bold font-['Outfit'] uppercase tracking-wider mb-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                Configuration Data Stored & Active
+            <div className="max-w-lg flex flex-col items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/70 text-emerald-800 text-[11px] font-bold font-['Outfit'] uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                CONFIGURATION DATA STORED & ACTIVE
               </div>
               <h2 className="font-['Outfit'] text-2xl sm:text-3xl font-extrabold text-[#1D1A23] tracking-tight">
                 Agent Parameters Already Configured
               </h2>
-              <p className="text-xs sm:text-sm text-[#57423D] mt-2 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#57423D] leading-relaxed">
                 Your custom wake phrase, biometric authentication, and voice tier are stored and active on this cluster. Would you like to adjust or re-configure any of these settings?
               </p>
             </div>
 
             {/* Active Parameters Card */}
-            <div className="w-full max-w-lg bg-[#FAF9F6] border border-[#FFE6DC] rounded-2xl p-5 text-left flex flex-col gap-3 shadow-sm">
-              <div className="flex items-center justify-between pb-2.5 border-b border-[#FFE6DC]/80">
-                <span className="text-xs font-bold text-[#8B716B] uppercase font-['Outfit']">Active Acoustic Parameter</span>
-                <span className="text-xs font-bold text-[#8B716B] uppercase font-['Outfit']">Current Value</span>
+            <div className="w-full max-w-lg bg-[#FAF9F6] border border-[#FFE6DC] rounded-2xl p-5 sm:p-6 text-left flex flex-col gap-3.5 shadow-sm">
+              <div className="flex items-center justify-between pb-2.5 border-b border-[#FFE6DC]">
+                <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit'] tracking-wider">Active Acoustic Parameter</span>
+                <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit'] tracking-wider">Current Value</span>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between gap-3 text-xs sm:text-[13px]">
                 <span className="text-[#57423D] flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-[#A53B22]">mic</span>
+                  <span className="material-symbols-outlined text-[17px] text-[#A53B22]">mic</span>
                   Custom Wake Phrase:
                 </span>
-                <span className="font-bold text-[#1D1A23] font-mono bg-white px-2.5 py-1 rounded-lg border border-[#FFE6DC]">
+                <span className="font-bold text-[#1D1A23] font-mono bg-white px-3 py-1 rounded-lg border border-[#FFE6DC] shadow-sm">
                   "{wakeWord}"
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between gap-3 text-xs sm:text-[13px]">
                 <span className="text-[#57423D] flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-[#006688]">fingerprint</span>
+                  <span className="material-symbols-outlined text-[17px] text-[#006688]">fingerprint</span>
                   Biometric Passphrase:
                 </span>
-                <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                <span className="font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200 flex items-center gap-1 shadow-sm">
+                  <span className="material-symbols-outlined text-[14px]">verified_user</span>
                   Protected & Active
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between gap-3 text-xs sm:text-[13px]">
                 <span className="text-[#57423D] flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-[#845400]">graphic_eq</span>
+                  <span className="material-symbols-outlined text-[17px] text-[#845400]">graphic_eq</span>
                   Voice Persona Tier:
                 </span>
                 <span className="font-bold text-[#1D1A23]">
@@ -292,14 +296,14 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-[#8B716B] pt-2 border-t border-[#FFE6DC]/60 font-mono">
+              <div className="flex items-center justify-between text-[11px] text-[#8B716B] pt-2.5 border-t border-[#FFE6DC] font-mono">
                 <span>Last Updated:</span>
                 <span>{lastSavedTimestamp}</span>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-lg mt-2">
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-lg mt-1">
               <button
                 type="button"
                 onClick={() => {
@@ -307,7 +311,7 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
                   setCurrentStep(1);
                   setMaxAllowedStep(5);
                 }}
-                className="w-full sm:flex-1 py-3 px-5 rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FF5F45] hover:from-[#FF5F45] hover:to-[#FFAE33] text-white font-bold text-xs shadow-md shadow-[#FF5F45]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="w-full sm:flex-1 py-3 px-5 rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FF543E] hover:from-[#FF543E] hover:to-[#FFAE33] text-white font-bold text-xs shadow-md shadow-[#FF543E]/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-[18px]">tune</span>
                 <span>Yes, Re-configure Settings</span>
@@ -315,14 +319,14 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full sm:flex-1 py-3 px-5 rounded-full bg-white hover:bg-[#F8F1FE] text-[#57423D] hover:text-[#1D1A23] font-bold text-xs border border-[#FFE6DC] transition-all flex items-center justify-center gap-2"
+                className="w-full sm:flex-1 py-3 px-5 rounded-full bg-white hover:bg-[#FAF9F6] text-[#57423D] hover:text-[#1D1A23] font-bold text-xs border border-[#FFE6DC] shadow-sm transition-all flex items-center justify-center gap-2"
               >
                 <span className="material-symbols-outlined text-[18px]">check</span>
                 <span>Keep Current Settings</span>
               </button>
             </div>
             <p className="text-[11px] text-[#8B716B]">
-              Selecting re-configure allows you to jump directly to any step (1 to 5) without sequential locking.
+              Selecting re-configure unlocks all 5 steps so you can jump directly to any setting without sequential locking.
             </p>
           </div>
         ) : (
@@ -579,7 +583,7 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
                     value={passphrase}
                     onChange={(e) => setPassphrase(e.target.value)}
                     className="w-full h-12 pl-4 pr-28 rounded-xl bg-white text-[#1D1A23] font-medium text-sm shadow-sm border border-[#FFE6DC] focus:outline-none focus:ring-2 focus:ring-[#FF7E5F]"
-                    placeholder="E.g., 'Blue Phoenix Alpha'"
+                    placeholder={hasExistingConfig ? "Existing protected passphrase active (leave blank to keep, or enter new)..." : "E.g., 'Blue Phoenix Alpha'"}
                   />
                   <div className="absolute right-2 top-2 bottom-2 flex items-center">
                     <button

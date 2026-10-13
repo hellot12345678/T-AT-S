@@ -288,7 +288,14 @@ class UsageMeter(models.Model):
         if platform_config is None:
             platform_config = PlatformConfig.get_active()
 
-        base_quota = (platform_config.free_tier_units if self.application.plan_tier == 'FREE' else 50000) + self.bonus_units
+        if self.application.plan_tier == 'FREE':
+            plan_quota = platform_config.free_tier_units
+        elif self.application.plan_tier == 'ENTERPRISE':
+            plan_quota = platform_config.enterprise_tier_units
+        else:
+            plan_quota = platform_config.growth_tier_units
+
+        base_quota = plan_quota + self.bonus_units
         grace_buffer_pct = platform_config.grace_buffer_pct
         grace_limit = int(base_quota * (1 + grace_buffer_pct / 100))
         remaining = max(0, base_quota - self.units_consumed)
