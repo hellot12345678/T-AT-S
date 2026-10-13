@@ -103,6 +103,28 @@ class AdminGovernanceDataView(APIView):
 
         total_units = UsageMeter.objects.aggregate(Sum('units_consumed'))['units_consumed__sum'] or 0
         total_revenue_paise = PaymentOrder.objects.filter(status='PAID').aggregate(Sum('amount'))['amount__sum'] or 0
+        total_paid_orders = PaymentOrder.objects.filter(status='PAID').count()
+        total_created_orders = PaymentOrder.objects.filter(status='CREATED').count()
+        total_failed_orders = PaymentOrder.objects.filter(status='FAILED').count()
+
+        # Real Payment Transactions History for Super Admin
+        orders_qs = PaymentOrder.objects.all().select_related('developer', 'application').order_by('-created_at')
+        transactions_data = []
+        for order in orders_qs:
+            transactions_data.append({
+                'id': str(order.id),
+                'order_id': order.razorpay_order_id,
+                'payment_id': order.razorpay_payment_id or '—',
+                'developer_name': order.developer.name if order.developer else 'Developer',
+                'developer_email': order.developer.email if order.developer else '—',
+                'application_name': order.application.app_name if order.application else 'General Cluster',
+                'plan_tier': order.plan_tier,
+                'amount_inr': order.amount / 100,
+                'currency': order.currency or 'INR',
+                'status': order.status,
+                'units_credited': order.units_credited,
+                'created_at': order.created_at.isoformat(),
+            })
 
         end_users_data = []
         for conf in EndUserConfig.objects.all().order_by('-last_active')[:50]:
@@ -119,12 +141,17 @@ class AdminGovernanceDataView(APIView):
         return Response({
             'developers': developers_data,
             'applications': applications_data,
+            'transactions': transactions_data,
             'end_users': end_users_data,
             'metrics': {
                 'total_developers': devs_qs.count(),
                 'total_applications': apps_qs.count(),
                 'total_units_consumed': total_units,
                 'total_revenue_inr': total_revenue_paise / 100,
+                'total_transactions': orders_qs.count(),
+                'paid_transactions': total_paid_orders,
+                'created_transactions': total_created_orders,
+                'failed_transactions': total_failed_orders,
                 'total_end_users': EndUserConfig.objects.count()
             }
         }, status=status.HTTP_200_OK)

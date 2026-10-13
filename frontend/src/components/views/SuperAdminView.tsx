@@ -45,12 +45,31 @@ interface GovEndUser {
   created_at: string;
 }
 
+interface GovTransaction {
+  id: string;
+  order_id: string;
+  payment_id: string;
+  developer_name: string;
+  developer_email: string;
+  application_name: string;
+  plan_tier: string;
+  amount_inr: number;
+  currency: string;
+  status: string;
+  units_credited: number;
+  created_at: string;
+}
+
 interface GovMetrics {
   total_developers: number;
   total_applications: number;
   total_units_consumed: number;
   total_revenue_inr: number;
   total_end_users: number;
+  total_transactions?: number;
+  paid_transactions?: number;
+  created_transactions?: number;
+  failed_transactions?: number;
 }
 
 export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
@@ -92,12 +111,13 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
   }, [adminEmailInput, developer?.email]);
 
   // Active admin tab
-  const [adminTab, setAdminTab] = useState<'users' | 'end-users' | 'pricing' | 'database'>('users');
+  const [adminTab, setAdminTab] = useState<'users' | 'transactions' | 'end-users' | 'pricing' | 'database'>('users');
 
   // Real Database State
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [developers, setDevelopers] = useState<GovDeveloper[]>([]);
   const [applications, setApplications] = useState<GovApplication[]>([]);
+  const [transactions, setTransactions] = useState<GovTransaction[]>([]);
   const [endUsers, setEndUsers] = useState<GovEndUser[]>([]);
   const [metrics, setMetrics] = useState<GovMetrics>({
     total_developers: 0,
@@ -105,7 +125,16 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
     total_units_consumed: 0,
     total_revenue_inr: 0,
     total_end_users: 0,
+    total_transactions: 0,
+    paid_transactions: 0,
+    created_transactions: 0,
+    failed_transactions: 0,
   });
+
+  // Transactions Search & Filters
+  const [txSearch, setTxSearch] = useState<string>('');
+  const [txStatusFilter, setTxStatusFilter] = useState<'All' | 'PAID' | 'CREATED' | 'FAILED'>('All');
+  const [txPlanFilter, setTxPlanFilter] = useState<'All' | 'GROWTH' | 'ENTERPRISE' | 'TOPUP'>('All');
 
   // Users Directory Filter & Search
   const [userSearch, setUserSearch] = useState<string>('');
@@ -132,6 +161,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
       if (data) {
         setDevelopers(data.developers || []);
         setApplications(data.applications || []);
+        setTransactions(data.transactions || []);
         setEndUsers(data.end_users || []);
         if (data.metrics) {
           setMetrics(data.metrics);
@@ -326,6 +356,29 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
       (userStatusFilter === 'Active' && d.is_active) ||
       (userStatusFilter === 'Suspended' && !d.is_active);
     return matchesSearch && matchesStatus;
+  });
+
+  // Filtered Transactions Ledger
+  const filteredTransactions = transactions.filter((tx) => {
+    const q = txSearch.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      tx.developer_name.toLowerCase().includes(q) ||
+      tx.developer_email.toLowerCase().includes(q) ||
+      tx.application_name.toLowerCase().includes(q) ||
+      tx.order_id.toLowerCase().includes(q) ||
+      tx.payment_id.toLowerCase().includes(q);
+
+    const matchesStatus =
+      txStatusFilter === 'All' || tx.status === txStatusFilter;
+
+    const matchesPlan =
+      txPlanFilter === 'All' ||
+      (txPlanFilter === 'GROWTH' && (tx.plan_tier.includes('GROWTH') || tx.plan_tier.includes('STARTER'))) ||
+      (txPlanFilter === 'ENTERPRISE' && tx.plan_tier.includes('ENTERPRISE')) ||
+      (txPlanFilter === 'TOPUP' && (tx.plan_tier.includes('TOPUP') || tx.plan_tier.includes('CREDIT') || tx.plan_tier.includes('ADDON')));
+
+    return matchesSearch && matchesStatus && matchesPlan;
   });
 
   // Dynamic financial projections based on real cluster counts
@@ -667,6 +720,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
       <div className="flex items-center gap-2 p-1.5 bg-white border border-[#FFE6DC] rounded-2xl shadow-sm overflow-x-auto">
         {[
           { id: 'users', label: 'Developer Directory', icon: 'group' },
+          { id: 'transactions', label: 'Billing & Transactions', icon: 'receipt_long' },
           { id: 'end-users', label: 'End-User Biometric Setups', icon: 'record_voice_over' },
           { id: 'pricing', label: 'Pricing Plans & Quota Tuning', icon: 'payments' },
           { id: 'database', label: 'Application Tenant Partitions', icon: 'shield' }
@@ -849,6 +903,242 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                       </td>
                     </tr>
                   ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: BILLING & PAYMENT TRANSACTIONS (SUPER ADMIN ONLY) */}
+      {adminTab === 'transactions' && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#FFE6DC] shadow-sm flex flex-col gap-6 animate-in fade-in duration-200">
+          {/* Header & Overview */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#FFE6DC]">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="material-symbols-outlined text-[20px] text-[#A53B22]">receipt_long</span>
+                <h2 className="font-['Outfit'] text-lg font-bold text-[#1D1A23]">
+                  Billing Settlements & Transaction Ledger
+                </h2>
+              </div>
+              <p className="text-xs text-[#57423D]">
+                Audit real-time subscription purchases, quota expansions, and Razorpay gateway settlements across all developers.
+              </p>
+            </div>
+
+            {/* Quick Metrics Pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold font-['Outfit'] flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>{metrics.paid_transactions || transactions.filter((t) => t.status === 'PAID').length} Paid</span>
+              </span>
+              <span className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold font-['Outfit'] flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                <span>{metrics.created_transactions || transactions.filter((t) => t.status === 'CREATED').length} Pending / In-Flight</span>
+              </span>
+              <span className="px-3 py-1.5 rounded-xl bg-[#FAF9F6] border border-[#FFE6DC] text-[#57423D] text-xs font-bold font-['Outfit']">
+                Total: {transactions.length} Records
+              </span>
+            </div>
+          </div>
+
+          {/* Search & Filters Bar */}
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#8B716B]">
+                search
+              </span>
+              <input
+                type="text"
+                placeholder="Search by developer, email, cluster, order ID or payment ID..."
+                value={txSearch}
+                onChange={(e) => setTxSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#FAF9F6] border border-[#FFE6DC] text-xs text-[#1D1A23] focus:outline-none focus:border-[#A53B22] placeholder:text-[#8B716B]"
+              />
+              {txSearch && (
+                <button
+                  onClick={() => setTxSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#8B716B] hover:text-[#1D1A23]"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {/* Status & Plan Filter Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Status Filters */}
+              <div className="flex items-center gap-1 p-1 bg-[#FAF9F6] border border-[#FFE6DC] rounded-xl text-xs font-bold">
+                {(['All', 'PAID', 'CREATED', 'FAILED'] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setTxStatusFilter(st)}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      txStatusFilter === st
+                        ? 'bg-white text-[#A53B22] shadow-sm font-extrabold'
+                        : 'text-[#57423D] hover:text-[#1D1A23]'
+                    }`}
+                  >
+                    {st === 'All' ? 'All Status' : st === 'PAID' ? 'Paid' : st === 'CREATED' ? 'Pending' : 'Failed'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Plan Type Filters */}
+              <div className="flex items-center gap-1 p-1 bg-[#FAF9F6] border border-[#FFE6DC] rounded-xl text-xs font-bold">
+                {(['All', 'GROWTH', 'ENTERPRISE', 'TOPUP'] as const).map((pl) => (
+                  <button
+                    key={pl}
+                    onClick={() => setTxPlanFilter(pl)}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      txPlanFilter === pl
+                        ? 'bg-white text-[#A53B22] shadow-sm font-extrabold'
+                        : 'text-[#57423D] hover:text-[#1D1A23]'
+                    }`}
+                  >
+                    {pl === 'All' ? 'All Items' : pl === 'GROWTH' ? 'Growth' : pl === 'ENTERPRISE' ? 'Enterprise' : 'Top-Up'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Transactions Responsive Table */}
+          <div className="w-full overflow-x-auto rounded-2xl border border-[#FFE6DC]">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-[#FAF9F6] border-b border-[#FFE6DC] text-[10px] font-bold uppercase tracking-wider text-[#8B716B] font-['Outfit']">
+                  <th className="py-3 px-4">Developer & Organization</th>
+                  <th className="py-3 px-4">Cluster & Plan Tier</th>
+                  <th className="py-3 px-4">Amount</th>
+                  <th className="py-3 px-4">Settlement Status</th>
+                  <th className="py-3 px-4">Gateway Identifiers</th>
+                  <th className="py-3 px-4">Date & Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#FFE6DC]/60">
+                {filteredTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-[#8B716B]">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <span className="material-symbols-outlined text-[32px] text-[#A53B22]/40">receipt</span>
+                        <p className="font-bold text-sm text-[#1D1A23]">No Transactions Found</p>
+                        <p className="text-xs text-[#8B716B] max-w-sm">
+                          {txSearch || txStatusFilter !== 'All' || txPlanFilter !== 'All'
+                            ? 'No payment records match your active search filters.'
+                            : 'No payment orders have been recorded in the platform ledger yet.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTransactions.map((tx) => {
+                    const isPaid = tx.status === 'PAID';
+                    const isCreated = tx.status === 'CREATED';
+
+                    const planLabel =
+                      tx.plan_tier.startsWith('TOPUP') || tx.plan_tier.includes('CREDIT')
+                        ? `Credit Booster (+${tx.units_credited?.toLocaleString('en-IN')} Units)`
+                        : tx.plan_tier.includes('ENTERPRISE')
+                        ? 'Scale Enterprise Plan'
+                        : tx.plan_tier.includes('GROWTH') || tx.plan_tier.includes('STARTER')
+                        ? 'Growth Startup Plan'
+                        : tx.plan_tier;
+
+                    return (
+                      <tr key={tx.id} className="hover:bg-[#FAF9F6]/80 transition-colors">
+                        {/* Developer & Org */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-[#1D1A23] font-['Outfit'] text-[13px]">
+                              {tx.developer_name}
+                            </span>
+                            <span className="text-[11px] text-[#57423D] font-mono">
+                              {tx.developer_email}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Cluster & Plan Tier */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-[14px] text-[#A53B22]">layers</span>
+                              <span className="font-semibold text-xs text-[#1D1A23]">{tx.application_name}</span>
+                            </div>
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono w-max ${
+                                tx.plan_tier.includes('ENTERPRISE')
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : tx.plan_tier.includes('GROWTH') || tx.plan_tier.includes('STARTER')
+                                  ? 'bg-[#FFDAD2] text-[#84240D]'
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}
+                            >
+                              {planLabel}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Amount */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-col">
+                            <span className="font-['Outfit'] text-sm font-extrabold text-[#1D1A23]">
+                              ₹{Number(tx.amount_inr || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </span>
+                            <span className="text-[10px] text-emerald-700 font-bold font-mono">
+                              +{tx.units_credited?.toLocaleString('en-IN')} units
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                              isPaid
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                : isCreated
+                                ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                : 'bg-rose-100 text-rose-800 border border-rose-200'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[14px]">
+                              {isPaid ? 'check_circle' : isCreated ? 'hourglass_top' : 'cancel'}
+                            </span>
+                            <span>{isPaid ? 'Paid & Verified' : isCreated ? 'Pending Checkout' : 'Failed'}</span>
+                          </span>
+                        </td>
+
+                        {/* Gateway IDs */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-col gap-0.5 font-mono text-[11px]">
+                            <div className="flex items-center gap-1 text-[#1D1A23]">
+                              <span className="text-[#8B716B] text-[10px]">Order:</span>
+                              <span className="select-all">{tx.order_id}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[#57423D]">
+                              <span className="text-[#8B716B] text-[10px]">Payment:</span>
+                              <span className="select-all">{tx.payment_id}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Timestamp */}
+                        <td className="py-3.5 px-4 whitespace-nowrap text-[#57423D] text-[11px]">
+                          {new Date(tx.created_at).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
