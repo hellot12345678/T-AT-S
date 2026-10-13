@@ -1113,7 +1113,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                   </label>
                   <div className="flex items-baseline gap-1">
                     <span className="font-['Outfit'] text-xl font-bold text-[#1D1A23]">
-                      ₹{overageUnitCost.toFixed(2)}
+                      ₹{Number(overageUnitCost || 0.35).toFixed(2)}
                     </span>
                     <span className="text-xs text-[#57423D]">/ unit</span>
                   </div>
@@ -1143,7 +1143,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                   <div className="p-3.5 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC] flex flex-col justify-between gap-3">
                     <span className="text-xs font-bold text-[#1D1A23]">Text Message</span>
                     <div className="flex items-center justify-between">
-                      <span className="font-['Outfit'] text-lg font-bold text-[#1D1A23]">{textMultiplier.toFixed(1)}x</span>
+                      <span className="font-['Outfit'] text-lg font-bold text-[#1D1A23]">{Number(textMultiplier || 1.0).toFixed(1)}x</span>
                       <div className="flex items-center gap-1 bg-white p-0.5 rounded-full border border-[#FFE6DC]">
                         <button
                           onClick={() => setTextMultiplier(1.0)}
@@ -1164,7 +1164,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                   <div className="p-3.5 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC] flex flex-col justify-between gap-3">
                     <span className="text-xs font-bold text-[#1D1A23]">Voice Call</span>
                     <div className="flex items-center justify-between">
-                      <span className="font-['Outfit'] text-lg font-bold text-[#A53B22]">{voiceMultiplier.toFixed(1)}x</span>
+                      <span className="font-['Outfit'] text-lg font-bold text-[#A53B22]">{Number(voiceMultiplier || 2.0).toFixed(1)}x</span>
                       <div className="flex items-center gap-1 bg-white p-0.5 rounded-full border border-[#FFE6DC]">
                         <button
                           onClick={() => setVoiceMultiplier(1.5)}
@@ -1185,7 +1185,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                   <div className="p-3.5 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC] flex flex-col justify-between gap-3">
                     <span className="text-xs font-bold text-[#1D1A23]">Run Live Action</span>
                     <div className="flex items-center justify-between">
-                      <span className="font-['Outfit'] text-lg font-bold text-[#006688]">{toolMultiplier.toFixed(1)}x</span>
+                      <span className="font-['Outfit'] text-lg font-bold text-[#006688]">{Number(toolMultiplier || 3.0).toFixed(1)}x</span>
                       <div className="flex items-center gap-1 bg-white p-0.5 rounded-full border border-[#FFE6DC]">
                         <button
                           onClick={() => setToolMultiplier(2.5)}

@@ -276,13 +276,16 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   };
 
   // Dynamic pricing values from Platform Governance / Admin
-  const growthPrice = platformConfig?.growth_price_inr || platformConfig?.starter_price_inr || 1999;
-  const enterprisePrice = platformConfig?.enterprise_price_inr || 14999;
-  const freeUnits = platformConfig?.free_tier_units || 2000;
-  const growthUnits = platformConfig?.growth_tier_units || 50000;
-  const enterpriseUnits = platformConfig?.enterprise_tier_units || 250000;
-  const gracePct = platformConfig?.grace_buffer_pct || 10;
-  const costPerExtraUnit = parseFloat(platformConfig?.cost_per_extra_unit || '0.10');
+  const growthPrice = Number(platformConfig?.growth_price_inr || platformConfig?.starter_price_inr || 1999);
+  const enterprisePrice = Number(platformConfig?.enterprise_price_inr || 14999);
+  const freeUnits = Number(platformConfig?.free_tier_units || 2000);
+  const growthUnits = Number(platformConfig?.growth_tier_units || 50000);
+  const enterpriseUnits = Number(platformConfig?.enterprise_tier_units || 250000);
+  const gracePct = Number(platformConfig?.grace_buffer_pct || 10);
+  const costPerExtraUnit = parseFloat(String(platformConfig?.cost_per_extra_unit || '0.10'));
+  const textMultiplierVal = Number(platformConfig?.text_multiplier || 1.0);
+  const voiceMultiplierVal = Number(platformConfig?.voice_multiplier || 2.0);
+  const toolMultiplierVal = Number(platformConfig?.tool_multiplier || 3.0);
 
   const plans = [
     {
@@ -891,7 +894,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC] flex flex-col gap-1">
             <span className="font-bold text-[#1D1A23]">Text Message Turn</span>
             <span className="font-mono text-sm font-bold text-[#845400]">
-              {(platformConfig?.text_multiplier || 1.0).toFixed(1)} Unit
+              {textMultiplierVal.toFixed(1)} Unit
             </span>
             <p className="text-[11px] text-[#57423D] mt-1">Single deterministic text message to or from the agent.</p>
           </div>
@@ -899,7 +902,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC] flex flex-col gap-1">
             <span className="font-bold text-[#1D1A23]">Voice Call Speech Turn</span>
             <span className="font-mono text-sm font-bold text-[#A53B22]">
-              {(platformConfig?.voice_multiplier || 2.0).toFixed(1)} Units
+              {voiceMultiplierVal.toFixed(1)} Units
             </span>
             <p className="text-[11px] text-[#57423D] mt-1">Bidirectional live speech-to-speech turn with acoustic calibration.</p>
           </div>
@@ -907,7 +910,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC] flex flex-col gap-1">
             <span className="font-bold text-[#1D1A23]">Action & Tool Execution</span>
             <span className="font-mono text-sm font-bold text-[#006688]">
-              {(platformConfig?.tool_multiplier || 3.0).toFixed(1)} Units
+              {toolMultiplierVal.toFixed(1)} Units
             </span>
             <p className="text-[11px] text-[#57423D] mt-1">Webhook call, database mutation, or payment trigger executed by agent.</p>
           </div>

@@ -17,6 +17,7 @@ import { PlaygroundView } from './components/views/PlaygroundView';
 import { SuperAdminView } from './components/views/SuperAdminView';
 import { SubscriptionView } from './components/views/SubscriptionView';
 import { SettingsView } from './components/views/SettingsView';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
   // Developer Session & Tenancy State
@@ -256,87 +257,89 @@ export default function App() {
             developer && currentView !== 'landing' ? 'lg:pl-64' : 'w-full'
           }`}
         >
-          {currentView === 'landing' && (
-            <LandingView
-              onNavigate={handleNavigate}
-              onShowToast={addToast}
-              onOpenWizard={() => {
-                if (!developer) {
-                  handleOpenAuth('Sign in to launch the acoustic calibration wizard.');
-                } else {
-                  setIsWizardOpen(true);
-                }
-              }}
-              developer={developer}
-              onOpenAuth={handleOpenAuth}
-              activeAppId={activeAppId}
-              onRefreshApps={loadApplications}
-            />
-          )}
+          <ErrorBoundary>
+            {currentView === 'landing' && (
+              <LandingView
+                onNavigate={handleNavigate}
+                onShowToast={addToast}
+                onOpenWizard={() => {
+                  if (!developer) {
+                    handleOpenAuth('Sign in to launch the acoustic calibration wizard.');
+                  } else {
+                    setIsWizardOpen(true);
+                  }
+                }}
+                developer={developer}
+                onOpenAuth={handleOpenAuth}
+                activeAppId={activeAppId}
+                onRefreshApps={loadApplications}
+              />
+            )}
 
-          {currentView === 'developer-dashboard' && (
-            <DeveloperDashboardView
-              onNavigate={handleNavigate}
-              onShowToast={addToast}
-            />
-          )}
+            {currentView === 'developer-dashboard' && (
+              <DeveloperDashboardView
+                onNavigate={handleNavigate}
+                onShowToast={addToast}
+              />
+            )}
 
-          {currentView === 'visual-tool-builder' && (
-            <ToolBuilderView
-              onNavigate={handleNavigate}
-              onShowToast={addToast}
-            />
-          )}
+            {currentView === 'visual-tool-builder' && (
+              <ToolBuilderView
+                onNavigate={handleNavigate}
+                onShowToast={addToast}
+              />
+            )}
 
-          {currentView === 'live-voice-playground' && (
-            <PlaygroundView
-              onNavigate={handleNavigate}
-              onShowToast={addToast}
-            />
-          )}
+            {currentView === 'live-voice-playground' && (
+              <PlaygroundView
+                onNavigate={handleNavigate}
+                onShowToast={addToast}
+              />
+            )}
 
-          {currentView === 'super-admin' && developer?.is_admin && (
-            <SuperAdminView
-              onNavigate={handleNavigate}
-              onShowToast={addToast}
-              developer={developer}
-            />
-          )}
+            {currentView === 'super-admin' && developer?.is_admin && (
+              <SuperAdminView
+                onNavigate={handleNavigate}
+                onShowToast={addToast}
+                developer={developer}
+              />
+            )}
 
-          {currentView === 'subscription-pricing' && (
-            <SubscriptionView
-              onNavigate={handleNavigate}
-              onShowToast={addToast}
-              developer={developer}
-              applications={applications}
-              activeAppId={activeAppId}
-              onSelectApp={(app) => {
-                setActiveAppId(app.id);
-                addToast('Switched Cluster', `Active application context set to "${app.app_name}".`);
-              }}
-              onRefreshApps={loadApplications}
-              onOpenCreateApp={() => setIsAppCreateModalOpen(true)}
-            />
-          )}
+            {currentView === 'subscription-pricing' && (
+              <SubscriptionView
+                onNavigate={handleNavigate}
+                onShowToast={addToast}
+                developer={developer}
+                applications={applications}
+                activeAppId={activeAppId}
+                onSelectApp={(app) => {
+                  setActiveAppId(app.id);
+                  addToast('Switched Cluster', `Active application context set to "${app.app_name}".`);
+                }}
+                onRefreshApps={loadApplications}
+                onOpenCreateApp={() => setIsAppCreateModalOpen(true)}
+              />
+            )}
 
-          {currentView === 'settings' && developer && (
-            <SettingsView
-              onNavigate={handleNavigate}
-              onShowToast={addToast}
-              developer={developer}
-              applications={applications}
-              activeAppId={activeAppId}
-              onSelectApp={(app) => {
-                setActiveAppId(app.id);
-                addToast('Switched Cluster', `Active application context set to "${app.app_name}".`);
-              }}
-              onRefreshApps={loadApplications}
-              onOpenCreateApp={() => setIsAppCreateModalOpen(true)}
-              onUpdateDeveloperProfile={(updatedDev) => {
-                setDeveloper(updatedDev);
-              }}
-            />
-          )}
+            {currentView === 'settings' && developer && (
+              <SettingsView
+                onNavigate={handleNavigate}
+                onShowToast={addToast}
+                developer={developer}
+                applications={applications}
+                activeAppId={activeAppId}
+                onSelectApp={(app) => {
+                  setActiveAppId(app.id);
+                  addToast('Switched Cluster', `Active application context set to "${app.app_name}".`);
+                }}
+                onRefreshApps={loadApplications}
+                onOpenCreateApp={() => setIsAppCreateModalOpen(true)}
+                onUpdateDeveloperProfile={(updatedDev) => {
+                  setDeveloper(updatedDev);
+                }}
+              />
+            )}
+          </ErrorBoundary>
         </main>
       </div>
 
