@@ -151,9 +151,21 @@ class ApplicationUpgradeView(APIView):
         except Application.DoesNotExist:
             return Response({'error': 'Application not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        target_plan = request.data.get('plan', 'STARTER').upper()
-        if target_plan not in ['FREE', 'STARTER']:
-            return Response({'error': "Invalid plan. Choose 'STARTER' or 'FREE'."}, status=status.HTTP_400_BAD_REQUEST)
+        target_plan = request.data.get('plan', 'GROWTH').upper()
+        if target_plan in ['GROWTH_STARTUP']:
+            target_plan = 'GROWTH'
+        elif target_plan in ['SCALE_ENTERPRISE']:
+            target_plan = 'ENTERPRISE'
+
+        valid_plans = ['FREE', 'GROWTH', 'ENTERPRISE', 'STARTER']
+        if target_plan not in valid_plans:
+            return Response({'error': f"Invalid plan. Choose from {valid_plans}."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if app.plan_tier == target_plan:
+            return Response({
+                'error': f"Application '{app.app_name}' is already running on the {target_plan} plan. Use credit booster to add more units.",
+                'code': 'ALREADY_ACTIVE'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         app.plan_tier = target_plan
         app.save()

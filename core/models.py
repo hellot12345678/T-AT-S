@@ -116,9 +116,10 @@ class Application(models.Model):
         ('CUSTOM', 'Allow End-User Custom'),
     ]
     PLAN_TIER_CHOICES = [
-        ('FREE', 'Free Tier (2,000 units/mo)'),
-        ('STARTER', 'Starter Tier (INR 799/mo)'),
-
+        ('FREE', 'Developer Free (2,000 units/mo)'),
+        ('GROWTH', 'Growth Startup (50,000 units/mo)'),
+        ('ENTERPRISE', 'Scale Enterprise (250,000 units/mo)'),
+        ('STARTER', 'Starter Tier (Legacy)'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

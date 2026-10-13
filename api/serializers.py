@@ -142,6 +142,7 @@ class NotificationSerializer(serializers.Serializer):
 class RazorpayCreateOrderSerializer(serializers.Serializer):
     app_id = serializers.UUIDField(required=False, allow_null=True)
     plan_tier = serializers.CharField(max_length=50, default='GROWTH_STARTUP')
+    units = serializers.IntegerField(required=False, default=0)
 
 
 class RazorpayVerifySerializer(serializers.Serializer):

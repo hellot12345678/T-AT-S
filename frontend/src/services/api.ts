@@ -300,11 +300,20 @@ export class TATSBackendAPI {
   // ==========================================
   // Razorpay Payments & Subscriptions
   // ==========================================
-  public static async createRazorpayOrder(planTier: string = 'GROWTH_STARTUP', appId?: string) {
+  public static async createRazorpayOrder(planTier: string = 'GROWTH_STARTUP', appId?: string, units?: number) {
     const res = await fetch(`${API_BASE}/payments/create-order/`, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify({ plan_tier: planTier, app_id: appId }),
+      body: JSON.stringify({ plan_tier: planTier, app_id: appId, units: units || undefined }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  public static async addBonusUnits(appId: string, units: number, reason: string = 'Developer Credit Topup') {
+    const res = await fetch(`${API_BASE}/apps/${appId}/add-bonus/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ units, reason }),
     });
     return { ok: res.ok, status: res.status, data: await res.json() };
   }

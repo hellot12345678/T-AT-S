@@ -37,6 +37,7 @@ class RazorpayCreateOrderView(APIView):
         dev = request.developer
         plan_tier = serializer.validated_data.get('plan_tier', 'GROWTH_STARTUP')
         app_id = serializer.validated_data.get('app_id')
+        custom_units = serializer.validated_data.get('units', 0)
 
         # Fetch dynamic platform pricing set by Platform Governance / Admin
         platform_config = PlatformConfig.get_active()
@@ -44,34 +45,9 @@ class RazorpayCreateOrderView(APIView):
         enterprise_price = getattr(platform_config, 'enterprise_price_inr', 14999) or 14999
         growth_units = getattr(platform_config, 'growth_tier_units', 50000) or 50000
         enterprise_units = getattr(platform_config, 'enterprise_tier_units', 250000) or 250000
+        cost_per_unit = float(getattr(platform_config, 'cost_per_extra_unit', 0.10) or 0.10)
 
-        plan_configs = {
-            'GROWTH_STARTUP': {
-                'name': 'Growth Startup',
-                'price_inr': growth_price,
-                'amount_paise': int(growth_price * 100),
-                'units_credited': growth_units,
-                'description': f'{growth_units:,} units, {platform_config.grace_buffer_pct}% grace buffer, sub-850ms latency guarantee'
-            },
-            'STARTER': {
-                'name': 'Starter Tier',
-                'price_inr': growth_price,
-                'amount_paise': int(growth_price * 100),
-                'units_credited': 10000,
-                'description': '10,000 units, community support'
-            },
-            'SCALE_ENTERPRISE': {
-                'name': 'Scale Enterprise',
-                'price_inr': enterprise_price,
-                'amount_paise': int(enterprise_price * 100),
-                'units_credited': enterprise_units,
-                'description': f'{enterprise_units:,} units, air-gapped clusters, SLA guarantee'
-            }
-        }
-
-        plan_meta = plan_configs.get(plan_tier, plan_configs['GROWTH_STARTUP'])
-        amount_paise = plan_meta['amount_paise']
-
+        # Resolve Target Application Cluster
         app = None
         if app_id:
             app = Application.objects.filter(id=app_id, developer=dev).first()
@@ -85,6 +61,69 @@ class RazorpayCreateOrderView(APIView):
                 return Response({
                     'error': 'Application Cluster Required. Please create an application cluster first so your subscription units can be provisioned.'
                 }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Plan Tier / Booster Pack Metadata Resolution
+        is_credit_topup = plan_tier.startswith('TOPUP') or plan_tier in ['ADDON_CREDITS', 'CREDIT_BOOSTER']
+
+        if is_credit_topup:
+            units_to_credit = custom_units if custom_units > 0 else 25000
+            price_inr = max(100, int(units_to_credit * cost_per_unit))
+            plan_meta = {
+                'name': f'Credit Booster ({units_to_credit:,} Units)',
+                'price_inr': price_inr,
+                'amount_paise': int(price_inr * 100),
+                'units_credited': units_to_credit,
+                'description': f'Immediate credit expansion of {units_to_credit:,} units for active application cluster'
+            }
+        else:
+            # Active Subscription Conflict Guard:
+            current_tier = (app.plan_tier or 'FREE').upper()
+            if current_tier in ['GROWTH', 'GROWTH_STARTUP', 'STARTER'] and plan_tier in ['GROWTH_STARTUP', 'GROWTH', 'STARTER']:
+                return Response({
+                    'error': f"Application '{app.app_name}' is already actively subscribed to the Growth Startup plan. You cannot run duplicate subscriptions at the same time. You can either purchase immediate credit booster packs to expand quota, or upgrade to Scale Enterprise.",
+                    'code': 'ALREADY_SUBSCRIBED',
+                    'current_plan': 'GROWTH_STARTUP',
+                    'current_plan_name': 'Growth Startup',
+                    'can_topup': True,
+                    'can_upgrade': True,
+                    'upgrade_target': 'SCALE_ENTERPRISE'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            elif current_tier in ['ENTERPRISE', 'SCALE_ENTERPRISE'] and plan_tier in ['SCALE_ENTERPRISE', 'ENTERPRISE']:
+                return Response({
+                    'error': f"Application '{app.app_name}' is already actively provisioned on the Scale Enterprise plan. To add more actions, please purchase a credit booster pack.",
+                    'code': 'ALREADY_SUBSCRIBED',
+                    'current_plan': 'SCALE_ENTERPRISE',
+                    'current_plan_name': 'Scale Enterprise',
+                    'can_topup': True,
+                    'can_upgrade': False
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            plan_configs = {
+                'GROWTH_STARTUP': {
+                    'name': 'Growth Startup',
+                    'price_inr': growth_price,
+                    'amount_paise': int(growth_price * 100),
+                    'units_credited': growth_units,
+                    'description': f'{growth_units:,} units, {platform_config.grace_buffer_pct}% grace buffer, sub-850ms latency guarantee'
+                },
+                'STARTER': {
+                    'name': 'Starter Tier',
+                    'price_inr': growth_price,
+                    'amount_paise': int(growth_price * 100),
+                    'units_credited': 10000,
+                    'description': '10,000 units, community support'
+                },
+                'SCALE_ENTERPRISE': {
+                    'name': 'Scale Enterprise',
+                    'price_inr': enterprise_price,
+                    'amount_paise': int(enterprise_price * 100),
+                    'units_credited': enterprise_units,
+                    'description': f'{enterprise_units:,} units, air-gapped clusters, SLA guarantee'
+                }
+            }
+            plan_meta = plan_configs.get(plan_tier, plan_configs['GROWTH_STARTUP'])
+
+        amount_paise = plan_meta['amount_paise']
 
         razorpay_key_id = getattr(settings, 'RAZORPAY_KEY_ID', '')
         razorpay_key_secret = getattr(settings, 'RAZORPAY_KEY_SECRET', '')
@@ -219,9 +258,15 @@ class RazorpayVerifyView(APIView):
         if not target_app:
             target_app = Application.objects.filter(developer=dev, is_active=True).first()
 
+        is_topup_order = order.plan_tier.startswith('TOPUP') or order.plan_tier in ['ADDON_CREDITS', 'CREDIT_BOOSTER']
+
         if target_app:
-            target_app.plan_tier = 'GROWTH' if order.plan_tier == 'GROWTH_STARTUP' else 'STARTER'
-            target_app.save()
+            if not is_topup_order:
+                if order.plan_tier == 'SCALE_ENTERPRISE':
+                    target_app.plan_tier = 'ENTERPRISE'
+                elif order.plan_tier in ['GROWTH_STARTUP', 'GROWTH', 'STARTER']:
+                    target_app.plan_tier = 'GROWTH'
+                target_app.save()
 
             # Credit units into current month UsageMeter
             current_month = timezone.now().strftime('%Y-%m')
@@ -233,26 +278,48 @@ class RazorpayVerifyView(APIView):
             meter.save()
 
         # Create billing notification
-        Notification.objects.create(
-            developer=dev,
-            title="Payment Successful - Growth Plan Activated!",
-            message=(
+        if is_topup_order:
+            notif_title = f"Credit Booster Activated (+{order.units_credited:,} Units)"
+            notif_msg = (
+                f"Your top-up payment of ₹{order.amount / 100:,.2f} succeeded. "
+                f"{order.units_credited:,} units have been credited to application '{target_app.app_name if target_app else 'Active Cluster'}'. "
+                f"Payment ID: {payment_id}"
+            )
+            resp_message = f"Credit top-up successful! Added {order.units_credited:,} action units."
+        elif order.plan_tier == 'SCALE_ENTERPRISE':
+            notif_title = "Scale Enterprise Plan Activated!"
+            notif_msg = (
+                f"Your payment of ₹{order.amount / 100:,.2f} has been verified. "
+                f"Application '{target_app.app_name if target_app else 'Active Cluster'}' upgraded to Scale Enterprise with {order.units_credited:,} units credited. "
+                f"Payment ID: {payment_id}"
+            )
+            resp_message = f"Scale Enterprise Plan activated! Application upgraded successfully."
+        else:
+            notif_title = "Payment Successful - Growth Plan Activated!"
+            notif_msg = (
                 f"Your payment of ₹{order.amount / 100:,.2f} has been verified successfully. "
                 f"{order.units_credited:,} units have been credited to application '{target_app.app_name if target_app else 'Active Cluster'}'. "
-                f"Razorpay Payment ID: {payment_id}"
-            ),
+                f"Payment ID: {payment_id}"
+            )
+            resp_message = f"Growth Startup Plan activated successfully!"
+
+        Notification.objects.create(
+            developer=dev,
+            title=notif_title,
+            message=notif_msg,
             notification_type='BILLING',
             link='/dashboard'
         )
 
         return Response({
             'success': True,
-            'message': 'Payment verified and Growth Plan activated successfully!',
+            'message': resp_message,
             'order_id': order_id,
             'payment_id': payment_id,
             'units_credited': order.units_credited,
             'application_name': target_app.app_name if target_app else None,
-            'plan_tier': target_app.plan_tier if target_app else order.plan_tier
+            'plan_tier': target_app.plan_tier if target_app else order.plan_tier,
+            'is_topup': is_topup_order
         }, status=status.HTTP_200_OK)
 
 
