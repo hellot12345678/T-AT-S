@@ -365,7 +365,7 @@ class RazorpayVerifyView(APIView):
                     send_mail(
                         subject=email_subject,
                         message=notif_msg,
-                        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'T @ S <noreply@tats.ai>'),
+                        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', '"T @ S" <noreply@tats.ai>'),
                         recipient_list=[dev.email],
                         html_message=email_html,
                         fail_silently=True

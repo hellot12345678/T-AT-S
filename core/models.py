@@ -516,21 +516,25 @@ class EmailOTPVerification(models.Model):
 </html>"""
 
         import threading
+        from email.utils import parseaddr, formataddr
 
         def _dispatch_mail_async():
             try:
+                raw_from = getattr(settings, 'DEFAULT_FROM_EMAIL', '"T @ S" <noreply@tats.ai>')
+                parsed_name, parsed_addr = parseaddr(raw_from)
+                from_email = formataddr((parsed_name or 'T @ S', parsed_addr or 'noreply@tats.ai'))
                 send_mail(
                     subject=subject,
                     message=plain_message,
-                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'T @ S <noreply@tats.ai>'),
+                    from_email=from_email,
                     recipient_list=[email],
                     html_message=html_message,
                     fail_silently=False
                 )
             except Exception as e:
                 import logging
-                logging.getLogger(__name__).warning(
-                    f"[T@S Email Notification] OTP Email delivery note ({e}). Verification OTP: {raw_otp} for {email}"
+                logging.getLogger(__name__).error(
+                    f"[T@S Email Error] Failed to send email via SMTP ({e}). Fallback verification OTP: {raw_otp} for {email}"
                 )
 
         threading.Thread(target=_dispatch_mail_async, daemon=True, name=f"EmailOTPThread-{email}").start()
