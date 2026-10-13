@@ -24,12 +24,13 @@ interface HeaderProps {
 }
 
 const AD_LINES = [
-  "⚡ Sub-850ms Voice AI Telephony Infrastructure",
-  "🎙️ 6s Zero-Shot Real-Time Voice Cloning",
-  "⚙️ Dynamic OpenAPI Function Tool Execution",
-  "🛡️ Isolated Multi-Tenant Enterprise Clusters",
-  "📞 Real-Time SIP & WebRTC Telephony Streaming",
-  "🚀 99.98% High-Throughput SLA Reliability"
+  "Sub-850ms Voice AI Telephony Infrastructure",
+  "6-Second Zero-Shot Real-Time Voice Cloning",
+  "Dynamic OpenAPI Function Tool Execution",
+  "Isolated Multi-Tenant Enterprise Sandboxes",
+  "Native Real-Time SIP & WebRTC Streaming",
+  "Deterministic Low-Latency Action Graphs",
+  "99.98% High-Throughput SLA Availability"
 ];
 
 export const Header: React.FC<HeaderProps> = ({
@@ -50,6 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showQuickstartModal, setShowQuickstartModal] = useState(false);
   const [adIndex, setAdIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Dynamic Real Notifications State
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -62,11 +64,15 @@ export const Header: React.FC<HeaderProps> = ({
 
   const activeApp = applications.find((a) => a.id === activeAppId) || applications[0];
 
-  // Vertical ad autoscroll interval
+  // Slow, smooth 3-tier vertical reel interval (changes every 4.5s over 750ms transition)
   useEffect(() => {
     const timer = setInterval(() => {
-      setAdIndex((prev) => (prev + 1) % AD_LINES.length);
-    }, 3200);
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setAdIndex((prev) => (prev + 1) % AD_LINES.length);
+        setIsTransitioning(false);
+      }, 750);
+    }, 4500);
     return () => clearInterval(timer);
   }, []);
 
@@ -121,6 +127,11 @@ export const Header: React.FC<HeaderProps> = ({
     }, 300);
   };
 
+  const item0 = AD_LINES[adIndex % AD_LINES.length];
+  const item1 = AD_LINES[(adIndex + 1) % AD_LINES.length];
+  const item2 = AD_LINES[(adIndex + 2) % AD_LINES.length];
+  const item3 = AD_LINES[(adIndex + 3) % AD_LINES.length];
+
   return (
     <header className="fixed top-0 left-0 right-0 h-16 z-40 bg-[#FFFFFF]/85 backdrop-blur-xl border-b border-[#FFE6DC]/60 shadow-[0_1px_8px_rgba(30,27,36,0.03)]">
       <div className="h-16 w-full px-4 sm:px-6 flex items-center justify-between gap-4">
@@ -165,14 +176,55 @@ export const Header: React.FC<HeaderProps> = ({
                 else onNavigate('demo');
               }}
               title="Click to explore T@S Autonomous Telephony Engine"
-              className="w-full h-8 px-1 bg-transparent border-0 shadow-none flex items-center overflow-hidden text-left cursor-pointer focus:outline-none"
+              className="w-full h-12 px-1 bg-transparent border-0 shadow-none flex items-center overflow-hidden text-center cursor-pointer focus:outline-none"
             >
-              <div className="h-7 overflow-hidden relative flex items-center w-full">
+              <div className="h-12 overflow-hidden relative w-full flex flex-col justify-center">
                 <div
-                  key={adIndex}
-                  className="text-xs font-semibold text-[#1D1A23] whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-500"
+                  className={`flex flex-col w-full ${
+                    isTransitioning
+                      ? '-translate-y-4 transition-transform duration-700 ease-in-out'
+                      : 'translate-y-0'
+                  }`}
                 >
-                  {AD_LINES[adIndex]}
+                  {/* Top Item (faded, moves out up on transition) */}
+                  <div
+                    className={`h-4 flex items-center justify-center text-[10px] text-[#57423D] truncate transition-opacity duration-700 ${
+                      isTransitioning ? 'opacity-0' : 'opacity-40 font-normal'
+                    }`}
+                  >
+                    {item0}
+                  </div>
+
+                  {/* Mid Item (bold & clear, moves to top on transition) */}
+                  <div
+                    className={`h-4 flex items-center justify-center truncate transition-all duration-700 ${
+                      isTransitioning
+                        ? 'text-[10px] opacity-40 font-normal text-[#57423D]'
+                        : 'text-xs opacity-100 font-bold text-[#1D1A23]'
+                    }`}
+                  >
+                    {item1}
+                  </div>
+
+                  {/* Bottom Item (faded, moves to mid & becomes bold on transition) */}
+                  <div
+                    className={`h-4 flex items-center justify-center truncate transition-all duration-700 ${
+                      isTransitioning
+                        ? 'text-xs opacity-100 font-bold text-[#1D1A23]'
+                        : 'text-[10px] opacity-40 font-normal text-[#57423D]'
+                    }`}
+                  >
+                    {item2}
+                  </div>
+
+                  {/* Incoming Item (moves in from below to bottom on transition) */}
+                  <div
+                    className={`h-4 flex items-center justify-center text-[10px] text-[#57423D] truncate transition-opacity duration-700 ${
+                      isTransitioning ? 'opacity-40 font-normal' : 'opacity-0'
+                    }`}
+                  >
+                    {item3}
+                  </div>
                 </div>
               </div>
             </button>

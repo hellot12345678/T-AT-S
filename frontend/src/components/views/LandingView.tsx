@@ -860,6 +860,101 @@ export function VoiceController() {
           </div>
         </div>
       </section>
+
+      {/* Landing Page Footer */}
+      <footer className="w-full bg-[#18161D] text-[#A49BAF] border-t border-[#2F293A] pt-12 pb-8 px-4 sm:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-[#2C2736]">
+            {/* Brand Column */}
+            <div className="md:col-span-1 space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FF7E5F] via-[#FF5F45] to-[#FFAE33] flex items-center justify-center text-white font-bold text-xs shadow-md">
+                  <span className="material-symbols-outlined text-[18px]">graphic_eq</span>
+                </div>
+                <span className="font-['Outfit'] font-bold text-lg text-white tracking-tight">
+                  T@S
+                </span>
+              </div>
+              <p className="text-xs text-[#8B8196] leading-relaxed">
+                Autonomous Telephony System. Real-time deterministic voice-to-execution runtime with sub-850ms latency SLA.
+              </p>
+              <div className="flex items-center gap-2 text-[11px] text-emerald-400 font-mono">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>All Telephony Systems Operational</span>
+              </div>
+            </div>
+
+            {/* Product Column */}
+            <div className="space-y-2.5">
+              <h4 className="font-['Outfit'] text-xs font-bold uppercase tracking-wider text-white">
+                Platform Core
+              </h4>
+              <ul className="space-y-2 text-xs">
+                <li>
+                  <button onClick={() => onNavigate('live-voice-playground')} className="hover:text-white transition-colors cursor-pointer text-left">
+                    Voice Playground
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => onNavigate('tool-builder')} className="hover:text-white transition-colors cursor-pointer text-left">
+                    OpenAPI Tool Builder
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => onNavigate('plans-billing')} className="hover:text-white transition-colors cursor-pointer text-left">
+                    Subscriptions &amp; Units
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => onNavigate('demo')} className="hover:text-white transition-colors cursor-pointer text-left">
+                    Interactive Walkthrough
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Architecture Column */}
+            <div className="space-y-2.5">
+              <h4 className="font-['Outfit'] text-xs font-bold uppercase tracking-wider text-white">
+                Infrastructure
+              </h4>
+              <ul className="space-y-2 text-xs text-[#8B8196]">
+                <li>Sub-850ms Acoustic Graph</li>
+                <li>Deterministic Function Router</li>
+                <li>6-Sec Zero-Shot Voice Clones</li>
+                <li>Self-Hosted pgvector Isolation</li>
+              </ul>
+            </div>
+
+            {/* Compliance & Security */}
+            <div className="space-y-2.5">
+              <h4 className="font-['Outfit'] text-xs font-bold uppercase tracking-wider text-white">
+                Governance &amp; SLA
+              </h4>
+              <ul className="space-y-2 text-xs text-[#8B8196]">
+                <li>99.98% High-Throughput SLA</li>
+                <li>Enterprise Multi-Tenant DPAs</li>
+                <li>bcrypt Vocal Passphrase Gating</li>
+                <li>Role-Based Platform Control</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Copyright Bar */}
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#8B8196]">
+            <div>
+              &copy; {new Date().getFullYear()} T-AT-S Engineering. All rights reserved.
+            </div>
+            <div className="flex items-center gap-4 text-[11px]">
+              <span>Deterministic Execution</span>
+              <span>&bull;</span>
+              <span>Zero-Storage Volatile Audio</span>
+              <span>&bull;</span>
+              <span>Sub-850ms Latency SLA</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

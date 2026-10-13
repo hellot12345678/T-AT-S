@@ -332,11 +332,11 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       features: isAnnual
         ? [
             `${(growthUnits * 12).toLocaleString('en-IN')} units / year included`,
-            '🎁 2 Full Months Free (~17% Immediate Savings)',
-            '🔄 Unspent Credit Rollover Guarantee (Never expires)',
-            '🎙️ 3 Instant Neural Voice Clone Slots (vs 1 on monthly)',
-            '⚡ Sub-650ms Priority Speech Pipeline Guarantee',
-            '📞 50 Concurrent Channels (2x monthly limit)',
+            '2 Full Months Free (~17% Immediate Savings)',
+            'Unspent Credit Rollover Guarantee (Never expires)',
+            '3 Instant Neural Voice Clone Slots (vs 1 on monthly)',
+            'Sub-650ms Priority Speech Pipeline Guarantee',
+            '50 Concurrent Channels (2x monthly limit)',
             `${gracePct}% Grace Unit Buffer (Never Drops Callers)`,
             'Priority WhatsApp & Slack Bridge Support',
           ]
@@ -366,14 +366,14 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       features: isAnnual
         ? [
             `${(enterpriseUnits * 12).toLocaleString('en-IN')} units / year included`,
-            `🎁 Save ₹${(enterprisePrice * 2).toLocaleString('en-IN')} with 2 Months Free`,
-            '🔄 100% Unspent Quota Rollover into next year',
-            '🎙️ Unlimited Instant Neural Voice Clones',
-            '📞 Unlimited Concurrent Voice Channels',
-            '⚡ 99.99% High Availability SLA Guarantee',
-            '🛡️ Dedicated isolated SQLite / pgvector Cluster',
-            '👨‍💻 24/7 Dedicated Engineering Lead + Private Slack',
-            '📑 Custom Enterprise DPA & Invoice GST Billing',
+            `Save ₹${(enterprisePrice * 2).toLocaleString('en-IN')} with 2 Months Free`,
+            '100% Unspent Quota Rollover into next year',
+            'Unlimited Instant Neural Voice Clones',
+            'Unlimited Concurrent Voice Channels',
+            '99.99% High Availability SLA Guarantee',
+            'Dedicated isolated SQLite / pgvector Cluster',
+            '24/7 Dedicated Engineering Lead + Private Slack',
+            'Custom Enterprise DPA & Invoice GST Billing',
           ]
         : [
             `${enterpriseUnits.toLocaleString('en-IN')} units included / month`,
@@ -581,7 +581,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase font-mono ${
               billingCycle === 'annual' ? 'bg-white/20 text-white' : 'bg-[#FFDAD2] text-[#84240D]'
             }`}>
-              2 Mo Free 🎁
+              2 Months Free
             </span>
           </button>
         </div>
