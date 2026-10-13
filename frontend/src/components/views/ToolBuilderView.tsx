@@ -739,36 +739,15 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
               />
             </div>
 
-            <button
-              onClick={fetchDeployedTools}
-              disabled={isLoadingTools}
-              className="p-2 rounded-xl bg-[#FAF9F6] hover:bg-[#FFE6DC]/60 border border-[#FFE6DC] text-[#57423D] hover:text-[#1D1A23] transition-colors"
-              title="Refresh Cluster Tools"
-            >
-              <span className={`material-symbols-outlined text-[18px] ${isLoadingTools ? 'animate-spin' : ''}`}>
-                refresh
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Starter Templates Menu Bar & Clean Wrapped Action Pills */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1 border-t border-[#FFE6DC]/60 text-xs">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[#8B716B] font-semibold text-[11px] shrink-0 flex items-center gap-1 mr-1">
-              <span className="material-symbols-outlined text-[15px] text-[#FF7E5F]">auto_awesome</span>
-              Starter Templates:
-            </span>
-
-            {/* Quick Templates Dropdown Menu Button */}
+            {/* Quick Templates Dropdown Menu Button in Right Corner */}
             <div ref={templatesMenuRef} className="relative">
               <button
                 type="button"
                 onClick={() => setShowTemplatesMenu((prev) => !prev)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-[#FAF9F6] border border-[#FFE6DC] text-[#1D1A23] text-xs font-bold shadow-xs transition-all hover:border-[#DEC0B9]"
-                title="Open starter templates menu"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF9F6] hover:bg-[#FFDAD2]/30 border border-[#FFE6DC] text-[#1D1A23] text-xs font-bold shadow-xs transition-all hover:border-[#DEC0B9]"
+                title="Choose a starter action template"
               >
-                <span className="material-symbols-outlined text-[16px] text-[#FF7E5F]">menu_book</span>
+                <span className="material-symbols-outlined text-[16px] text-[#FF7E5F]">auto_awesome</span>
                 <span>Templates Menu</span>
                 <span className="material-symbols-outlined text-[16px] text-[#8B716B]">
                   {showTemplatesMenu ? 'expand_less' : 'expand_more'}
@@ -776,10 +755,10 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
               </button>
 
               {showTemplatesMenu && (
-                <div className="absolute left-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-[#FFE6DC] p-2 z-50 animate-in fade-in zoom-in-95">
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-[#FFE6DC] p-2 z-50 animate-in fade-in zoom-in-95">
                   <div className="px-3 py-1.5 border-b border-[#FFE6DC]/50 mb-1 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit']">
-                      Choose Starter Template
+                      Starter Templates
                     </span>
                     <span className="text-[10px] font-mono text-[#A53B22] font-semibold">5 Available</span>
                   </div>
@@ -797,7 +776,7 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
                           <span className="font-semibold text-xs text-[#1D1A23] group-hover:text-[#A53B22]">
                             {tmpl.name}
                           </span>
-                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#FAF9F6] border border-[#FFE6DC] text-[#8B716B]">
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-white border border-[#FFE6DC] text-[#8B716B]">
                             {tmpl.badge}
                           </span>
                         </div>
@@ -811,21 +790,16 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
               )}
             </div>
 
-            {/* Clean Wrapped Action Pills (never cuts off, wraps to next line if needed, no horizontal scroll) */}
-            <div className="hidden sm:flex flex-wrap items-center gap-1.5">
-              {QUICK_TEMPLATES.map((tmpl) => (
-                <button
-                  key={tmpl.id}
-                  onClick={() => handleLoadTemplate(tmpl)}
-                  className="px-2.5 py-1 rounded-full bg-[#FAF9F6] hover:bg-[#FFDAD2]/40 border border-[#FFE6DC] text-[#1D1A23] hover:text-[#A53B22] font-semibold text-[11px] transition-all flex items-center gap-1.5 shadow-xs"
-                >
-                  <span>{tmpl.name}</span>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-white border border-[#FFE6DC] text-[#8B716B]">
-                    {tmpl.badge}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={fetchDeployedTools}
+              disabled={isLoadingTools}
+              className="p-2 rounded-xl bg-[#FAF9F6] hover:bg-[#FFE6DC]/60 border border-[#FFE6DC] text-[#57423D] hover:text-[#1D1A23] transition-colors"
+              title="Refresh Cluster Tools"
+            >
+              <span className={`material-symbols-outlined text-[18px] ${isLoadingTools ? 'animate-spin' : ''}`}>
+                refresh
+              </span>
+            </button>
           </div>
         </div>
 
