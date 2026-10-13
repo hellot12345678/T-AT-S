@@ -58,14 +58,38 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
   onShowToast,
   developer
 }) => {
-  // If the user already signed in with superuser/admin credentials, unlock automatically
-  const initialAuth = Boolean(developer?.is_admin || TATSBackendAPI.getCurrentDeveloper()?.is_admin);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(initialAuth);
+  // Persistent Lock Check: If explicitly locked, ALWAYS remain locked even after page refresh!
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    const isExplicitlyLocked = localStorage.getItem('tats_admin_portal_locked') === 'true';
+    if (isExplicitlyLocked) return false;
+    // Session unlock flag (persists across tab reload if not locked)
+    return sessionStorage.getItem('tats_admin_portal_unlocked') === 'true';
+  });
+
   const [adminEmailInput, setAdminEmailInput] = useState<string>(developer?.email || '');
+  const [authMethod, setAuthMethod] = useState<'PASSWORD' | 'OTP' | 'SAVE_CODES'>('PASSWORD');
   const [passwordInput, setPasswordInput] = useState<string>('');
+  const [otpInput, setOtpInput] = useState<string>('');
+  const [saveCodeInput, setSaveCodeInput] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string>('');
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
+  const [isSendingOtp, setIsSendingOtp] = useState<boolean>(false);
+  const [otpSentNotice, setOtpSentNotice] = useState<string>('');
+
+  // Fetch admin configured preferred verification method
+  useEffect(() => {
+    const fetchPref = async () => {
+      const email = adminEmailInput || developer?.email;
+      if (email) {
+        const pref = await TATSBackendAPI.getAdminAuthMethod(email);
+        if (pref && pref.auth_method) {
+          setAuthMethod(pref.auth_method);
+        }
+      }
+    };
+    fetchPref();
+  }, [adminEmailInput, developer?.email]);
 
   // Active admin tab
   const [adminTab, setAdminTab] = useState<'users' | 'end-users' | 'pricing' | 'database'>('users');
@@ -198,11 +222,54 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
     }
   };
 
-  // Admin Credentials Unlock Handler (checks with Django backend)
+  // Dispatch Email OTP to administrator
+  const handleSendOTP = async () => {
+    if (!adminEmailInput.trim()) {
+      setAuthError('Please enter the administrator email address.');
+      return;
+    }
+    setIsSendingOtp(true);
+    setAuthError('');
+    setOtpSentNotice('');
+
+    try {
+      const res = await TATSBackendAPI.sendAdminGovernanceOTP(adminEmailInput.trim());
+      if (res.ok) {
+        setOtpSentNotice(res.data?.message || `6-digit verification code sent to ${adminEmailInput}.`);
+        onShowToast('OTP Dispatched', `Verification code sent to ${adminEmailInput}. Check email or server console.`);
+      } else {
+        setAuthError(res.data?.error || 'Failed to dispatch verification code.');
+      }
+    } catch (err: any) {
+      setAuthError(err.message || 'Error sending verification code.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  // Admin Credentials Unlock Handler with Multi-Method Support
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adminEmailInput || !passwordInput) {
-      setAuthError('Please enter both email and password.');
+    if (!adminEmailInput.trim()) {
+      setAuthError('Administrator email is required.');
+      return;
+    }
+
+    let credential = '';
+    if (authMethod === 'PASSWORD') credential = passwordInput;
+    else if (authMethod === 'OTP') credential = otpInput;
+    else if (authMethod === 'SAVE_CODES') credential = saveCodeInput;
+
+    if (!credential.trim()) {
+      setAuthError(
+        `Please enter your ${
+          authMethod === 'PASSWORD'
+            ? 'administrator password'
+            : authMethod === 'OTP'
+            ? '6-digit email OTP'
+            : 'emergency save code (e.g. TAS-XXXX-XXXX)'
+        }.`
+      );
       return;
     }
 
@@ -210,15 +277,24 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
     setAuthError('');
 
     try {
-      const res = await TATSBackendAPI.login(adminEmailInput, passwordInput);
-      if (res.ok && res.data?.developer?.is_admin) {
+      const res = await TATSBackendAPI.unlockGovernancePortal({
+        email: adminEmailInput.trim(),
+        method: authMethod,
+        credential: credential.trim(),
+      });
+
+      if (res.ok && res.data?.success) {
+        // Clear locked state so current session is authorized
+        localStorage.removeItem('tats_admin_portal_locked');
+        sessionStorage.setItem('tats_admin_portal_unlocked', 'true');
         setIsAuthenticated(true);
         setAuthError('');
-        onShowToast('Admin Portal Unlocked', `Welcome back, ${res.data.developer.name || 'Platform Administrator'}.`);
-      } else if (res.ok && !res.data?.developer?.is_admin) {
-        setAuthError('Access denied: This account does not possess Super Admin permissions.');
+        setPasswordInput('');
+        setOtpInput('');
+        setSaveCodeInput('');
+        onShowToast('Admin Portal Unlocked', res.data?.message || 'Access granted to Platform Governance.');
       } else {
-        setAuthError(res.data?.error || 'Invalid administrator credentials.');
+        setAuthError(res.data?.error || 'Authentication check failed.');
       }
     } catch (err: any) {
       setAuthError(err.message || 'Authentication failed. Please verify credentials.');
@@ -228,10 +304,15 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
   };
 
   const handleLock = () => {
+    // Persist lock in localStorage so page reload NEVER bypasses the lock!
+    localStorage.setItem('tats_admin_portal_locked', 'true');
+    sessionStorage.removeItem('tats_admin_portal_unlocked');
     setIsAuthenticated(false);
     setPasswordInput('');
+    setOtpInput('');
+    setSaveCodeInput('');
     setAuthError('');
-    onShowToast('Admin Portal Locked', 'Session locked for security.');
+    onShowToast('Admin Portal Locked', 'Platform Governance locked securely. Page refresh will maintain the locked state.');
   };
 
   // Filtered Developers
@@ -258,27 +339,84 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
   const estPlatformInfra = totalProjectedRevenue * 0.28;
   const netMargin = totalProjectedRevenue - estPlatformInfra;
 
-  // PASSWORD GATE VIEW (WHEN LOCKED)
+  // SECURE GATE VIEW (WHEN LOCKED)
   if (!isAuthenticated) {
     return (
       <div className="w-full min-h-[calc(100vh-4rem)] bg-[#FAF9F6] flex items-center justify-center p-4 sm:p-6">
-        <div className="relative w-full max-w-md bg-white rounded-3xl p-8 border border-[#FFE6DC] shadow-[0_20px_50px_-10px_rgba(255,126,95,0.18)] flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+        <div className="relative w-full max-w-lg bg-white rounded-3xl p-7 sm:p-9 border-2 border-[#FFE6DC] shadow-[0_20px_50px_-10px_rgba(255,126,95,0.18)] flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
           {/* Key Icon */}
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#FF7E5F] to-[#FFAE33] flex items-center justify-center text-white shadow-[0_8px_20px_rgba(255,126,95,0.35)] mb-5">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#FF7E5F] via-[#FF5F45] to-[#FFAE33] flex items-center justify-center text-white shadow-[0_8px_20px_rgba(255,126,95,0.35)] mb-4">
             <span className="material-symbols-outlined text-[32px]">admin_panel_settings</span>
           </div>
 
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFDAD2] text-[#84240D] font-['Outfit'] text-[11px] font-bold uppercase tracking-wider mb-2">
+            <span className="material-symbols-outlined text-[14px]">lock</span>
+            <span>Platform Governance Locked</span>
+          </div>
+
           <h2 className="font-['Outfit'] text-2xl font-bold text-[#1D1A23]">
-            Admin Access Verification
+            Admin Security Verification Check
           </h2>
-          <p className="text-xs sm:text-sm text-[#57423D] mt-2 mb-6 max-w-xs leading-relaxed">
-            Please sign in with your Super Administrator email and password to access platform governance.
+          <p className="text-xs text-[#57423D] mt-1.5 mb-5 max-w-sm leading-relaxed">
+            Verify your administrator identity to access tenant clusters, monetization tuning, and platform telemetry.
           </p>
 
-          <form onSubmit={handleUnlock} className="w-full flex flex-col gap-3">
+          {/* Verification Method Switcher */}
+          <div className="w-full grid grid-cols-3 gap-1.5 p-1.5 bg-[#FAF9F6] border border-[#FFE6DC] rounded-2xl mb-5">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMethod('PASSWORD');
+                setAuthError('');
+              }}
+              className={`py-2 px-2 rounded-xl text-[11px] font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all ${
+                authMethod === 'PASSWORD'
+                  ? 'bg-white text-[#A53B22] shadow-sm border border-[#FFE6DC]'
+                  : 'text-[#8B716B] hover:text-[#1D1A23]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">key</span>
+              <span>Password</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMethod('OTP');
+                setAuthError('');
+              }}
+              className={`py-2 px-2 rounded-xl text-[11px] font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all ${
+                authMethod === 'OTP'
+                  ? 'bg-white text-[#A53B22] shadow-sm border border-[#FFE6DC]'
+                  : 'text-[#8B716B] hover:text-[#1D1A23]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">mail</span>
+              <span>Email OTP</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMethod('SAVE_CODES');
+                setAuthError('');
+              }}
+              className={`py-2 px-2 rounded-xl text-[11px] font-bold flex flex-col sm:flex-row items-center justify-center gap-1 transition-all ${
+                authMethod === 'SAVE_CODES'
+                  ? 'bg-white text-[#A53B22] shadow-sm border border-[#FFE6DC]'
+                  : 'text-[#8B716B] hover:text-[#1D1A23]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">shield</span>
+              <span>Save Code</span>
+            </button>
+          </div>
+
+          <form onSubmit={handleUnlock} className="w-full flex flex-col gap-3.5">
+            {/* Email Field */}
             <div className="relative w-full text-left">
               <label className="text-[11px] font-bold text-[#8B716B] uppercase tracking-wider block mb-1">
-                Admin Email
+                Admin Email Address
               </label>
               <input
                 type="email"
@@ -293,34 +431,101 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
               />
             </div>
 
-            <div className="relative w-full text-left">
-              <label className="text-[11px] font-bold text-[#8B716B] uppercase tracking-wider block mb-1">
-                Password
-              </label>
-              <div className="relative">
+            {/* Mode 1: Password Input */}
+            {authMethod === 'PASSWORD' && (
+              <div className="relative w-full text-left animate-in fade-in">
+                <label className="text-[11px] font-bold text-[#8B716B] uppercase tracking-wider block mb-1">
+                  Administrator Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={passwordInput}
+                    onChange={(e) => {
+                      setPasswordInput(e.target.value);
+                      if (authError) setAuthError('');
+                    }}
+                    placeholder="Enter administrator password..."
+                    className="w-full h-11 pl-4 pr-11 rounded-xl bg-[#FAF9F6] border border-[#FFE6DC] text-xs text-[#1D1A23] font-medium focus:outline-none focus:ring-2 focus:ring-[#FF7E5F] transition-all"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-[#8B716B] hover:text-[#1D1A23] p-1"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {showPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Mode 2: Email OTP Input */}
+            {authMethod === 'OTP' && (
+              <div className="relative w-full text-left flex flex-col gap-2 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-[#8B716B] uppercase tracking-wider">
+                    6-Digit Email OTP
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleSendOTP}
+                    disabled={isSendingOtp}
+                    className="text-[11px] font-bold text-[#A53B22] hover:underline flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <span className={`material-symbols-outlined text-[14px] ${isSendingOtp ? 'animate-spin' : ''}`}>
+                      {isSendingOtp ? 'refresh' : 'send'}
+                    </span>
+                    <span>{isSendingOtp ? 'Dispatching...' : otpSentNotice ? 'Resend OTP' : 'Send OTP to Email'}</span>
+                  </button>
+                </div>
+
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={passwordInput}
+                  type="text"
+                  maxLength={6}
+                  value={otpInput}
                   onChange={(e) => {
-                    setPasswordInput(e.target.value);
+                    setOtpInput(e.target.value.replace(/\D/g, ''));
                     if (authError) setAuthError('');
                   }}
-                  placeholder="Enter administrator password..."
-                  className="w-full h-11 pl-4 pr-11 rounded-xl bg-[#FAF9F6] border border-[#FFE6DC] text-xs text-[#1D1A23] font-medium focus:outline-none focus:ring-2 focus:ring-[#FF7E5F] transition-all"
+                  placeholder="• • • • • •"
+                  className="w-full h-12 px-4 rounded-xl bg-[#FAF9F6] border border-[#FFE6DC] text-center font-mono text-lg tracking-[0.5em] text-[#1D1A23] font-bold focus:outline-none focus:ring-2 focus:ring-[#FF7E5F] transition-all"
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-[#8B716B] hover:text-[#1D1A23] p-1"
-                  title={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    {showPassword ? 'visibility_off' : 'visibility'}
-                  </span>
-                </button>
+
+                {otpSentNotice && (
+                  <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 p-2 rounded-lg text-center font-medium">
+                    {otpSentNotice}
+                  </p>
+                )}
               </div>
-            </div>
+            )}
+
+            {/* Mode 3: Save / Recovery Codes Input */}
+            {authMethod === 'SAVE_CODES' && (
+              <div className="relative w-full text-left flex flex-col gap-1.5 animate-in fade-in">
+                <label className="text-[11px] font-bold text-[#8B716B] uppercase tracking-wider">
+                  Emergency Save Code
+                </label>
+                <input
+                  type="text"
+                  value={saveCodeInput}
+                  onChange={(e) => {
+                    setSaveCodeInput(e.target.value.toUpperCase());
+                    if (authError) setAuthError('');
+                  }}
+                  placeholder="TAS-XXXX-XXXX"
+                  className="w-full h-11 px-4 rounded-xl bg-[#FAF9F6] border border-[#FFE6DC] text-xs font-mono uppercase text-[#1D1A23] font-bold tracking-wider focus:outline-none focus:ring-2 focus:ring-[#FF7E5F] transition-all"
+                  required
+                />
+                <p className="text-[11px] text-[#57423D] leading-tight">
+                  Enter one of your 5 single-use emergency recovery codes generated in Accounts & Settings.
+                </p>
+              </div>
+            )}
 
             {authError && (
               <div className="p-3 rounded-xl bg-[#FFDAD6] border border-[#BA1A1A]/20 text-[#93000A] text-xs flex items-center gap-2 text-left mt-1">
@@ -334,16 +539,25 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
               disabled={isAuthenticating}
               className="w-full mt-2 py-3 rounded-full bg-gradient-to-r from-[#FF7E5F] via-[#FF5F45] to-[#FFAE33] hover:from-[#FF5F45] hover:to-[#FFAE33] text-white font-['Outfit'] font-bold text-sm shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <span>{isAuthenticating ? 'Verifying...' : 'Unlock Governance Portal'}</span>
+              <span>{isAuthenticating ? 'Verifying Credentials...' : 'Unlock Governance Portal'}</span>
               <span className={`material-symbols-outlined text-[18px] ${isAuthenticating ? 'animate-spin' : ''}`}>
                 {isAuthenticating ? 'refresh' : 'lock_open'}
               </span>
             </button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-[#FFE6DC]/60 w-full text-xs text-[#8B716B] flex items-center justify-center gap-1.5 font-mono">
-            <span className="material-symbols-outlined text-[14px] text-[#A53B22]">shield</span>
-            <span>Authenticate using your credentials</span>
+          {/* Persistent security footnote */}
+          <div className="mt-6 pt-4 border-t border-[#FFE6DC]/60 w-full text-[11px] text-[#8B716B] flex items-center justify-between font-mono">
+            <span className="flex items-center gap-1">
+              <span className="material-symbols-outlined text-[14px] text-emerald-600">verified_user</span>
+              <span>ACID Security Shield</span>
+            </span>
+            <button
+              onClick={() => onNavigate('settings')}
+              className="text-[#A53B22] hover:underline font-bold"
+            >
+              Security Settings →
+            </button>
           </div>
         </div>
       </div>

@@ -51,6 +51,21 @@ class Developer(AbstractBaseUser, PermissionsMixin):
     is_verified = models.BooleanField(default=False, db_index=True, help_text="Verified via email OTP")
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    governance_auth_method = models.CharField(
+        max_length=30,
+        default='PASSWORD',
+        choices=[
+            ('PASSWORD', 'Master Password'),
+            ('OTP', 'Email OTP'),
+            ('SAVE_CODES', 'Save / Backup Codes')
+        ],
+        help_text="Verification check required during Platform Governance access"
+    )
+    governance_save_codes = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Single-use emergency recovery backup codes for Platform Governance unlock"
+    )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 

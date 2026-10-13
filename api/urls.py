@@ -6,6 +6,9 @@ from api.views import (
     AdminConfigView,
     AdminGovernanceDataView,
     AdminDeveloperStatusView,
+    AdminGovernanceSecurityView,
+    AdminGovernanceUnlockView,
+    AdminSendOTPView,
     SystemStatusView,
     DeveloperRegisterView,
     LoginRequestOTPView,
@@ -88,5 +91,8 @@ urlpatterns = [
     path('platform-config/', AdminConfigView.as_view(), name='api-platform-config'),
     path('plans/', AdminConfigView.as_view(), name='api-plans'),
     path('admin/governance/', AdminGovernanceDataView.as_view(), name='api-admin-governance'),
+    path('admin/governance/security/', AdminGovernanceSecurityView.as_view(), name='api-admin-gov-security'),
+    path('admin/governance/unlock/', AdminGovernanceUnlockView.as_view(), name='api-admin-gov-unlock'),
+    path('admin/governance/send-otp/', AdminSendOTPView.as_view(), name='api-admin-gov-send-otp'),
     path('admin/developers/<uuid:dev_id>/toggle-status/', AdminDeveloperStatusView.as_view(), name='api-admin-dev-status'),
 ]

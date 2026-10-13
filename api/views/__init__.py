@@ -5,7 +5,10 @@ from .tools import ToolManagementView
 from .admin import (
     AdminConfigView,
     AdminGovernanceDataView,
-    AdminDeveloperStatusView
+    AdminDeveloperStatusView,
+    AdminGovernanceSecurityView,
+    AdminGovernanceUnlockView,
+    AdminSendOTPView
 )
 from .auth import (
     SystemStatusView,

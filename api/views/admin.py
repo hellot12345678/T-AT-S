@@ -2,8 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from drf_spectacular.utils import extend_schema
-from core.models import PlatformConfig
+import secrets
+from django.contrib.auth.hashers import check_password
+from core.models import PlatformConfig, Developer, EmailOTPVerification, Notification
+from core.auth import DeveloperTokenAuthentication, IsDeveloperAuthenticated
 from api.serializers import PlatformConfigSerializer
+from api.views.auth import validate_strong_password
 
 class AdminConfigView(APIView):
     """
@@ -144,3 +148,217 @@ class AdminDeveloperStatusView(APIView):
             }, status=status.HTTP_200_OK)
         except Developer.DoesNotExist:
             return Response({'error': 'Developer not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class AdminGovernanceSecurityView(APIView):
+    """
+    Manages Super Admin Platform Governance Security configuration:
+    - Verification check mode (PASSWORD, OTP, SAVE_CODES)
+    - Generates and lists offline single-use save/backup recovery codes
+    - Updates admin governance password
+    Only accessible to authenticated Super Administrators.
+    """
+    authentication_classes = [DeveloperTokenAuthentication]
+    permission_classes = [IsDeveloperAuthenticated]
+
+    def get(self, request):
+        dev = request.developer
+        if not dev.is_admin:
+            return Response({'error': 'Unauthorized. Admin privileges required.'}, status=status.HTTP_403_FORBIDDEN)
+
+        # If user selected SAVE_CODES but has none, auto-generate initial set
+        if not dev.governance_save_codes:
+            dev.governance_save_codes = [f"TAS-{secrets.token_hex(2).upper()}-{secrets.token_hex(2).upper()}" for _ in range(5)]
+            dev.save()
+
+        return Response({
+            'auth_method': dev.governance_auth_method or 'PASSWORD',
+            'save_codes': dev.governance_save_codes,
+            'save_codes_count': len(dev.governance_save_codes),
+            'email': dev.email
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        dev = request.developer
+        if not dev.is_admin:
+            return Response({'error': 'Unauthorized. Admin privileges required.'}, status=status.HTTP_403_FORBIDDEN)
+
+        action = request.data.get('action')
+
+        if action == 'update_method':
+            method = request.data.get('method', 'PASSWORD').upper()
+            if method not in ['PASSWORD', 'OTP', 'SAVE_CODES']:
+                return Response({'error': "Invalid verification method. Choose 'PASSWORD', 'OTP', or 'SAVE_CODES'."}, status=status.HTTP_400_BAD_REQUEST)
+
+            if method == 'SAVE_CODES' and not dev.governance_save_codes:
+                dev.governance_save_codes = [f"TAS-{secrets.token_hex(2).upper()}-{secrets.token_hex(2).upper()}" for _ in range(5)]
+
+            dev.governance_auth_method = method
+            dev.save()
+
+            Notification.objects.create(
+                developer=dev,
+                title="Governance Security Updated",
+                message=f"Platform Governance verification check set to {method}.",
+                notification_type='SYSTEM'
+            )
+
+            return Response({
+                'message': f"Platform Governance verification check set to {method}.",
+                'auth_method': dev.governance_auth_method,
+                'save_codes': dev.governance_save_codes,
+                'save_codes_count': len(dev.governance_save_codes)
+            }, status=status.HTTP_200_OK)
+
+        elif action == 'generate_save_codes':
+            # Generate 5 fresh single-use recovery codes
+            new_codes = [f"TAS-{secrets.token_hex(2).upper()}-{secrets.token_hex(2).upper()}" for _ in range(5)]
+            dev.governance_save_codes = new_codes
+            dev.save()
+
+            Notification.objects.create(
+                developer=dev,
+                title="Save Codes Regenerated",
+                message="A new set of 5 single-use emergency backup recovery codes was generated.",
+                notification_type='SYSTEM'
+            )
+
+            return Response({
+                'message': "5 new emergency save codes generated successfully.",
+                'save_codes': new_codes,
+                'save_codes_count': len(new_codes)
+            }, status=status.HTTP_200_OK)
+
+        elif action == 'update_password':
+            old_password = request.data.get('old_password', '')
+            new_password = request.data.get('new_password', '')
+
+            if not old_password or not new_password:
+                return Response({'error': 'Please provide both current password and new password.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not check_password(old_password, dev.password):
+                return Response({'error': 'Current administrator password does not match.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                validate_strong_password(new_password)
+            except ValueError as ve:
+                return Response({'error': str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+
+            dev.set_password(new_password)
+            dev.save()
+
+            Notification.objects.create(
+                developer=dev,
+                title="Admin Password Updated",
+                message="Your administrator credentials have been successfully updated from Accounts & Settings.",
+                notification_type='SYSTEM'
+            )
+
+            return Response({'message': 'Administrator password updated successfully.'}, status=status.HTTP_200_OK)
+
+        return Response({'error': f"Unknown action: {action}"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminGovernanceUnlockView(APIView):
+    """
+    Unlocks Platform Governance access through the admin's chosen verification check:
+    - Master Password
+    - 6-digit Email OTP
+    - Single-use Save / Recovery Backup Code
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        email = request.query_params.get('email', '').lower().strip()
+        if not email:
+            return Response({'error': 'Email required.'}, status=status.HTTP_400_BAD_REQUEST)
+        admin = Developer.objects.filter(email=email, is_admin=True).first()
+        if not admin:
+            return Response({'error': 'Administrator account not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({
+            'auth_method': admin.governance_auth_method or 'PASSWORD',
+            'has_save_codes': len(admin.governance_save_codes or []) > 0,
+            'save_codes_count': len(admin.governance_save_codes or [])
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        email = request.data.get('email', '').lower().strip()
+        method = request.data.get('method', 'PASSWORD').upper()
+        credential = request.data.get('credential', '').strip()
+
+        if not email or not credential:
+            return Response({'error': 'Email and verification credential are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        dev = Developer.objects.filter(email=email, is_admin=True).first()
+        if not dev:
+            return Response({'error': 'Administrator account not found or access denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+        if method == 'PASSWORD':
+            if not check_password(credential, dev.password):
+                return Response({'error': 'Incorrect administrator password.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif method == 'OTP':
+            is_valid = EmailOTPVerification.verify_code(email=dev.email, raw_code=credential, purpose='LOGIN')
+            if not is_valid:
+                is_valid = EmailOTPVerification.verify_code(email=dev.email, raw_code=credential, purpose='REGISTER')
+            if not is_valid:
+                return Response({'error': 'Invalid or expired 6-digit verification code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif method in ['SAVE_CODES', 'SAVE_CODE']:
+            clean_input = credential.strip().upper()
+            save_codes = [c.upper() for c in (dev.governance_save_codes or [])]
+            if clean_input not in save_codes:
+                return Response({'error': 'Invalid emergency save code. Please enter an unused valid backup code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Consume code (single-use)
+            updated_codes = [c for c in dev.governance_save_codes if c.upper() != clean_input]
+            dev.governance_save_codes = updated_codes
+            dev.save()
+
+            Notification.objects.create(
+                developer=dev,
+                title="Save Code Used",
+                message=f"An emergency save code was consumed to unlock Platform Governance. {len(updated_codes)} codes remaining.",
+                notification_type='WARNING'
+            )
+        else:
+            return Response({'error': f"Unsupported verification method: {method}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'success': True,
+            'message': 'Platform Governance unlocked successfully.',
+            'auth_method_used': method,
+            'developer': {
+                'id': str(dev.id),
+                'name': dev.name,
+                'email': dev.email,
+                'is_admin': dev.is_admin,
+                'governance_auth_method': dev.governance_auth_method,
+                'save_codes_remaining': len(dev.governance_save_codes or [])
+            }
+        }, status=status.HTTP_200_OK)
+
+
+class AdminSendOTPView(APIView):
+    """
+    Sends a 6-digit OTP verification code to the Super Admin's email for governance unlock.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').lower().strip()
+        if not email:
+            return Response({'error': 'Admin email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        admin = Developer.objects.filter(email=email, is_admin=True).first()
+        if not admin:
+            return Response({'error': 'No Super Administrator account found with this email.'}, status=status.HTTP_404_NOT_FOUND)
+
+        instance, raw_otp = EmailOTPVerification.create_and_send(email=admin.email, purpose='LOGIN')
+
+        return Response({
+            'success': True,
+            'message': f"A 6-digit verification code has been dispatched to {admin.email}.",
+            'email': admin.email
+        }, status=status.HTTP_200_OK)
+

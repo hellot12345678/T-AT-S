@@ -332,6 +332,15 @@ export class TATSBackendAPI {
     return { ok: res.ok, status: res.status, data: await res.json() };
   }
 
+  public static async upgradeAppPlan(appId: string, plan: string) {
+    const res = await fetch(`${API_BASE}/apps/${appId}/upgrade/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ plan }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
   // ==========================================
   // Tool Registry
   // ==========================================
@@ -460,6 +469,79 @@ export class TATSBackendAPI {
       headers: this.getHeaders(),
     });
     return { ok: res.ok, data: await res.json() };
+  }
+
+  // ==========================================
+  // Platform Governance Security & Verification Check
+  // ==========================================
+  public static async getGovernanceSecurityConfig() {
+    const res = await fetch(`${API_BASE}/admin/governance/security/`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  public static async updateGovernanceSecurityMethod(method: string) {
+    const res = await fetch(`${API_BASE}/admin/governance/security/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ action: 'update_method', method }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  public static async generateGovernanceSaveCodes() {
+    const res = await fetch(`${API_BASE}/admin/governance/security/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ action: 'generate_save_codes' }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  public static async updateAdminGovernancePassword(payload: { old_password: string; new_password: string }) {
+    const res = await fetch(`${API_BASE}/admin/governance/security/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ action: 'update_password', ...payload }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  public static async getAdminAuthMethod(email: string) {
+    try {
+      const res = await fetch(`${API_BASE}/admin/governance/unlock/?email=${encodeURIComponent(email)}`, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  public static async sendAdminGovernanceOTP(email: string) {
+    const res = await fetch(`${API_BASE}/admin/governance/send-otp/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ email }),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
+  }
+
+  public static async unlockGovernancePortal(payload: {
+    email: string;
+    method: 'PASSWORD' | 'OTP' | 'SAVE_CODES' | 'SAVE_CODE';
+    credential: string;
+  }) {
+    const res = await fetch(`${API_BASE}/admin/governance/unlock/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return { ok: res.ok, status: res.status, data: await res.json() };
   }
 
   // ==========================================

@@ -153,6 +153,12 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             email: developer.email,
             contact: developer.phone || '',
           },
+          modal: {
+            ondismiss: () => {
+              setIsProcessing(false);
+              onShowToast('Payment Cancelled', 'Razorpay checkout was dismissed.', 'info');
+            },
+          },
           theme: {
             color: '#A53B22',
           },
@@ -212,7 +218,31 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       return;
     }
 
-    // Case 2: Already on the SAME paid plan (e.g. on Growth, clicking Growth)
+    // Case 2: Switching from paid plan to Free (Downgrade)
+    if (planTierNormalized === 'FREE' && currentTier !== 'FREE') {
+      if (!window.confirm(`Switch cluster "${activeApp.app_name}" to the Developer Free plan? Your application will reset to Free tier quota limits (${freeUnits.toLocaleString('en-IN')} units/mo).`)) {
+        return;
+      }
+      setIsProcessing(true);
+      (async () => {
+        try {
+          const res = await TATSBackendAPI.upgradeAppPlan(activeApp.id, 'FREE');
+          if (res.ok) {
+            await onRefreshApps();
+            onShowToast('Switched to Free Tier', `Cluster "${activeApp.app_name}" is now running on Developer Free.`, 'success');
+          } else {
+            onShowToast('Downgrade Notice', res.data?.error || 'Could not change plan.', 'warning');
+          }
+        } catch (err: any) {
+          onShowToast('Error', err.message || 'Failed to switch plan.', 'warning');
+        } finally {
+          setIsProcessing(false);
+        }
+      })();
+      return;
+    }
+
+    // Case 3: Already on the SAME paid plan (e.g. on Growth, clicking Growth)
     if (currentTier === planTierNormalized) {
       onShowToast(
         'Already Subscribed',
@@ -223,14 +253,14 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       return;
     }
 
-    // Case 3: Already on Growth, wants to upgrade to Scale Enterprise
+    // Case 4: Already on Growth, wants to upgrade to Scale Enterprise
     if (currentTier === 'GROWTH' && planTierNormalized === 'ENTERPRISE') {
       setTargetTransitionPlan(plan);
       setShowTransitionModal(true);
       return;
     }
 
-    // Case 4: Already on Enterprise, wants to click Growth
+    // Case 5: Already on Enterprise, wants to click Growth
     if (currentTier === 'ENTERPRISE' && planTierNormalized === 'GROWTH') {
       onShowToast(
         'Enterprise Plan Active',
@@ -241,7 +271,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       return;
     }
 
-    // Case 5: On Free tier, subscribing to Growth or Enterprise
+    // Case 6: Subscribing from Free to Growth or Enterprise
     executePayment(plan.id, plan.name, plan.price);
   };
 
@@ -662,13 +692,15 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                 <button
                   onClick={() => {
                     setShowTransitionModal(false);
-                    executePayment(targetTransitionPlan.id, targetTransitionPlan.name, targetTransitionPlan.price);
+                    if (targetTransitionPlan) {
+                      executePayment(targetTransitionPlan.id, targetTransitionPlan.name, targetTransitionPlan.price);
+                    }
                   }}
-                  disabled={isProcessing}
+                  disabled={isProcessing || !targetTransitionPlan}
                   className="mt-4 w-full py-2 px-3 rounded-full bg-[#A53B22] hover:bg-[#84240D] text-white font-bold text-xs shadow-sm transition-colors flex items-center justify-center gap-1.5"
                 >
                   <span className="material-symbols-outlined text-[15px]">payments</span>
-                  <span>Proceed (₹{targetTransitionPlan.price.toLocaleString('en-IN')})</span>
+                  <span>Proceed (₹{(targetTransitionPlan?.price || 0).toLocaleString('en-IN')})</span>
                 </button>
               </div>
             </div>
