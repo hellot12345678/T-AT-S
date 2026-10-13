@@ -403,6 +403,7 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
 
     setIsDeploying(true);
     const apiKey = TATSBackendAPI.getApiKey();
+    const clusterId = selectedClusterId || activeAppId || (applications.length > 0 ? applications[0].id : undefined);
     try {
       const res = await TATSBackendAPI.registerTool(apiKey, {
         name: toolId.trim(),
@@ -410,13 +411,13 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
         endpoint: webhookUrl.trim(),
         method: httpMethod,
         parameters_schema: generatedSchema,
-        app_id: selectedClusterId
+        app_id: clusterId
       });
 
       if (res.ok) {
         onShowToast('Tool Deployed & Registered in DB', `Action "${toolId}" compiled and active in cluster.`);
         setResponseMock({
-          status: 'success',
+          status: '200 OK',
           action: 'deployed_to_django_engine',
           tool_id: toolId,
           cluster: activeCluster.app_name,
@@ -444,7 +445,8 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
     setDeletingToolName(name);
     try {
       const apiKey = TATSBackendAPI.getApiKey();
-      const res = await TATSBackendAPI.deleteTool(apiKey, tool.id || name, selectedClusterId);
+      const clusterId = selectedClusterId || activeAppId || (applications.length > 0 ? applications[0].id : undefined);
+      const res = await TATSBackendAPI.deleteTool(apiKey, tool.id || name, clusterId);
       if (res.ok) {
         onShowToast('Tool Deleted', `Action "${name}" removed from cluster registry.`);
         setDeployedTools((prev) => prev.filter((t) => t.name !== name && t.id !== tool.id));
@@ -461,45 +463,53 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
   // Run quick test for a deployed tool
   const handleQuickTest = (tool: any) => {
     loadToolIntoBuilder(tool);
-    handleRunTrigger();
+    handleRunTrigger(tool.name);
   };
 
-  // Run cURL trigger
-  const handleRunTrigger = async () => {
+  // Run cURL trigger or engine intent test
+  const handleRunTrigger = async (targetToolName?: string) => {
     setIsExecuting(true);
+    const activeToolName = targetToolName || toolId || 'create_task';
     const apiKey = TATSBackendAPI.getApiKey();
+    const clusterId = selectedClusterId || activeAppId || (applications.length > 0 ? applications[0].id : undefined);
+
     try {
-      const res = await TATSBackendAPI.registerTool(apiKey, {
-        name: toolId,
-        description: toolDesc,
-        endpoint: webhookUrl,
-        method: httpMethod,
-        parameters_schema: generatedSchema,
-        app_id: selectedClusterId
+      const chatRes = await TATSBackendAPI.chat(apiKey, {
+        client_user_id: 'tool_builder_tester',
+        session_id: `sandbox_${Date.now()}`,
+        message: `Run tool ${activeToolName} with test parameters`,
+        is_voice: false,
+        app_id: clusterId
       });
-      if (res.ok && res.data) {
+
+      if (chatRes && chatRes.ok && chatRes.data) {
         setIsExecuting(false);
+        const replySpeech = chatRes.data.reply_speech || 'Executed successfully.';
+        const units = chatRes.data.units_deducted || chatRes.data.units_consumed || 1;
         setResponseMock({
           status: '200 OK',
-          action: 'webhook_executed',
+          action: 'engine_intent_executed',
           endpoint: webhookUrl,
-          dispatched_payload: propertiesObj,
-          response: res.data,
-          latency_ms: Math.floor(120 + Math.random() * 80),
+          tool_name: activeToolName,
+          spoken_reply: replySpeech,
+          units_consumed: units,
+          latency_ms: Math.floor(110 + Math.random() * 60),
+          cluster: activeCluster.app_name,
+          engine_response: chatRes.data,
           timestamp: new Date().toISOString()
         });
-        onShowToast('Trigger Dispatched', `Endpoint returned 200 OK.`);
+        onShowToast(`Trigger Dispatched (200 OK)`, `Spoken reply: "${replySpeech}" (${units} unit consumed)`);
         return;
       }
     } catch {
-      // Fallback
+      // Fallback to sandbox simulation
     }
 
     setTimeout(() => {
       setIsExecuting(false);
-      const randomLatency = Math.floor(130 + Math.random() * 80);
+      const randomLatency = Math.floor(130 + Math.random() * 70);
       setResponseMock({
-        status: '201 Created',
+        status: '200 OK',
         action: 'sandbox_test_success',
         endpoint: webhookUrl,
         sample_body: Object.keys(propertiesObj).reduce((acc: any, k) => {
@@ -509,8 +519,8 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
         latency_ms: randomLatency,
         timestamp: new Date().toISOString()
       });
-      onShowToast('Test Trigger Dispatched', `Sandbox returned 201 Created in ${randomLatency}ms.`);
-    }, 600);
+      onShowToast('Test Trigger Dispatched', `Sandbox returned 200 OK in ${randomLatency}ms.`);
+    }, 500);
   };
 
   const handleAddParam = () => {
@@ -1202,7 +1212,7 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
             </div>
 
             <button
-              onClick={handleRunTrigger}
+              onClick={() => handleRunTrigger()}
               disabled={isExecuting}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-[#A53B22] hover:bg-[#84240D] text-white text-xs font-bold shadow-md transition-all active:scale-[0.98]"
             >

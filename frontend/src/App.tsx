@@ -169,6 +169,16 @@ export default function App() {
     setActiveAppId(app.id);
   };
 
+  const handleSelectApp = (appOrId: any) => {
+    if (!appOrId) return;
+    const appId = typeof appOrId === 'string' ? appOrId : appOrId.id;
+    const appObj = applications.find((a: any) => a.id === appId) || (typeof appOrId === 'object' ? appOrId : null);
+    setActiveAppId(appId);
+    if (appObj) {
+      addToast('Switched Cluster', `Active application context set to "${appObj.app_name}".`);
+    }
+  };
+
   // Keyboard navigation shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -234,10 +244,7 @@ export default function App() {
         onLogout={handleLogout}
         applications={applications}
         activeAppId={activeAppId}
-        onSelectApp={(app) => {
-          setActiveAppId(app.id);
-          addToast('Switched Cluster', `Active application context set to "${app.app_name}".`);
-        }}
+        onSelectApp={handleSelectApp}
         onOpenCreateApp={() => setIsAppCreateModalOpen(true)}
       />
 
@@ -317,10 +324,7 @@ export default function App() {
                 developer={developer}
                 applications={applications}
                 activeAppId={activeAppId}
-                onSelectApp={(app) => {
-                  setActiveAppId(app.id);
-                  addToast('Switched Cluster', `Active application context set to "${app.app_name}".`);
-                }}
+                onSelectApp={handleSelectApp}
                 onRefreshApps={loadApplications}
                 onOpenCreateApp={() => setIsAppCreateModalOpen(true)}
               />
@@ -333,10 +337,7 @@ export default function App() {
                 developer={developer}
                 applications={applications}
                 activeAppId={activeAppId}
-                onSelectApp={(app) => {
-                  setActiveAppId(app.id);
-                  addToast('Switched Cluster', `Active application context set to "${app.app_name}".`);
-                }}
+                onSelectApp={handleSelectApp}
                 onRefreshApps={loadApplications}
                 onOpenCreateApp={() => setIsAppCreateModalOpen(true)}
                 onUpdateDeveloperProfile={(updatedDev) => {

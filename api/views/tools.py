@@ -16,26 +16,31 @@ class ToolManagementView(APIView):
     authentication_classes = [APIKeyAuthentication, DeveloperTokenAuthentication]
 
     def _resolve_application(self, request):
+        app_id = None
+        if hasattr(request, 'data') and isinstance(request.data, dict):
+            app_id = request.data.get('app_id')
+        if not app_id and hasattr(request, 'query_params'):
+            app_id = request.query_params.get('app_id')
+
+        if app_id and str(app_id).strip() not in ['undefined', 'null', 'None', '']:
+            import uuid
+            try:
+                uuid.UUID(str(app_id).strip())
+                if hasattr(request, 'developer') and request.developer:
+                    app = request.developer.applications.filter(id=app_id, is_active=True).first()
+                    if app:
+                        return app
+                from core.models import Application
+                app = Application.objects.filter(id=app_id, is_active=True).first()
+                if app:
+                    return app
+            except (ValueError, AttributeError, TypeError):
+                pass
+
         if hasattr(request, 'application') and request.application:
             return request.application
 
         if hasattr(request, 'developer') and request.developer:
-            app_id = None
-            if hasattr(request, 'data') and isinstance(request.data, dict):
-                app_id = request.data.get('app_id')
-            if not app_id and hasattr(request, 'query_params'):
-                app_id = request.query_params.get('app_id')
-
-            if app_id and str(app_id).strip() not in ['undefined', 'null', 'None', '']:
-                import uuid
-                try:
-                    uuid.UUID(str(app_id).strip())
-                    app = request.developer.applications.filter(id=app_id, is_active=True).first()
-                    if app:
-                        return app
-                except (ValueError, AttributeError, TypeError):
-                    pass
-
             app = request.developer.applications.filter(is_active=True).first()
             if not app:
                 from core.models import Application, APIKey
@@ -143,9 +148,15 @@ class ToolManagementView(APIView):
             return Response({'error': 'Tool ID or name is required for deletion.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Lookup by UUID id or unique name within application
-        tool = RegisteredTool.objects.filter(application=app).filter(
-            models.Q(id=tool_id) if len(str(tool_id)) > 30 else models.Q(name=tool_id)
-        ).first()
+        tool = None
+        import uuid
+        try:
+            uuid.UUID(str(tool_id).strip())
+            tool = RegisteredTool.objects.filter(application=app, id=str(tool_id).strip()).first()
+        except (ValueError, TypeError, AttributeError):
+            pass
+        if not tool:
+            tool = RegisteredTool.objects.filter(application=app, name=tool_id).first()
 
         if not tool:
             return Response({'error': 'Tool not found in this application cluster.'}, status=status.HTTP_404_NOT_FOUND)
