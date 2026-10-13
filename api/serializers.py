@@ -8,6 +8,7 @@ class ChatRequestSerializer(serializers.Serializer):
     message = serializers.CharField(required=True)
     passphrase = serializers.CharField(max_length=255, required=False, allow_blank=True)
     is_voice = serializers.BooleanField(default=True)
+    app_id = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
 
 
 class ToolRegisterSerializer(serializers.ModelSerializer):

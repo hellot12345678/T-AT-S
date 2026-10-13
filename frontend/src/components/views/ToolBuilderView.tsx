@@ -231,7 +231,8 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
     setIsLoadingTools(true);
     try {
       const apiKey = TATSBackendAPI.getApiKey();
-      const res = await TATSBackendAPI.getTools(apiKey, selectedClusterId);
+      const clusterId = selectedClusterId || activeAppId || (applications.length > 0 ? applications[0].id : undefined);
+      const res = await TATSBackendAPI.getTools(apiKey, clusterId);
       if (res && res.tools) {
         setDeployedTools(res.tools);
       } else {
@@ -246,7 +247,7 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
 
   useEffect(() => {
     fetchDeployedTools();
-  }, [selectedClusterId]);
+  }, [selectedClusterId, activeAppId, applications.length]);
 
   // Active Cluster Details
   const activeCluster = applications.find((a) => a.id === selectedClusterId) || applications[0] || {

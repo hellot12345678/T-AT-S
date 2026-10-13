@@ -1,8 +1,9 @@
+import uuid
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
-from core.auth import APIKeyAuthentication
+from core.auth import APIKeyAuthentication, DeveloperTokenAuthentication
 from agent.brain import AgentBrain, QuotaExceededError
 from api.serializers import ChatRequestSerializer
 
@@ -11,8 +12,44 @@ class ChatExecutionView(APIView):
     Primary runtime endpoint for voice & text action execution.
     Accepts speech transcript / text message, calls LLM, triggers tools,
     enforces accounting quotas, and returns speech audio response + UI update events.
+    Supports Application API Key (tas_live_...) or Developer Session Token (tas_dev_...).
     """
-    authentication_classes = [APIKeyAuthentication]
+    authentication_classes = [APIKeyAuthentication, DeveloperTokenAuthentication]
+
+    def _resolve_application(self, request, data=None):
+        if hasattr(request, 'application') and request.application:
+            return request.application
+
+        if hasattr(request, 'developer') and request.developer:
+            app_id = None
+            if data and isinstance(data, dict):
+                app_id = data.get('app_id')
+            if not app_id and hasattr(request, 'data') and isinstance(request.data, dict):
+                app_id = request.data.get('app_id')
+            if not app_id and hasattr(request, 'query_params'):
+                app_id = request.query_params.get('app_id')
+
+            if app_id and str(app_id).strip() not in ['undefined', 'null', 'None', '']:
+                try:
+                    uuid.UUID(str(app_id).strip())
+                    app = request.developer.applications.filter(id=app_id, is_active=True).first()
+                    if app:
+                        return app
+                except (ValueError, AttributeError, TypeError):
+                    pass
+
+            app = request.developer.applications.filter(is_active=True).first()
+            if not app:
+                from core.models import Application, APIKey
+                app = Application.objects.create(
+                    developer=request.developer,
+                    app_name="Default Workspace",
+                    base_url="https://api.tats.ai/v1"
+                )
+                APIKey.generate_for_app(app)
+            return app
+
+        return None
 
     @extend_schema(
         tags=['Acoustic Action Engine'],
@@ -28,7 +65,7 @@ class ChatExecutionView(APIView):
                 name='Authorization',
                 type=str,
                 location=OpenApiParameter.HEADER,
-                description='Bearer API Key: Bearer tas_live_...',
+                description='Bearer API Key: Bearer tas_live_... or Bearer tas_dev_...',
                 required=True
             ),
             OpenApiParameter(
@@ -63,7 +100,12 @@ class ChatExecutionView(APIView):
             return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         data = serializer.validated_data
-        application = request.application
+        application = self._resolve_application(request, data)
+        if not application:
+            return Response({
+                'error': 'UNAUTHORIZED',
+                'message': 'No valid application cluster found. Provide a valid Bearer tas_live_... API key or developer session token.'
+            }, status=status.HTTP_401_UNAUTHORIZED)
 
         brain = AgentBrain(application=application)
         try:
@@ -81,9 +123,13 @@ class ChatExecutionView(APIView):
                 'quota_status': qe.quota_status,
                 'upgrade_url': f'/api/v1/apps/{application.id}/upgrade/'
             }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        except Exception as ex:
+            return Response({
+                'error': 'EXECUTION_ERROR',
+                'message': str(ex)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         response = Response(result, status=status.HTTP_200_OK)
         if result.get('grace_buffer_active'):
             response['X-TATS-Grace-Buffer'] = 'active'
         return response
-

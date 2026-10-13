@@ -79,7 +79,7 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
 
           // Fetch real tools for this app
           try {
-            const toolsRes = await TATSBackendAPI.getTools(activeApiKey);
+            const toolsRes = await TATSBackendAPI.getTools(activeApiKey, mainApp.id);
             if (toolsRes && toolsRes.tools && toolsRes.tools.length > 0) {
               setActiveToolsList(toolsRes.tools);
               setToolsCount(toolsRes.tools.length);
@@ -113,10 +113,16 @@ export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({
         client_user_id: 'dev_tester',
         session_id: 'test_session',
         message: `Run tool ${toolName} with test arguments`,
-        is_voice: false
+        is_voice: false,
+        app_id: appId || undefined
       });
-      if (res.ok) {
-        onShowToast(`Tool ${toolName} Dispatched`, `Response 200 OK (${res.data.units_consumed || 1} units consumed).`);
+      if (res && res.ok) {
+        const units = res.data?.units_deducted || res.data?.units_consumed || 1;
+        const speech = res.data?.reply_speech || 'Executed successfully.';
+        onShowToast(`Tool ${toolName} Executed`, `Response 200 OK (${units} units). "${speech}"`);
+        return;
+      } else if (res && !res.ok && res.data?.message) {
+        onShowToast(`Test Response: ${res.status}`, res.data.message, 'warning');
         return;
       }
     }

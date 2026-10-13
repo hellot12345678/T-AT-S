@@ -26,10 +26,15 @@ class ToolManagementView(APIView):
             if not app_id and hasattr(request, 'query_params'):
                 app_id = request.query_params.get('app_id')
 
-            if app_id:
-                app = request.developer.applications.filter(id=app_id, is_active=True).first()
-                if app:
-                    return app
+            if app_id and str(app_id).strip() not in ['undefined', 'null', 'None', '']:
+                import uuid
+                try:
+                    uuid.UUID(str(app_id).strip())
+                    app = request.developer.applications.filter(id=app_id, is_active=True).first()
+                    if app:
+                        return app
+                except (ValueError, AttributeError, TypeError):
+                    pass
 
             app = request.developer.applications.filter(is_active=True).first()
             if not app:

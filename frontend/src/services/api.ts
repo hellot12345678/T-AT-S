@@ -367,22 +367,39 @@ export class TATSBackendAPI {
   // Tool Registry
   // ==========================================
   public static async getTools(apiKey?: string | null, appId?: string) {
-    const url = appId ? `${API_BASE}/tools/?app_id=${encodeURIComponent(appId)}` : `${API_BASE}/tools/`;
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: this.getHeaders(apiKey || undefined),
-    });
-    if (!res.ok) return null;
-    return await res.json();
+    const validAppId = appId && appId !== 'undefined' && appId !== 'null' ? appId : undefined;
+    const url = validAppId ? `${API_BASE}/tools/?app_id=${encodeURIComponent(validAppId)}` : `${API_BASE}/tools/`;
+    try {
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders(apiKey || undefined),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   }
 
   public static async deleteTool(apiKey?: string | null, toolIdOrName?: string, appId?: string) {
-    const res = await fetch(`${API_BASE}/tools/`, {
-      method: 'DELETE',
-      headers: this.getHeaders(apiKey || undefined),
-      body: JSON.stringify({ id: toolIdOrName, name: toolIdOrName, app_id: appId }),
-    });
-    return { ok: res.ok, status: res.status, data: await res.json() };
+    const validAppId = appId && appId !== 'undefined' && appId !== 'null' ? appId : undefined;
+    try {
+      const res = await fetch(`${API_BASE}/tools/`, {
+        method: 'DELETE',
+        headers: this.getHeaders(apiKey || undefined),
+        body: JSON.stringify({ id: toolIdOrName, name: toolIdOrName, app_id: validAppId }),
+      });
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: text };
+      }
+      return { ok: res.ok, status: res.status, data };
+    } catch (err: any) {
+      return { ok: false, status: 500, data: { error: err.message } };
+    }
   }
 
   public static async registerTool(apiKey?: string | null, toolData?: {
@@ -393,33 +410,62 @@ export class TATSBackendAPI {
     parameters_schema?: Record<string, any>;
     app_id?: string;
   }) {
-    const res = await fetch(`${API_BASE}/tools/register/`, {
-      method: 'POST',
-      headers: this.getHeaders(apiKey || undefined),
-      body: JSON.stringify(toolData),
-    });
-    return { ok: res.ok, status: res.status, data: await res.json() };
+    const validAppId = toolData?.app_id && toolData.app_id !== 'undefined' && toolData.app_id !== 'null' ? toolData.app_id : undefined;
+    try {
+      const res = await fetch(`${API_BASE}/tools/register/`, {
+        method: 'POST',
+        headers: this.getHeaders(apiKey || undefined),
+        body: JSON.stringify({
+          ...toolData,
+          app_id: validAppId,
+        }),
+      });
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: text };
+      }
+      return { ok: res.ok, status: res.status, data };
+    } catch (err: any) {
+      return { ok: false, status: 500, data: { error: err.message } };
+    }
   }
 
   // ==========================================
   // Agent Chat / Voice Execution
   // ==========================================
-  public static async chat(apiKey: string, payload: {
+  public static async chat(apiKey?: string | null, payload?: {
     client_user_id: string;
     session_id: string;
     message: string;
     passphrase?: string;
     is_voice?: boolean;
+    app_id?: string;
   }) {
-    const res = await fetch(`${API_BASE}/chat/`, {
-      method: 'POST',
-      headers: this.getHeaders(apiKey),
-      body: JSON.stringify({
-        ...payload,
-        is_voice: payload.is_voice ?? true,
-      }),
-    });
-    return { ok: res.ok, status: res.status, data: await res.json() };
+    const validAppId = payload?.app_id && payload.app_id !== 'undefined' && payload.app_id !== 'null' ? payload.app_id : undefined;
+    try {
+      const res = await fetch(`${API_BASE}/chat/`, {
+        method: 'POST',
+        headers: this.getHeaders(apiKey || undefined),
+        body: JSON.stringify({
+          ...(payload || {}),
+          app_id: validAppId,
+          is_voice: payload?.is_voice ?? true,
+        }),
+      });
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: text || 'Server returned invalid response' };
+      }
+      return { ok: res.ok, status: res.status, data };
+    } catch (err: any) {
+      return { ok: false, status: 500, data: { error: err.message || 'Network error' } };
+    }
   }
 
   // ==========================================
