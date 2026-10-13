@@ -66,6 +66,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [isSavingApp, setIsSavingApp] = useState(false);
   const [isRegeneratingKey, setIsRegeneratingKey] = useState(false);
 
+  // Small in-app confirmation modal states (replaces browser window.confirm)
+  const [showSaveCodesConfirm, setShowSaveCodesConfirm] = useState(false);
+  const [showApiKeyConfirm, setShowApiKeyConfirm] = useState(false);
+
   useEffect(() => {
     if (developer) {
       setName(developer.name || '');
@@ -183,13 +187,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  // Handle Regenerate Key
-  const handleRegenerateKey = async () => {
+  // Handle Regenerate Key (Opens small in-app modal)
+  const handleRegenerateKey = () => {
     if (!activeApp) return;
-    if (!window.confirm(`Are you sure you want to regenerate the API key for "${activeApp.app_name}"? Existing integrations will stop working until updated.`)) {
-      return;
-    }
+    setShowApiKeyConfirm(true);
+  };
 
+  const executeRegenerateKey = async () => {
+    if (!activeApp) return;
     setIsRegeneratingKey(true);
     try {
       const res = await TATSBackendAPI.regenerateAppKey(activeApp.id);
@@ -250,11 +255,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  // Admin: Generate Save Codes
-  const handleGenerateSaveCodes = async () => {
-    if (govSaveCodes.length > 0 && !window.confirm('Generating new save codes will invalidate all existing unused recovery codes. Continue?')) {
+  // Admin: Request Save Codes Regeneration (Opens small in-app modal)
+  const handleGenerateSaveCodes = () => {
+    if (govSaveCodes.length > 0) {
+      setShowSaveCodesConfirm(true);
       return;
     }
+    executeGenerateSaveCodes();
+  };
+
+  const executeGenerateSaveCodes = async () => {
     setIsGeneratingCodes(true);
     try {
       const res = await TATSBackendAPI.generateGovernanceSaveCodes();
@@ -1070,6 +1080,100 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   These security configurations are strictly restricted to verified platform administrators. Standard developer accounts cannot view or modify these controls.
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Small Screen Popup 1: Regenerate Offline Recovery Codes */}
+      {showSaveCodesConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="fixed inset-0" onClick={() => setShowSaveCodesConfirm(false)} />
+          <div className="relative w-full max-w-sm sm:max-w-md bg-white rounded-3xl p-6 sm:p-7 border border-[#FFE6DC] shadow-2xl flex flex-col items-center text-center gap-4 z-10 animate-in zoom-in-95 duration-150">
+            <div className="w-14 h-14 rounded-2xl bg-[#FFDAD2] text-[#A53B22] flex items-center justify-center shadow-md shadow-[#FF7E5F]/15">
+              <span className="material-symbols-outlined text-[28px]">vpn_key_alert</span>
+            </div>
+            <div>
+              <h3 className="font-['Outfit'] text-lg font-bold text-[#1D1A23]">
+                Invalidate & Regenerate Codes?
+              </h3>
+              <p className="text-xs text-[#57423D] mt-1.5 leading-relaxed">
+                Generating new save codes will permanently invalidate all existing unused recovery codes. Continue?
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 w-full pt-2">
+              <button
+                type="button"
+                onClick={() => setShowSaveCodesConfirm(false)}
+                className="flex-1 py-2.5 px-4 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] text-[#57423D] font-bold text-xs border border-[#FFE6DC] transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSaveCodesConfirm(false);
+                  executeGenerateSaveCodes();
+                }}
+                disabled={isGeneratingCodes}
+                className="flex-1 py-2.5 px-4 rounded-full bg-[#A53B22] hover:bg-[#84240D] text-white font-bold text-xs shadow-md shadow-[#A53B22]/20 transition-all flex items-center justify-center gap-1.5"
+              >
+                {isGeneratingCodes ? (
+                  <>
+                    <span className="material-symbols-outlined text-[15px] animate-spin">refresh</span>
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  <span>Regenerate Codes</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Small Screen Popup 2: Rotate Application API Key */}
+      {showApiKeyConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="fixed inset-0" onClick={() => setShowApiKeyConfirm(false)} />
+          <div className="relative w-full max-w-sm sm:max-w-md bg-white rounded-3xl p-6 sm:p-7 border border-[#FFE6DC] shadow-2xl flex flex-col items-center text-center gap-4 z-10 animate-in zoom-in-95 duration-150">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shadow-md shadow-amber-500/15">
+              <span className="material-symbols-outlined text-[28px]">key</span>
+            </div>
+            <div>
+              <h3 className="font-['Outfit'] text-lg font-bold text-[#1D1A23]">
+                Rotate Application API Key?
+              </h3>
+              <p className="text-xs text-[#57423D] mt-1.5 leading-relaxed">
+                Are you sure you want to regenerate the API key for "{activeApp?.app_name}"? Existing integrations will stop working until updated with the new token.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 w-full pt-2">
+              <button
+                type="button"
+                onClick={() => setShowApiKeyConfirm(false)}
+                className="flex-1 py-2.5 px-4 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] text-[#57423D] font-bold text-xs border border-[#FFE6DC] transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowApiKeyConfirm(false);
+                  executeRegenerateKey();
+                }}
+                disabled={isRegeneratingKey}
+                className="flex-1 py-2.5 px-4 rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FF5F45] hover:from-[#FF5F45] hover:to-[#FFAE33] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+              >
+                {isRegeneratingKey ? (
+                  <>
+                    <span className="material-symbols-outlined text-[15px] animate-spin">refresh</span>
+                    <span>Rotating...</span>
+                  </>
+                ) : (
+                  <span>Rotate Key</span>
+                )}
+              </button>
             </div>
           </div>
         </div>

@@ -40,6 +40,9 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   const [customSliderUnits, setCustomSliderUnits] = useState<number>(25000);
   const [isCustomMode, setIsCustomMode] = useState<boolean>(false);
 
+  // In-App Small Screen Popup for Free Plan Switch (replaces window.confirm)
+  const [showFreeDowngradeModal, setShowFreeDowngradeModal] = useState<boolean>(false);
+
   const activeApp = applications.find((a) => a.id === activeAppId) || applications[0];
 
   // Helper to normalize tier representations
@@ -218,27 +221,9 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       return;
     }
 
-    // Case 2: Switching from paid plan to Free (Downgrade)
+    // Case 2: Switching from paid plan to Free (Downgrade - Opens small in-app modal)
     if (planTierNormalized === 'FREE' && currentTier !== 'FREE') {
-      if (!window.confirm(`Switch cluster "${activeApp.app_name}" to the Developer Free plan? Your application will reset to Free tier quota limits (${freeUnits.toLocaleString('en-IN')} units/mo).`)) {
-        return;
-      }
-      setIsProcessing(true);
-      (async () => {
-        try {
-          const res = await TATSBackendAPI.upgradeAppPlan(activeApp.id, 'FREE');
-          if (res.ok) {
-            await onRefreshApps();
-            onShowToast('Switched to Free Tier', `Cluster "${activeApp.app_name}" is now running on Developer Free.`, 'success');
-          } else {
-            onShowToast('Downgrade Notice', res.data?.error || 'Could not change plan.', 'warning');
-          }
-        } catch (err: any) {
-          onShowToast('Error', err.message || 'Failed to switch plan.', 'warning');
-        } finally {
-          setIsProcessing(false);
-        }
-      })();
+      setShowFreeDowngradeModal(true);
       return;
     }
 
@@ -273,6 +258,25 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
 
     // Case 6: Subscribing from Free to Growth or Enterprise
     executePayment(plan.id, plan.name, plan.price);
+  };
+
+  // Execute Downgrade to Free Tier (called from in-app small screen popup)
+  const executeDowngradeToFree = async () => {
+    if (!activeApp) return;
+    setIsProcessing(true);
+    try {
+      const res = await TATSBackendAPI.upgradeAppPlan(activeApp.id, 'FREE');
+      if (res.ok) {
+        await onRefreshApps();
+        onShowToast('Switched to Free Tier', `Cluster "${activeApp.app_name}" is now running on Developer Free.`, 'success');
+      } else {
+        onShowToast('Downgrade Notice', res.data?.error || 'Could not change plan.', 'warning');
+      }
+    } catch (err: any) {
+      onShowToast('Error', err.message || 'Failed to switch plan.', 'warning');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Dynamic pricing values from Platform Governance / Admin
@@ -931,6 +935,53 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           </p>
         </div>
       </div>
+
+      {/* Small Screen Popup: Switch Cluster to Developer Free Tier (Replaces browser window.confirm) */}
+      {showFreeDowngradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="fixed inset-0" onClick={() => setShowFreeDowngradeModal(false)} />
+          <div className="relative w-full max-w-sm sm:max-w-md bg-white rounded-3xl p-6 sm:p-7 border border-[#FFE6DC] shadow-2xl flex flex-col items-center text-center gap-4 z-10 animate-in zoom-in-95 duration-150">
+            <div className="w-14 h-14 rounded-2xl bg-[#FFDAD2] text-[#A53B22] flex items-center justify-center shadow-md shadow-[#FF7E5F]/15">
+              <span className="material-symbols-outlined text-[28px]">swap_horiz</span>
+            </div>
+            <div>
+              <h3 className="font-['Outfit'] text-lg font-bold text-[#1D1A23]">
+                Switch to Developer Free Plan?
+              </h3>
+              <p className="text-xs text-[#57423D] mt-2 leading-relaxed">
+                Switch cluster <strong>"{activeApp?.app_name}"</strong> to the Developer Free plan? Your application will reset to Free tier quota limits ({freeUnits.toLocaleString('en-IN')} units/mo).
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 w-full pt-2">
+              <button
+                type="button"
+                onClick={() => setShowFreeDowngradeModal(false)}
+                className="flex-1 py-2.5 px-4 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] text-[#57423D] font-bold text-xs border border-[#FFE6DC] transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFreeDowngradeModal(false);
+                  executeDowngradeToFree();
+                }}
+                disabled={isProcessing}
+                className="flex-1 py-2.5 px-4 rounded-full bg-[#A53B22] hover:bg-[#84240D] text-white font-bold text-xs shadow-md shadow-[#A53B22]/20 transition-all flex items-center justify-center gap-1.5"
+              >
+                {isProcessing ? (
+                  <>
+                    <span className="material-symbols-outlined text-[15px] animate-spin">refresh</span>
+                    <span>Switching...</span>
+                  </>
+                ) : (
+                  <span>Confirm Switch</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

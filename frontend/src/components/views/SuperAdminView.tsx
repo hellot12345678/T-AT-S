@@ -1288,15 +1288,24 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                   </span>
                 </div>
 
-                {/* Growth Fee Slider */}
-                <div className="flex flex-col gap-1.5">
+                {/* Growth Fee Control (Slider + Custom Price Input + Presets) */}
+                <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-semibold text-[#57423D]">Monthly Base Plan Fee</span>
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-['Outfit'] text-xl font-extrabold text-[#A53B22]">
-                        ₹{baseTierPrice.toLocaleString('en-IN')}
-                      </span>
-                      <span className="text-xs text-[#57423D]">/ mo</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 bg-white border border-[#FFE6DC] rounded-xl px-2.5 py-1 shadow-xs">
+                        <span className="text-xs font-bold text-[#A53B22]">₹</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={99999}
+                          value={baseTierPrice}
+                          onChange={(e) => setBaseTierPrice(Math.max(0, Number(e.target.value)))}
+                          className="w-20 font-['Outfit'] text-base font-extrabold text-[#A53B22] focus:outline-none bg-transparent"
+                          title="Type any custom plan price"
+                        />
+                        <span className="text-[11px] text-[#57423D]">/ mo</span>
+                      </div>
                     </div>
                   </div>
                   <input
@@ -1308,26 +1317,48 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                     onChange={(e) => setBaseTierPrice(Number(e.target.value))}
                     className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#FF7E5F]"
                   />
-                  <div className="flex justify-between text-[10px] text-[#8B716B] font-mono">
+                  <div className="flex items-center justify-between text-[10px] text-[#8B716B] font-mono flex-wrap gap-1">
                     <span>₹499 (Min Base)</span>
-                    <span>₹1,999 (Current)</span>
-                    <span>₹4,999 (Default)</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] uppercase font-bold text-[#8B716B]">Price Presets:</span>
+                      {[499, 999, 1499, 1999, 2999, 4999].map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setBaseTierPrice(p)}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+                            baseTierPrice === p
+                              ? 'bg-[#FF7E5F] text-white shadow-xs'
+                              : 'bg-white text-[#57423D] hover:bg-[#FFE6DC]'
+                          }`}
+                        >
+                          ₹{p.toLocaleString('en-IN')}
+                        </button>
+                      ))}
+                    </div>
                     <span>₹14,999 (Max)</span>
                   </div>
                 </div>
 
-                {/* Growth Included Units Quota Slider */}
-                <div className="flex flex-col gap-1.5 pt-2 border-t border-[#FFE6DC]/60">
+                {/* Growth Included Units Quota (Slider + Custom Units Input) */}
+                <div className="flex flex-col gap-2 pt-2 border-t border-[#FFE6DC]/60">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-semibold text-[#57423D] flex items-center gap-1">
                       <span className="material-symbols-outlined text-[15px] text-[#845400]">token</span>
                       Included Action Units Quota
                     </span>
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-['Outfit'] text-xl font-extrabold text-[#845400]">
-                        {growthTierUnits.toLocaleString('en-IN')}
-                      </span>
-                      <span className="text-xs text-[#57423D]">units / mo</span>
+                    <div className="flex items-center gap-1 bg-white border border-[#FFE6DC] rounded-xl px-2.5 py-1 shadow-xs">
+                      <input
+                        type="number"
+                        min={1000}
+                        max={500000}
+                        step={1000}
+                        value={growthTierUnits}
+                        onChange={(e) => setGrowthTierUnits(Math.max(1000, Number(e.target.value)))}
+                        className="w-24 font-['Outfit'] text-base font-extrabold text-[#845400] focus:outline-none bg-transparent"
+                        title="Type any custom units quota"
+                      />
+                      <span className="text-[11px] text-[#57423D]">units</span>
                     </div>
                   </div>
                   <input
@@ -1455,15 +1486,24 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                   </span>
                 </div>
 
-                {/* Enterprise Fee Slider */}
-                <div className="flex flex-col gap-1.5">
+                {/* Enterprise Fee Control (Slider + Custom Price Input + Presets) */}
+                <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-semibold text-[#57423D]">Monthly Enterprise Plan Fee</span>
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-['Outfit'] text-xl font-extrabold text-[#1D1A23]">
-                        ₹{enterpriseTierPrice.toLocaleString('en-IN')}
-                      </span>
-                      <span className="text-xs text-[#57423D]">/ mo</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 bg-white border border-[#FFE6DC] rounded-xl px-2.5 py-1 shadow-xs">
+                        <span className="text-xs font-bold text-[#1D1A23]">₹</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={999999}
+                          value={enterpriseTierPrice}
+                          onChange={(e) => setEnterpriseTierPrice(Math.max(0, Number(e.target.value)))}
+                          className="w-24 font-['Outfit'] text-base font-extrabold text-[#1D1A23] focus:outline-none bg-transparent"
+                          title="Type any custom enterprise price"
+                        />
+                        <span className="text-[11px] text-[#57423D]">/ mo</span>
+                      </div>
                     </div>
                   </div>
                   <input
@@ -1475,25 +1515,48 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({
                     onChange={(e) => setEnterpriseTierPrice(Number(e.target.value))}
                     className="w-full h-2 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#1D1A23]"
                   />
-                  <div className="flex justify-between text-[10px] text-[#8B716B] font-mono">
+                  <div className="flex items-center justify-between text-[10px] text-[#8B716B] font-mono flex-wrap gap-1">
                     <span>₹4,999 (Min Base)</span>
-                    <span>₹14,999 (Standard)</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] uppercase font-bold text-[#8B716B]">Price Presets:</span>
+                      {[4999, 9999, 14999, 24999, 49999].map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setEnterpriseTierPrice(p)}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+                            enterpriseTierPrice === p
+                              ? 'bg-[#1D1A23] text-white shadow-xs'
+                              : 'bg-white text-[#57423D] hover:bg-purple-100'
+                          }`}
+                        >
+                          ₹{p.toLocaleString('en-IN')}
+                        </button>
+                      ))}
+                    </div>
                     <span>₹49,999 (Dedicated)</span>
                   </div>
                 </div>
 
-                {/* Enterprise Included Units Quota Slider */}
-                <div className="flex flex-col gap-1.5 pt-2 border-t border-[#FFE6DC]/60">
+                {/* Enterprise Included Units Quota (Slider + Custom Units Input) */}
+                <div className="flex flex-col gap-2 pt-2 border-t border-[#FFE6DC]/60">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-semibold text-[#57423D] flex items-center gap-1">
                       <span className="material-symbols-outlined text-[15px] text-purple-700">token</span>
                       Enterprise Action Units Quota
                     </span>
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-['Outfit'] text-xl font-extrabold text-purple-900">
-                        {enterpriseTierUnits.toLocaleString('en-IN')}
-                      </span>
-                      <span className="text-xs text-[#57423D]">units / mo</span>
+                    <div className="flex items-center gap-1 bg-white border border-[#FFE6DC] rounded-xl px-2.5 py-1 shadow-xs">
+                      <input
+                        type="number"
+                        min={10000}
+                        max={5000000}
+                        step={10000}
+                        value={enterpriseTierUnits}
+                        onChange={(e) => setEnterpriseTierUnits(Math.max(10000, Number(e.target.value)))}
+                        className="w-28 font-['Outfit'] text-base font-extrabold text-purple-900 focus:outline-none bg-transparent"
+                        title="Type any custom enterprise units quota"
+                      />
+                      <span className="text-[11px] text-[#57423D]">units</span>
                     </div>
                   </div>
                   <input

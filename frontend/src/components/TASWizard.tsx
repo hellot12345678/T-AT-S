@@ -227,19 +227,8 @@ export const TASWizard: React.FC<TASWizardProps> = ({ isOpen, onClose, onSuccess
         </div>
 
         {showConfiguredOverview ? (
-          /* CONFIGURATION ACTIVE & OVERVIEW SCREEN (Matches Image 2) */
+          /* CONFIGURATION ACTIVE & OVERVIEW SCREEN */
           <div className="p-6 sm:p-10 flex flex-col items-center text-center gap-6 animate-in fade-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto">
-            {/* Status Icon with Glowing Dot */}
-            <div className="relative my-1">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-emerald-50 border-2 border-emerald-300 flex items-center justify-center text-emerald-600 shadow-md shadow-emerald-500/10">
-                <span className="material-symbols-outlined text-[36px] sm:text-[42px]">verified</span>
-              </div>
-              <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
-              </span>
-            </div>
-
             {/* Headline & Description */}
             <div className="max-w-lg flex flex-col items-center gap-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/70 text-emerald-800 text-[11px] font-bold font-['Outfit'] uppercase tracking-wider">
