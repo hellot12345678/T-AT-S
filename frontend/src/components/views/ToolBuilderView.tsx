@@ -202,6 +202,20 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
   const [deletingToolName, setDeletingToolName] = useState<string | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importJsonInput, setImportJsonInput] = useState('');
+  const [showTemplatesMenu, setShowTemplatesMenu] = useState(false);
+  const templatesMenuRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (templatesMenuRef.current && !templatesMenuRef.current.contains(e.target as Node)) {
+        setShowTemplatesMenu(false);
+      }
+    };
+    if (showTemplatesMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showTemplatesMenu]);
 
   // Live Cluster Tools State & Pagination (PAGE_SIZE = 25)
   const [deployedTools, setDeployedTools] = useState<any[]>([]);
@@ -738,25 +752,80 @@ export const ToolBuilderView: React.FC<ToolBuilderViewProps> = ({
           </div>
         </div>
 
-        {/* Quick Starter Templates Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
-          <span className="text-[#8B716B] font-semibold text-[11px] shrink-0 flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px] text-[#FF7E5F]">auto_awesome</span>
-            Quick 1-Click Templates:
-          </span>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-            {QUICK_TEMPLATES.map((tmpl) => (
+        {/* Quick Starter Templates Menu Bar & Clean Wrapped Action Pills */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1 border-t border-[#FFE6DC]/60 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[#8B716B] font-semibold text-[11px] shrink-0 flex items-center gap-1 mr-1">
+              <span className="material-symbols-outlined text-[15px] text-[#FF7E5F]">auto_awesome</span>
+              Starter Templates:
+            </span>
+
+            {/* Quick Templates Dropdown Menu Button */}
+            <div ref={templatesMenuRef} className="relative">
               <button
-                key={tmpl.id}
-                onClick={() => handleLoadTemplate(tmpl)}
-                className="px-3 py-1 rounded-full bg-[#FAF9F6] hover:bg-[#FFDAD2]/40 border border-[#FFE6DC] text-[#1D1A23] hover:text-[#A53B22] font-semibold text-[11px] whitespace-nowrap transition-all flex items-center gap-1.5 shadow-xs"
+                type="button"
+                onClick={() => setShowTemplatesMenu((prev) => !prev)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-[#FAF9F6] border border-[#FFE6DC] text-[#1D1A23] text-xs font-bold shadow-xs transition-all hover:border-[#DEC0B9]"
+                title="Open starter templates menu"
               >
-                <span>{tmpl.name}</span>
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-white border border-[#FFE6DC] text-[#8B716B]">
-                  {tmpl.badge}
+                <span className="material-symbols-outlined text-[16px] text-[#FF7E5F]">menu_book</span>
+                <span>Templates Menu</span>
+                <span className="material-symbols-outlined text-[16px] text-[#8B716B]">
+                  {showTemplatesMenu ? 'expand_less' : 'expand_more'}
                 </span>
               </button>
-            ))}
+
+              {showTemplatesMenu && (
+                <div className="absolute left-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-[#FFE6DC] p-2 z-50 animate-in fade-in zoom-in-95">
+                  <div className="px-3 py-1.5 border-b border-[#FFE6DC]/50 mb-1 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit']">
+                      Choose Starter Template
+                    </span>
+                    <span className="text-[10px] font-mono text-[#A53B22] font-semibold">5 Available</span>
+                  </div>
+                  <div className="space-y-1 max-h-64 overflow-y-auto">
+                    {QUICK_TEMPLATES.map((tmpl) => (
+                      <button
+                        key={tmpl.id}
+                        onClick={() => {
+                          handleLoadTemplate(tmpl);
+                          setShowTemplatesMenu(false);
+                        }}
+                        className="w-full text-left p-2.5 rounded-xl hover:bg-[#FAF9F6] border border-transparent hover:border-[#FFE6DC] transition-all flex flex-col gap-0.5 group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-[#1D1A23] group-hover:text-[#A53B22]">
+                            {tmpl.name}
+                          </span>
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#FAF9F6] border border-[#FFE6DC] text-[#8B716B]">
+                            {tmpl.badge}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-[#57423D] line-clamp-1 leading-normal">
+                          {tmpl.description}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Clean Wrapped Action Pills (never cuts off, wraps to next line if needed, no horizontal scroll) */}
+            <div className="hidden sm:flex flex-wrap items-center gap-1.5">
+              {QUICK_TEMPLATES.map((tmpl) => (
+                <button
+                  key={tmpl.id}
+                  onClick={() => handleLoadTemplate(tmpl)}
+                  className="px-2.5 py-1 rounded-full bg-[#FAF9F6] hover:bg-[#FFDAD2]/40 border border-[#FFE6DC] text-[#1D1A23] hover:text-[#A53B22] font-semibold text-[11px] transition-all flex items-center gap-1.5 shadow-xs"
+                >
+                  <span>{tmpl.name}</span>
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-white border border-[#FFE6DC] text-[#8B716B]">
+                    {tmpl.badge}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
