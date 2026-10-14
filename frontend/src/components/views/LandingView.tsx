@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppView } from '../../types';
 import { TATSBackendAPI } from '../../services/api';
+import { LegalModalType } from '../LegalModals';
 
 interface LandingViewProps {
   onNavigate: (view: AppView) => void;
@@ -17,6 +18,7 @@ interface LandingViewProps {
   onOpenAuth: (notice?: string, targetView?: AppView) => void;
   activeAppId?: string;
   onRefreshApps?: () => void;
+  onOpenLegalModal?: (type: LegalModalType) => void;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({
@@ -26,7 +28,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
   developer,
   onOpenAuth,
   activeAppId,
-  onRefreshApps
+  onRefreshApps,
+  onOpenLegalModal
 }) => {
   const [activeCodeTab, setActiveCodeTab] = useState<'django' | 'react'>('django');
   const [units, setUnits] = useState(50000);
@@ -941,34 +944,34 @@ export function VoiceController() {
               </h4>
               <ul className="space-y-2 text-xs">
                 <li>
-                  <a href="#services" className="hover:text-white transition-colors">
+                  <button onClick={() => onNavigate('services')} className="hover:text-white transition-colors cursor-pointer text-left">
                     Autonomous Telephony
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#services" className="hover:text-white transition-colors">
+                  <button onClick={() => onNavigate('services')} className="hover:text-white transition-colors cursor-pointer text-left">
                     Real-Time Tool Calling
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#services" className="hover:text-white transition-colors">
+                  <button onClick={() => onNavigate('services')} className="hover:text-white transition-colors cursor-pointer text-left">
                     Zero-Shot Voice Synthesis
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#services" className="hover:text-white transition-colors">
+                  <button onClick={() => onNavigate('services')} className="hover:text-white transition-colors cursor-pointer text-left">
                     Low-Latency Acoustic Engine
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#services" className="hover:text-white transition-colors">
+                  <button onClick={() => onNavigate('services')} className="hover:text-white transition-colors cursor-pointer text-left">
                     Webhook &amp; SIP Integrations
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#services" className="hover:text-white transition-colors">
+                  <button onClick={() => onNavigate('services')} className="hover:text-white transition-colors cursor-pointer text-left">
                     Multi-Tenant Cluster Isolation
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -980,19 +983,19 @@ export function VoiceController() {
               </h4>
               <ul className="space-y-2 text-xs">
                 <li>
-                  <a href="#about" className="hover:text-white transition-colors">
+                  <button onClick={() => onNavigate('about')} className="hover:text-white transition-colors cursor-pointer text-left">
                     About T@S
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#services" className="hover:text-white transition-colors">
+                  <button onClick={() => onNavigate('services')} className="hover:text-white transition-colors cursor-pointer text-left">
                     Core Capabilities
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#pricing" className="hover:text-white transition-colors">
+                  <button onClick={() => onNavigate('subscription-pricing')} className="hover:text-white transition-colors cursor-pointer text-left">
                     Subscriptions &amp; Units
-                  </a>
+                  </button>
                 </li>
                 <li>
                   <button onClick={() => onNavigate('live-voice-playground')} className="hover:text-white transition-colors cursor-pointer text-left">
@@ -1057,12 +1060,6 @@ export function VoiceController() {
                 <span className="material-symbols-outlined text-[16px]">send</span>
                 <span>Contact Team</span>
               </a>
-
-              {/* SLA Operational Status (Warm Tone, No Green) */}
-              <div className="flex items-center gap-2 pt-1 text-[11px] text-[#C4B7D1] font-medium">
-                <span className="w-2 h-2 rounded-full bg-[#FF7E5F]"></span>
-                <span>99.98% High-Throughput SLA</span>
-              </div>
             </div>
           </div>
 
@@ -1072,15 +1069,40 @@ export function VoiceController() {
               &copy; {new Date().getFullYear()} T@S (Talk. Decide. Solve.). All rights reserved.
             </div>
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[11px] text-[#8B8196]">
-              <a href="#about" className="hover:text-white transition-colors">Privacy Policy</a>
+              <button
+                onClick={() => onOpenLegalModal?.('privacy')}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Privacy Policy
+              </button>
               <span>&bull;</span>
-              <a href="#about" className="hover:text-white transition-colors">Terms of Service</a>
+              <button
+                onClick={() => onOpenLegalModal?.('terms')}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Terms of Service
+              </button>
               <span>&bull;</span>
-              <a href="#about" className="hover:text-white transition-colors">Security &amp; DPAs</a>
+              <button
+                onClick={() => onOpenLegalModal?.('security')}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Security &amp; DPAs
+              </button>
               <span>&bull;</span>
-              <a href="#about" className="hover:text-white transition-colors">Cookie Settings</a>
+              <button
+                onClick={() => onOpenLegalModal?.('cookies')}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Cookie Settings
+              </button>
               <span>&bull;</span>
-              <a href="#contact" className="hover:text-white transition-colors">Status Page</a>
+              <button
+                onClick={() => onOpenLegalModal?.('status')}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Status Page
+              </button>
             </div>
           </div>
         </div>

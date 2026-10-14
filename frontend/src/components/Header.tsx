@@ -40,6 +40,8 @@ export const Header: React.FC<HeaderProps> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showQuickstartModal, setShowQuickstartModal] = useState(false);
+  const [showServicesDropdown, setShowServicesDropdown] = useState(false);
+  const servicesDropdownRef = useRef<HTMLDivElement>(null);
   // Navigation handler for landing section anchors (About, Services, Pricing, Contact)
   const handleNavClick = (sectionId: string) => {
     if (currentView !== 'landing') {
@@ -88,13 +90,16 @@ export const Header: React.FC<HeaderProps> = ({
       if (showUserMenu && userMenuRef.current && !userMenuRef.current.contains(target)) {
         setShowUserMenu(false);
       }
+      if (showServicesDropdown && servicesDropdownRef.current && !servicesDropdownRef.current.contains(target)) {
+        setShowServicesDropdown(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showEnvDropdown, showNotifications, showUserMenu]);
+  }, [showEnvDropdown, showNotifications, showUserMenu, showServicesDropdown]);
 
   const handleMarkAllRead = async () => {
     await TATSBackendAPI.markAllNotificationsRead();
@@ -125,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Header Center: Auto-scrolling T@S Ad on Landing/Public, or Quick Command Search when Logged-in */}
+        {/* Header Center: Command Search when Logged-in */}
         {developer && currentView !== 'landing' ? (
           <div className="hidden md:flex items-center flex-1 max-w-xs lg:max-w-md mx-2">
             <button
@@ -142,47 +147,11 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
         ) : (
-          <nav className="hidden md:flex items-center justify-center flex-1 max-w-sm lg:max-w-md mx-auto gap-1 text-xs font-semibold">
-            <button
-              onClick={() => handleNavClick('about')}
-              className="px-3 py-1.5 rounded-full text-[#57423D] hover:text-[#1D1A23] hover:bg-[#FAF9F6] border border-transparent hover:border-[#FFE6DC] transition-all cursor-pointer font-medium"
-            >
-              About
-            </button>
-            <button
-              onClick={() => handleNavClick('services')}
-              className="px-3 py-1.5 rounded-full text-[#57423D] hover:text-[#1D1A23] hover:bg-[#FAF9F6] border border-transparent hover:border-[#FFE6DC] transition-all cursor-pointer font-medium"
-            >
-              Services
-            </button>
-            <button
-              onClick={() => handleNavClick('pricing')}
-              className="px-3 py-1.5 rounded-full text-[#57423D] hover:text-[#1D1A23] hover:bg-[#FAF9F6] border border-transparent hover:border-[#FFE6DC] transition-all cursor-pointer font-medium"
-            >
-              Pricing
-            </button>
-            <button
-              onClick={() => handleNavClick('contact')}
-              className="px-3 py-1.5 rounded-full text-[#57423D] hover:text-[#1D1A23] hover:bg-[#FAF9F6] border border-transparent hover:border-[#FFE6DC] transition-all cursor-pointer font-medium"
-            >
-              Contact
-            </button>
-          </nav>
+          <div className="flex-1" />
         )}
 
         {/* Status Indicators & Profile Controls */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
-          {/* Useful In-App SDK Quickstart Button (Visible only when not logged in) */}
-          {!developer && (
-            <button
-              onClick={() => setShowQuickstartModal(true)}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] border border-[#DEC0B9]/40 text-[#57423D] hover:text-[#1D1A23] text-xs font-semibold transition-all shadow-sm"
-              title="View SDK installation and quickstart guide"
-            >
-              <span className="material-symbols-outlined text-[16px] text-[#A53B22]">terminal</span>
-              <span>SDK Quickstart</span>
-            </button>
-          )}
 
           {/* Real Application Cluster Selector Dropdown (When Logged In) */}
           {developer && (
@@ -479,25 +448,161 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* About Button */}
+              <button
+                onClick={() => onNavigate('about')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer ${
+                  currentView === 'about'
+                    ? 'border-[#A53B22] text-[#A53B22] bg-white shadow-xs'
+                    : 'border-[#DEC0B9]/60 hover:border-[#A53B22] text-[#57423D] hover:text-[#A53B22] bg-[#FAF9F6]'
+                }`}
+                title="About T@S, our mission and benefits"
+              >
+                <span>About</span>
+              </button>
+
+              {/* Services Button with Dropdown */}
+              <div ref={servicesDropdownRef} className="relative">
+                <button
+                  onClick={() => setShowServicesDropdown(!showServicesDropdown)}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer ${
+                    currentView === 'services' || showServicesDropdown
+                      ? 'border-[#A53B22] text-[#A53B22] bg-white shadow-xs'
+                      : 'border-[#DEC0B9]/60 hover:border-[#A53B22] text-[#57423D] hover:text-[#A53B22] bg-[#FAF9F6]'
+                  }`}
+                  title="Explore T@S Services & Capabilities"
+                >
+                  <span>Services</span>
+                  <span className={`material-symbols-outlined text-[15px] transition-transform duration-200 ${showServicesDropdown ? 'rotate-180' : ''}`}>
+                    expand_more
+                  </span>
+                </button>
+
+                {showServicesDropdown && (
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#FFE6DC] p-2 z-50 animate-in fade-in zoom-in-95">
+                    <div className="px-3 py-1.5 text-[11px] font-bold text-[#8B716B] uppercase tracking-wider">
+                      Core Services
+                    </div>
+                    <div className="space-y-1">
+                      <button
+                        onClick={() => {
+                          setShowServicesDropdown(false);
+                          onNavigate('services');
+                        }}
+                        className="w-full text-left p-2 rounded-xl hover:bg-[#FAF9F6] transition-colors flex items-start gap-2.5 group cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">call</span>
+                        <div>
+                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Autonomous Telephony</div>
+                          <div className="text-[11px] text-[#57423D]">Enterprise SIP, PSTN &amp; WebRTC voice pipelines</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowServicesDropdown(false);
+                          onNavigate('services');
+                        }}
+                        className="w-full text-left p-2 rounded-xl hover:bg-[#FAF9F6] transition-colors flex items-start gap-2.5 group cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">graphic_eq</span>
+                        <div>
+                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Zero-Shot Voice Clones</div>
+                          <div className="text-[11px] text-[#57423D]">Sub-850ms natural latency acoustic graph</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowServicesDropdown(false);
+                          onNavigate('services');
+                        }}
+                        className="w-full text-left p-2 rounded-xl hover:bg-[#FAF9F6] transition-colors flex items-start gap-2.5 group cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">build</span>
+                        <div>
+                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Real-Time Tool Calling</div>
+                          <div className="text-[11px] text-[#57423D]">Zero-code dynamic OpenAPI parameter binding</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowServicesDropdown(false);
+                          onNavigate('services');
+                        }}
+                        className="w-full text-left p-2 rounded-xl hover:bg-[#FAF9F6] transition-colors flex items-start gap-2.5 group cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">security</span>
+                        <div>
+                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Deterministic Router &amp; DPAs</div>
+                          <div className="text-[11px] text-[#57423D]">bCrypt gating with self-hosted pgvector</div>
+                        </div>
+                      </button>
+                    </div>
+
+                    <div className="mt-2 pt-2 border-t border-[#FFE6DC]">
+                      <button
+                        onClick={() => {
+                          setShowServicesDropdown(false);
+                          onNavigate('services');
+                        }}
+                        className="w-full text-center py-1.5 px-3 rounded-xl bg-[#FAF9F6] hover:bg-[#F3EBF8] text-[#A53B22] text-xs font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <span>Explore All Services</span>
+                        <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Contact Button */}
+              <button
+                onClick={() => handleNavClick('contact')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#DEC0B9]/60 hover:border-[#A53B22] text-[#57423D] hover:text-[#A53B22] text-xs font-semibold bg-[#FAF9F6] transition-all cursor-pointer"
+                title="Contact the T@S Team"
+              >
+                <span>Contact</span>
+              </button>
+
+              {/* Useful In-App SDK Quickstart Button */}
+              <button
+                onClick={() => setShowQuickstartModal(true)}
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] border border-[#DEC0B9]/60 hover:border-[#A53B22] text-[#57423D] hover:text-[#1D1A23] text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                title="View SDK installation and quickstart guide"
+              >
+                <span className="material-symbols-outlined text-[15px] text-[#A53B22]">terminal</span>
+                <span>SDK Quickstart</span>
+              </button>
+
+              {/* Plans Button */}
               <button
                 onClick={() => {
-                  const pricingEl = document.getElementById('pricing');
-                  if (pricingEl) {
-                    pricingEl.scrollIntoView({ behavior: 'smooth' });
+                  if (currentView !== 'landing') {
+                    onNavigate('landing');
+                    setTimeout(() => {
+                      const el = document.getElementById('pricing');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
                   } else {
-                    onNavigate('subscription-pricing');
+                    const pricingEl = document.getElementById('pricing');
+                    if (pricingEl) {
+                      pricingEl.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                      onNavigate('subscription-pricing');
+                    }
                   }
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#DEC0B9]/60 hover:border-[#A53B22] text-[#57423D] hover:text-[#A53B22] text-xs font-semibold bg-[#FAF9F6] transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#DEC0B9]/60 hover:border-[#A53B22] text-[#57423D] hover:text-[#A53B22] text-xs font-semibold bg-[#FAF9F6] transition-all cursor-pointer"
                 title="View Transparent Pricing Plans"
               >
                 <span className="material-symbols-outlined text-[15px] text-[#A53B22]">payments</span>
                 <span>Plans</span>
               </button>
+
+              {/* Sign In Button */}
               <button
                 onClick={onOpenAuth}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FF5F45] text-white text-xs font-bold shadow-sm shadow-[#FF5F45]/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#FF7E5F] to-[#FF5F45] text-white text-xs font-bold shadow-sm shadow-[#FF5F45]/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[15px]">login</span>
                 <span>Sign In</span>

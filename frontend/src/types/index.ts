@@ -8,7 +8,9 @@ export type AppView =
   | 'subscription-pricing'
   | 'auth'
   | 'settings'
-  | 'notifications';
+  | 'notifications'
+  | 'about'
+  | 'services';
 
 export interface TelemetrySession {
   id: string;

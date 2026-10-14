@@ -18,6 +18,9 @@ import { SuperAdminView } from './components/views/SuperAdminView';
 import { SubscriptionView } from './components/views/SubscriptionView';
 import { SettingsView } from './components/views/SettingsView';
 import { NotificationsView } from './components/views/NotificationsView';
+import { AboutView } from './components/views/AboutView';
+import { ServicesView } from './components/views/ServicesView';
+import { LegalModal, LegalModalType } from './components/LegalModals';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
@@ -40,6 +43,7 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authBannerNotice, setAuthBannerNotice] = useState<string>('');
   const [isAppCreateModalOpen, setIsAppCreateModalOpen] = useState(false);
+  const [activeLegalModal, setActiveLegalModal] = useState<LegalModalType>(null);
 
   // Application Tenancy State
   const [applications, setApplications] = useState<any[]>([]);
@@ -124,7 +128,8 @@ export default function App() {
       return;
     }
 
-    if (!developer && view !== 'landing') {
+    const isPublicView = view === 'landing' || view === 'about' || view === 'services';
+    if (!developer && !isPublicView) {
       setPendingNavView(view);
       handleOpenAuth('Sign in or register to access this developer workspace.', view);
       return;
@@ -255,8 +260,8 @@ export default function App() {
       />
 
       <div className="flex flex-1 pt-16">
-        {/* Left Workspaces Sidebar (Shown only when authenticated & not on landing) */}
-        {developer && currentView !== 'landing' && (
+        {/* Left Workspaces Sidebar (Shown only when authenticated & not on public pages) */}
+        {developer && currentView !== 'landing' && currentView !== 'about' && currentView !== 'services' && (
           <Sidebar
             currentView={currentView}
             onNavigate={handleNavigate}
@@ -268,7 +273,7 @@ export default function App() {
         {/* Main Content View Container */}
         <main
           className={`flex-1 transition-all ${
-            developer && currentView !== 'landing' ? 'lg:pl-64' : 'w-full'
+            developer && currentView !== 'landing' && currentView !== 'about' && currentView !== 'services' ? 'lg:pl-64' : 'w-full'
           }`}
         >
           <ErrorBoundary>
@@ -287,6 +292,7 @@ export default function App() {
                 onOpenAuth={handleOpenAuth}
                 activeAppId={activeAppId}
                 onRefreshApps={loadApplications}
+                onOpenLegalModal={setActiveLegalModal}
               />
             )}
 
@@ -359,6 +365,22 @@ export default function App() {
                 developer={developer}
               />
             )}
+
+            {currentView === 'about' && (
+              <AboutView
+                onNavigate={handleNavigate}
+                onOpenAuth={handleOpenAuth}
+                developer={developer}
+              />
+            )}
+
+            {currentView === 'services' && (
+              <ServicesView
+                onNavigate={handleNavigate}
+                onOpenAuth={handleOpenAuth}
+                developer={developer}
+              />
+            )}
           </ErrorBoundary>
         </main>
       </div>
@@ -398,6 +420,13 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Legal & Compliance Modals (Privacy, Terms, Security DPA, Cookie Settings, Status) */}
+      <LegalModal
+        type={activeLegalModal}
+        onClose={() => setActiveLegalModal(null)}
+        onShowToast={addToast}
+      />
 
       {/* Toast Notification Stream */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
