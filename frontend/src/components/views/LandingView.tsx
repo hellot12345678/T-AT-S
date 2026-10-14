@@ -247,24 +247,27 @@ export function VoiceController() {
 }`;
 
   return (
-    <div className="w-full min-h-screen bg-[#FAF9F6] pb-24 text-[#1D1A23]">
+    <div className="w-full min-h-screen bg-[#FAF9F6] text-[#1D1A23] flex flex-col justify-between">
       {/* Ambient Floating Sub-nav */}
       <div className="sticky top-20 z-30 w-full px-4 flex justify-center pointer-events-none mb-6">
         <nav className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white/95 backdrop-blur-xl border border-[#FFE6DC] shadow-md text-xs font-semibold">
-          <a href="#features" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
-            Features
+          <a href="#about" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
+            About
+          </a>
+          <a href="#services" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
+            Services
           </a>
           <a href="#quickstart" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
             5-Min SDK
-          </a>
-          <a href="#architecture" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
-            Architecture
           </a>
           <a href="#pricing" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
             Pricing
           </a>
           <a href="#faq" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
             FAQ
+          </a>
+          <a href="#contact" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
+            Contact
           </a>
           <div className="h-3.5 w-[1px] bg-[#DEC0B9]/50 mx-1"></div>
           <button
@@ -282,8 +285,8 @@ export function VoiceController() {
         </nav>
       </div>
 
-      {/* Hero Section */}
-      <section className="relative w-full px-4 sm:px-8 pt-14 sm:pt-20 pb-16 overflow-hidden flex flex-col items-center text-center max-w-6xl mx-auto">
+      {/* Hero Section (About) */}
+      <section id="about" className="relative w-full px-4 sm:px-8 pt-14 sm:pt-20 pb-16 overflow-hidden flex flex-col items-center text-center max-w-6xl mx-auto scroll-mt-24">
         {/* Ambient Radial Coral Aura */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[720px] h-[340px] bg-gradient-to-b from-[#FF7E5F]/20 via-[#FFAE33]/15 to-transparent blur-3xl pointer-events-none rounded-full"></div>
 
@@ -322,8 +325,9 @@ export function VoiceController() {
           </button>
         </div>
 
-        {/* TARGET FOR #features: Acoustic Wave Ribbon & Synthesized Tool Node */}
-        <div id="features" className="relative z-10 w-full max-w-5xl rounded-3xl bg-white/90 backdrop-blur-2xl p-5 sm:p-7 border border-[#FFE6DC] shadow-xl overflow-hidden text-left scroll-mt-28">
+        {/* TARGET FOR #services & #features: Acoustic Wave Ribbon & Synthesized Tool Node */}
+        <div id="services" className="relative z-10 w-full max-w-5xl rounded-3xl bg-white/90 backdrop-blur-2xl p-5 sm:p-7 border border-[#FFE6DC] shadow-xl overflow-hidden text-left scroll-mt-28">
+          <span id="features" className="scroll-mt-28"></span>
           <div className="flex items-center justify-between pb-3 border-b border-[#FFE6DC]/60 mb-5">
             <div className="flex items-center gap-2 text-xs">
               <span className="w-3 h-3 rounded-full bg-[#BA1A1A]/70"></span>
@@ -862,34 +866,134 @@ export function VoiceController() {
       </section>
 
       {/* Landing Page Footer */}
-      <footer className="w-full bg-[#18161D] text-[#A49BAF] border-t border-[#2F293A] pt-12 pb-8 px-4 sm:px-8">
+      <footer id="contact" className="w-full bg-[#18161D] text-[#A49BAF] border-t border-[#2F293A] pt-14 pb-8 px-4 sm:px-8 mt-12 scroll-mt-24">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-[#2C2736]">
-            {/* Brand Column */}
-            <div className="md:col-span-1 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 pb-10 border-b border-[#2C2736]">
+            {/* Brand & Slogan Column */}
+            <div className="space-y-3.5">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FF7E5F] via-[#FF5F45] to-[#FFAE33] flex items-center justify-center text-white font-bold text-xs shadow-md">
-                  <span className="material-symbols-outlined text-[18px]">graphic_eq</span>
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#FF7E5F] via-[#FF5F45] to-[#FFAE33] flex items-center justify-center text-white font-bold text-xs shadow-md">
+                  <span className="material-symbols-outlined text-[20px]">graphic_eq</span>
                 </div>
-                <span className="font-['Outfit'] font-bold text-lg text-white tracking-tight">
+                <span className="font-['Outfit'] font-bold text-xl text-white tracking-tight">
                   T@S
                 </span>
               </div>
+
+              {/* Slogan with Humanized Warm Color (No Green) */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2A2330] border border-[#443850] text-[#FFD1C7] text-[11px] font-semibold shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-[#FF7E5F] animate-pulse"></span>
+                <span>Talk. Decide. Solve.</span>
+              </div>
+
               <p className="text-xs text-[#8B8196] leading-relaxed">
-                Autonomous Telephony System. Real-time deterministic voice-to-execution runtime with sub-850ms latency SLA.
+                Universal autonomous voice AI platform. Turn spoken commands into deterministic backend software actions in real-time.
               </p>
-              <div className="flex items-center gap-2 text-[11px] text-emerald-400 font-mono">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>All Telephony Systems Operational</span>
+
+              {/* Social Links */}
+              <div className="pt-2">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8B8196] mb-2 font-['Outfit']">Connect &amp; Community</div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href="https://github.com/tusharsune/T-AT-S"
+                    target="_blank"
+                    rel="noreferrer"
+                    title="GitHub Repository"
+                    className="w-8 h-8 rounded-xl bg-[#231E2A] hover:bg-[#FF7E5F] hover:text-white border border-[#3A3245] flex items-center justify-center text-[#A49BAF] transition-all hover:scale-105"
+                  >
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                  </a>
+                  <a
+                    href="https://x.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Follow on X / Twitter"
+                    className="w-8 h-8 rounded-xl bg-[#231E2A] hover:bg-[#FF7E5F] hover:text-white border border-[#3A3245] flex items-center justify-center text-[#A49BAF] transition-all hover:scale-105"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                  </a>
+                  <a
+                    href="https://linkedin.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    title="LinkedIn"
+                    className="w-8 h-8 rounded-xl bg-[#231E2A] hover:bg-[#FF7E5F] hover:text-white border border-[#3A3245] flex items-center justify-center text-[#A49BAF] transition-all hover:scale-105"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.53 1.53 0 0 0 0-3.06 1.53 1.53 0 0 0 0 3.06m1.4 9.74v-8.37H5.06v8.37z"/></svg>
+                  </a>
+                  <a
+                    href="https://discord.gg"
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Discord Developer Community"
+                    className="w-8 h-8 rounded-xl bg-[#231E2A] hover:bg-[#FF7E5F] hover:text-white border border-[#3A3245] flex items-center justify-center text-[#A49BAF] transition-all hover:scale-105"
+                  >
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+                  </a>
+                </div>
               </div>
             </div>
 
-            {/* Product Column */}
+            {/* Services Column */}
             <div className="space-y-2.5">
               <h4 className="font-['Outfit'] text-xs font-bold uppercase tracking-wider text-white">
-                Platform Core
+                Services
               </h4>
               <ul className="space-y-2 text-xs">
+                <li>
+                  <a href="#services" className="hover:text-white transition-colors">
+                    Autonomous Telephony
+                  </a>
+                </li>
+                <li>
+                  <a href="#services" className="hover:text-white transition-colors">
+                    Real-Time Tool Calling
+                  </a>
+                </li>
+                <li>
+                  <a href="#services" className="hover:text-white transition-colors">
+                    Zero-Shot Voice Synthesis
+                  </a>
+                </li>
+                <li>
+                  <a href="#services" className="hover:text-white transition-colors">
+                    Low-Latency Acoustic Engine
+                  </a>
+                </li>
+                <li>
+                  <a href="#services" className="hover:text-white transition-colors">
+                    Webhook &amp; SIP Integrations
+                  </a>
+                </li>
+                <li>
+                  <a href="#services" className="hover:text-white transition-colors">
+                    Multi-Tenant Cluster Isolation
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Quick Links Column */}
+            <div className="space-y-2.5">
+              <h4 className="font-['Outfit'] text-xs font-bold uppercase tracking-wider text-white">
+                Quick Links
+              </h4>
+              <ul className="space-y-2 text-xs">
+                <li>
+                  <a href="#about" className="hover:text-white transition-colors">
+                    About T@S
+                  </a>
+                </li>
+                <li>
+                  <a href="#services" className="hover:text-white transition-colors">
+                    Core Capabilities
+                  </a>
+                </li>
+                <li>
+                  <a href="#pricing" className="hover:text-white transition-colors">
+                    Subscriptions &amp; Units
+                  </a>
+                </li>
                 <li>
                   <button onClick={() => onNavigate('live-voice-playground')} className="hover:text-white transition-colors cursor-pointer text-left">
                     Voice Playground
@@ -901,56 +1005,82 @@ export function VoiceController() {
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => onNavigate('plans-billing')} className="hover:text-white transition-colors cursor-pointer text-left">
-                    Subscriptions &amp; Units
-                  </button>
+                  <a href="#quickstart" className="hover:text-white transition-colors">
+                    Developer SDK &amp; Docs
+                  </a>
                 </li>
                 <li>
-                  <button onClick={() => onNavigate('demo')} className="hover:text-white transition-colors cursor-pointer text-left">
-                    Interactive Walkthrough
-                  </button>
+                  <a href="#faq" className="hover:text-white transition-colors">
+                    Frequently Asked Questions
+                  </a>
                 </li>
               </ul>
             </div>
 
-            {/* Architecture Column */}
-            <div className="space-y-2.5">
+            {/* Help & Contact Column */}
+            <div className="space-y-3">
               <h4 className="font-['Outfit'] text-xs font-bold uppercase tracking-wider text-white">
-                Infrastructure
+                Help &amp; Contact
               </h4>
-              <ul className="space-y-2 text-xs text-[#8B8196]">
-                <li>Sub-850ms Acoustic Graph</li>
-                <li>Deterministic Function Router</li>
-                <li>6-Sec Zero-Shot Voice Clones</li>
-                <li>Self-Hosted pgvector Isolation</li>
-              </ul>
-            </div>
+              
+              {/* Help Email */}
+              <a
+                href="mailto:ts.help2407@gmail.com"
+                className="flex items-center gap-2.5 p-2 rounded-xl bg-[#231E2A] hover:bg-[#2C2534] border border-[#3A3245] transition-all group"
+                title="Send email to Help Desk"
+              >
+                <span className="material-symbols-outlined text-[18px] text-[#FF7E5F] shrink-0">mail</span>
+                <div className="min-w-0">
+                  <div className="text-[10px] text-[#8B8196] uppercase font-bold tracking-wider">Help Desk</div>
+                  <div className="text-xs font-mono text-[#E4DFEA] group-hover:text-white truncate">ts.help2407@gmail.com</div>
+                </div>
+              </a>
 
-            {/* Compliance & Security */}
-            <div className="space-y-2.5">
-              <h4 className="font-['Outfit'] text-xs font-bold uppercase tracking-wider text-white">
-                Governance &amp; SLA
-              </h4>
-              <ul className="space-y-2 text-xs text-[#8B8196]">
-                <li>99.98% High-Throughput SLA</li>
-                <li>Enterprise Multi-Tenant DPAs</li>
-                <li>bcrypt Vocal Passphrase Gating</li>
-                <li>Role-Based Platform Control</li>
-              </ul>
+              {/* Service Email */}
+              <a
+                href="mailto:support@tats.ai"
+                className="flex items-center gap-2.5 p-2 rounded-xl bg-[#231E2A] hover:bg-[#2C2534] border border-[#3A3245] transition-all group"
+                title="Send email to Technical Support"
+              >
+                <span className="material-symbols-outlined text-[18px] text-[#FFAE33] shrink-0">headset_mic</span>
+                <div className="min-w-0">
+                  <div className="text-[10px] text-[#8B8196] uppercase font-bold tracking-wider">Service &amp; Ops</div>
+                  <div className="text-xs font-mono text-[#E4DFEA] group-hover:text-white truncate">support@tats.ai</div>
+                </div>
+              </a>
+
+              {/* Direct Contact Button */}
+              <a
+                href="mailto:ts.help2407@gmail.com?subject=T%40S%20Platform%20Inquiry"
+                className="flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#FF7E5F] to-[#FFAE33] hover:from-[#FF6B47] hover:to-[#FF9E1B] text-white text-xs font-bold shadow-md transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">send</span>
+                <span>Contact Team</span>
+              </a>
+
+              {/* SLA Operational Status (Warm Tone, No Green) */}
+              <div className="flex items-center gap-2 pt-1 text-[11px] text-[#C4B7D1] font-medium">
+                <span className="w-2 h-2 rounded-full bg-[#FF7E5F]"></span>
+                <span>99.98% High-Throughput SLA</span>
+              </div>
             </div>
           </div>
 
-          {/* Bottom Copyright Bar */}
+          {/* Bottom Legal & Industry Standard Bar */}
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#8B8196]">
             <div>
-              &copy; {new Date().getFullYear()} T-AT-S Engineering. All rights reserved.
+              &copy; {new Date().getFullYear()} T@S (Talk. Decide. Solve.). All rights reserved.
             </div>
-            <div className="flex items-center gap-4 text-[11px]">
-              <span>Deterministic Execution</span>
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[11px] text-[#8B8196]">
+              <a href="#about" className="hover:text-white transition-colors">Privacy Policy</a>
               <span>&bull;</span>
-              <span>Zero-Storage Volatile Audio</span>
+              <a href="#about" className="hover:text-white transition-colors">Terms of Service</a>
               <span>&bull;</span>
-              <span>Sub-850ms Latency SLA</span>
+              <a href="#about" className="hover:text-white transition-colors">Security &amp; DPAs</a>
+              <span>&bull;</span>
+              <a href="#about" className="hover:text-white transition-colors">Cookie Settings</a>
+              <span>&bull;</span>
+              <a href="#contact" className="hover:text-white transition-colors">Status Page</a>
             </div>
           </div>
         </div>
