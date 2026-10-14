@@ -285,7 +285,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <span className="font-['Outfit'] font-bold text-xl tracking-tight text-[#1D1A23]">T@S</span>
-            <span className="text-xs text-[#8B716B] font-medium hidden sm:inline">| Talk. Decide. Solve.</span>
+            <span className="text-base font-cursive text-[#A53B22] font-bold hidden sm:inline ml-1">Talk. Decide. Solve.</span>
           </div>
         </div>
 

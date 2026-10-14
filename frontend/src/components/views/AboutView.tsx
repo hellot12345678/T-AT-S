@@ -32,9 +32,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenAuth, de
       <div className="max-w-5xl mx-auto px-4 sm:px-8 pt-10 sm:pt-14 space-y-16">
         {/* Hero Section */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FAF9F6] border border-[#FFE6DC] text-[#A53B22] text-xs font-semibold shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-[#FF7E5F] animate-pulse"></span>
-            <span>Talk. Decide. Solve.</span>
+          <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-white border border-[#FFE6DC] shadow-xs">
+            <span className="font-cursive text-2xl font-bold tracking-wide text-[#A53B22]">
+              Talk. Decide. Solve.
+            </span>
           </div>
 
           <h1 className="font-['Outfit'] text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#1D1A23] tracking-tight leading-tight">

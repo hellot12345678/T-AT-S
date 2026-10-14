@@ -21,6 +21,8 @@ interface HeaderProps {
   activeAppId: string;
   onSelectApp: (app: any) => void;
   onOpenCreateApp: () => void;
+  selectedServiceId?: string | null;
+  onSelectService?: (serviceId: string | null) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,14 +36,65 @@ export const Header: React.FC<HeaderProps> = ({
   applications,
   activeAppId,
   onSelectApp,
-  onOpenCreateApp
+  onOpenCreateApp,
+  selectedServiceId,
+  onSelectService
 }) => {
   const [showEnvDropdown, setShowEnvDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showQuickstartModal, setShowQuickstartModal] = useState(false);
+  const [quickstartLang, setQuickstartLang] = useState<'python' | 'node' | 'curl'>('python');
+  const [copiedSnippet, setCopiedSnippet] = useState(false);
+  const [copiedInstall, setCopiedInstall] = useState(false);
+
+  const quickstartData = {
+    python: {
+      install: 'pip install tats-ai',
+      code: `from tats import AcousticAgent
+
+agent = AcousticAgent(api_key="tas_live_...")
+response = agent.execute_voice(audio_stream)`
+    },
+    node: {
+      install: 'npm i @tats/sdk',
+      code: `import { AcousticAgent } from '@tats/sdk';
+
+const agent = new AcousticAgent({ apiKey: 'tas_live_...' });
+const response = await agent.executeVoice(audioStream);`
+    },
+    curl: {
+      install: '# Zero install needed - standard cURL command',
+      code: `curl -X POST https://api.tats.internal/v1/voice/execute \\
+  -H "Authorization: Bearer tas_live_..." \\
+  -F "audio=@recording.wav"`
+    }
+  };
+
+  const handleCopyInstall = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedInstall(true);
+    setTimeout(() => setCopiedInstall(false), 2000);
+  };
+
+  const handleCopySnippet = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedSnippet(true);
+    setTimeout(() => setCopiedSnippet(false), 2000);
+  };
   const [showServicesDropdown, setShowServicesDropdown] = useState(false);
   const servicesDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic Real Notifications State
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  // Click Outside References
+  const envDropdownRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const activeApp = applications.find((a) => a.id === activeAppId) || applications[0];
   // Navigation handler for landing section anchors (About, Services, Pricing, Contact)
   const handleNavClick = (sectionId: string) => {
     if (currentView !== 'landing') {
@@ -462,6 +515,15 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>About</span>
               </button>
 
+              {/* Contact Button */}
+              <button
+                onClick={() => handleNavClick('contact')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#DEC0B9]/60 hover:border-[#A53B22] text-[#57423D] hover:text-[#A53B22] text-xs font-semibold bg-[#FAF9F6] transition-all cursor-pointer"
+                title="Contact the T@S Team"
+              >
+                <span>Contact</span>
+              </button>
+
               {/* Services Button with Dropdown */}
               <div ref={servicesDropdownRef} className="relative">
                 <button
@@ -480,89 +542,119 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
 
                 {showServicesDropdown && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#FFE6DC] p-2 z-50 animate-in fade-in zoom-in-95">
-                    <div className="px-3 py-1.5 text-[11px] font-bold text-[#8B716B] uppercase tracking-wider">
-                      Core Services
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-[#FFE6DC] p-2 z-50 animate-in fade-in zoom-in-95 max-h-[85vh] overflow-y-auto">
+                    <div className="px-3 py-1.5 flex items-center justify-between text-[11px] font-bold text-[#8B716B] uppercase tracking-wider border-b border-[#FFE6DC]/60 mb-1">
+                      <span>Platform Services</span>
+                      <span className="font-mono text-[10px] text-[#A53B22]">6 Architectures</span>
                     </div>
                     <div className="space-y-1">
-                      <button
-                        onClick={() => {
-                          setShowServicesDropdown(false);
-                          onNavigate('services');
-                        }}
-                        className="w-full text-left p-2 rounded-xl hover:bg-[#FAF9F6] transition-colors flex items-start gap-2.5 group cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">call</span>
-                        <div>
-                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Phone &amp; Web Calls</div>
-                          <div className="text-[11px] text-[#57423D]">Talk to callers and run your app's code live</div>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowServicesDropdown(false);
-                          onNavigate('services');
-                        }}
-                        className="w-full text-left p-2 rounded-xl hover:bg-[#FAF9F6] transition-colors flex items-start gap-2.5 group cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">graphic_eq</span>
-                        <div>
-                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Custom AI Voices</div>
-                          <div className="text-[11px] text-[#57423D]">Natural brand voices ready in 6 seconds</div>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowServicesDropdown(false);
-                          onNavigate('services');
-                        }}
-                        className="w-full text-left p-2 rounded-xl hover:bg-[#FAF9F6] transition-colors flex items-start gap-2.5 group cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">build</span>
-                        <div>
-                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Automated API Calling</div>
-                          <div className="text-[11px] text-[#57423D]">Extracts parameters and runs your tools without guessing</div>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowServicesDropdown(false);
-                          onNavigate('services');
-                        }}
-                        className="w-full text-left p-2 rounded-xl hover:bg-[#FAF9F6] transition-colors flex items-start gap-2.5 group cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">security</span>
-                        <div>
-                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Private by Default</div>
-                          <div className="text-[11px] text-[#57423D]">Zero voice audio saved on disk. Safe and private</div>
-                        </div>
-                      </button>
+                      {[
+                        {
+                          id: 'telephony',
+                          title: 'Phone & Web Calls',
+                          desc: 'SIP trunks, WebRTC & sub-850ms audio',
+                          icon: 'call'
+                        },
+                        {
+                          id: 'voice_synthesis',
+                          title: 'Custom AI Voices',
+                          desc: 'Natural brand voices ready in 6 seconds',
+                          icon: 'graphic_eq'
+                        },
+                        {
+                          id: 'tool_calling',
+                          title: 'Automated API Calling',
+                          desc: 'Deterministic tool execution without guessing',
+                          icon: 'build'
+                        },
+                        {
+                          id: 'cluster_isolation',
+                          title: 'Private by Default',
+                          desc: 'Air-gapped VPCs & in-memory audio buffers',
+                          icon: 'security'
+                        },
+                        {
+                          id: 'telemetry_metering',
+                          title: 'Action Unit Accounting',
+                          desc: 'Fair billing with automatic session cleanup',
+                          icon: 'speed'
+                        },
+                        {
+                          id: 'developer_sdk',
+                          title: 'Developer SDKs & Templates',
+                          desc: 'FastAPI, Django, Express & React libraries',
+                          icon: 'terminal'
+                        }
+                      ].map((svc) => {
+                        const isActive = currentView === 'services' && selectedServiceId === svc.id;
+                        return (
+                          <button
+                            key={svc.id}
+                            onClick={() => {
+                              setShowServicesDropdown(false);
+                              if (onSelectService) {
+                                onSelectService(svc.id);
+                              } else {
+                                localStorage.setItem('tats_selected_service', svc.id);
+                                window.dispatchEvent(new CustomEvent('tats_service_selected', { detail: svc.id }));
+                                onNavigate('services');
+                              }
+                            }}
+                            className={`w-full text-left p-2 rounded-xl transition-colors flex items-start justify-between gap-2.5 group cursor-pointer ${
+                              isActive
+                                ? 'bg-[#FFF6F3] border border-[#FFDAD2]'
+                                : 'hover:bg-[#FAF9F6] border border-transparent'
+                            }`}
+                          >
+                            <div className="flex items-start gap-2.5 min-w-0">
+                              <span className={`material-symbols-outlined text-[18px] mt-0.5 shrink-0 ${
+                                isActive ? 'text-[#A53B22]' : 'text-[#8B716B] group-hover:text-[#A53B22]'
+                              }`}>
+                                {svc.icon}
+                              </span>
+                              <div className="min-w-0">
+                                <div className={`text-xs font-bold truncate ${
+                                  isActive ? 'text-[#A53B22]' : 'text-[#1D1A23] group-hover:text-[#A53B22]'
+                                }`}>
+                                  {svc.title}
+                                </div>
+                                <div className="text-[11px] text-[#57423D] truncate">{svc.desc}</div>
+                              </div>
+                            </div>
+                            {isActive && (
+                              <span className="material-symbols-outlined text-[16px] text-[#A53B22] shrink-0 mt-0.5">check</span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
 
                     <div className="mt-2 pt-2 border-t border-[#FFE6DC]">
                       <button
                         onClick={() => {
                           setShowServicesDropdown(false);
-                          onNavigate('services');
+                          if (onSelectService) {
+                            onSelectService(null);
+                          } else {
+                            localStorage.removeItem('tats_selected_service');
+                            window.dispatchEvent(new CustomEvent('tats_service_selected', { detail: null }));
+                            onNavigate('services');
+                          }
                         }}
-                        className="w-full text-center py-1.5 px-3 rounded-xl bg-[#FAF9F6] hover:bg-[#F3EBF8] text-[#A53B22] text-xs font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                        className={`w-full text-center py-2 px-3 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                          currentView === 'services' && !selectedServiceId
+                            ? 'bg-[#A53B22] text-white shadow-xs'
+                            : 'bg-[#FAF9F6] hover:bg-[#F3EBF8] text-[#A53B22]'
+                        }`}
                       >
-                        <span>Explore All Services</span>
+                        <span className="material-symbols-outlined text-[16px]">grid_view</span>
+                        <span>Explore All Services Catalog</span>
                         <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                       </button>
                     </div>
                   </div>
                 )}
               </div>
-
-              {/* Contact Button */}
-              <button
-                onClick={() => handleNavClick('contact')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#DEC0B9]/60 hover:border-[#A53B22] text-[#57423D] hover:text-[#A53B22] text-xs font-semibold bg-[#FAF9F6] transition-all cursor-pointer"
-                title="Contact the T@S Team"
-              >
-                <span>Contact</span>
-              </button>
 
               {/* Useful In-App SDK Quickstart Button */}
               <button
@@ -612,64 +704,113 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Useful Interactive SDK Quickstart Modal */}
+      {/* Useful Interactive SDK Quickstart Modal (Streamlined & Simple) */}
       {showQuickstartModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
           <div className="fixed inset-0" onClick={() => setShowQuickstartModal(false)} />
-          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-[#FFE6DC] p-6 z-10 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-[#FFE6DC]">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-[#FFE6DC] p-6 sm:p-7 z-10 animate-in zoom-in-95">
+            {/* Header: Title + Language Switcher */}
+            <div className="flex flex-wrap items-center justify-between pb-3.5 border-b border-[#FFE6DC] gap-2">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-[#A53B22]/10 text-[#A53B22] flex items-center justify-center">
                   <span className="material-symbols-outlined text-[18px]">terminal</span>
                 </div>
                 <div>
-                  <h3 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">T@S SDK Quickstart</h3>
-                  <p className="text-[11px] text-[#57423D]">Add real-time voice and API actions to your app in minutes</p>
+                  <h3 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">Quickstart</h3>
+                  <p className="text-[11px] text-[#8B716B]">Run in 2 quick steps</p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowQuickstartModal(false)}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[#8B716B] hover:bg-[#FAF9F6]"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-              </button>
+
+              {/* Language Pills (Python / Node / cURL) */}
+              <div className="flex items-center gap-1 p-0.5 bg-[#FAF9F6] border border-[#DEC0B9]/60 rounded-full">
+                {(['python', 'node', 'curl'] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setQuickstartLang(lang)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                      quickstartLang === lang
+                        ? 'bg-[#1D1A23] text-white shadow-xs'
+                        : 'text-[#57423D] hover:text-[#1D1A23]'
+                    }`}
+                  >
+                    {lang === 'python' ? 'Python' : lang === 'node' ? 'Node.js' : 'cURL'}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="mt-4 space-y-3.5 text-xs">
+            {/* Clean 2-Step Content (No over-content) */}
+            <div className="mt-4 space-y-4">
+              {/* Step 1: Install */}
               <div>
-                <span className="font-bold text-[#1D1A23] font-['Outfit']">1. Install Client SDK</span>
-                <div className="mt-1.5 p-3 rounded-xl bg-[#1A1816] text-[#F4EFEA] font-mono text-[11px] flex items-center justify-between">
-                  <span>pip install tats-ai  # or npm i @tats/sdk</span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-['Outfit'] font-bold text-xs text-[#1D1A23]">
+                    1. Install Package
+                  </span>
+                  <span className="text-[10px] text-[#8B716B]">
+                    {quickstartLang === 'curl' ? 'Zero dependencies' : 'Official SDK'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#191720] text-[#FAF9F6] font-mono text-xs border border-white/10">
+                  <span className="truncate">{quickstartData[quickstartLang].install}</span>
+                  {quickstartLang !== 'curl' && (
+                    <button
+                      onClick={() => handleCopyInstall(quickstartData[quickstartLang].install)}
+                      className="ml-2 flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-[#FAF9F6] text-[11px] font-sans font-bold transition-colors cursor-pointer"
+                      title="Copy install command"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">
+                        {copiedInstall ? 'check' : 'content_copy'}
+                      </span>
+                      <span>{copiedInstall ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Step 2: Code Snippet */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-['Outfit'] font-bold text-xs text-[#1D1A23]">
+                    2. Execute Voice Stream
+                  </span>
                   <button
-                    onClick={() => navigator.clipboard.writeText('pip install tats-ai')}
-                    className="text-[#FF7E5F] hover:underline font-bold"
+                    onClick={() => handleCopySnippet(quickstartData[quickstartLang].code)}
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#A53B22] hover:text-[#1D1A23] transition-colors cursor-pointer"
+                    title="Copy code to clipboard"
                   >
-                    Copy
+                    <span className="material-symbols-outlined text-[13px]">
+                      {copiedSnippet ? 'check' : 'content_copy'}
+                    </span>
+                    <span>{copiedSnippet ? 'Copied!' : 'Copy Code'}</span>
                   </button>
                 </div>
-              </div>
-
-              <div>
-                <span className="font-bold text-[#1D1A23] font-['Outfit']">2. Initialize in 3 Lines of Python</span>
-                <div className="mt-1.5 p-3 rounded-xl bg-[#1A1816] text-[#F4EFEA] font-mono text-[11px] overflow-x-auto leading-relaxed">
-                  <span className="text-[#8B716B]"># Connect directly to your live cluster</span><br />
-                  <span className="text-[#FF7E5F]">from</span> tats <span className="text-[#FF7E5F]">import</span> AcousticAgent<br />
-                  agent = AcousticAgent(api_key=<span className="text-amber-400">"tas_live_..."</span>)<br />
-                  response = agent.execute_voice(audio_stream)
+                <div className="p-3.5 rounded-2xl bg-[#191720] text-[#FAF9F6] font-mono text-xs border border-white/10 overflow-x-auto leading-relaxed shadow-inner">
+                  <pre className="text-[11.5px] leading-relaxed">
+                    {quickstartData[quickstartLang].code}
+                  </pre>
                 </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[#FFF8EB] border border-[#FDE047] text-[11px] text-[#854D0E]">
-                <strong>Fast &amp; Reliable:</strong> Speech is processed directly in memory and triggers your verified code in under 1 second.
               </div>
             </div>
 
-            <div className="mt-5 pt-3 border-t border-[#FFE6DC] flex justify-end">
+            {/* Footer Actions */}
+            <div className="mt-5 pt-3.5 border-t border-[#FFE6DC] flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setShowQuickstartModal(false);
+                  onNavigate('live-voice-playground');
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold text-[#A53B22] hover:text-[#1D1A23] transition-colors cursor-pointer"
+              >
+                <span>Try Voice in Playground</span>
+                <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+              </button>
+
               <button
                 onClick={() => setShowQuickstartModal(false)}
-                className="px-4 py-1.5 rounded-full bg-[#A53B22] text-white font-bold text-xs shadow-sm hover:opacity-90"
+                className="px-4 py-1.5 rounded-full bg-[#1D1A23] hover:bg-[#342F3E] text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
               >
-                Close Quickstart
+                Done
               </button>
             </div>
           </div>

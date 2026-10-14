@@ -4,7 +4,7 @@ import { TATSBackendAPI } from '../../services/api';
 
 interface DeveloperDashboardViewProps {
   onNavigate: (view: AppView) => void;
-  onShowToast: (title: string, desc?: string) => void;
+  onShowToast: (title: string, desc?: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
 export const DeveloperDashboardView: React.FC<DeveloperDashboardViewProps> = ({

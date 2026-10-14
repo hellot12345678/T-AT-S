@@ -5,6 +5,7 @@
     --font-display: 'Outfit', sans-serif;
     --font-body: 'Manrope', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
+    --font-cursive: 'Caveat', cursive;
   }
 
   body {
@@ -21,6 +22,10 @@
 
   code, pre, .font-mono {
     font-family: var(--font-mono);
+  }
+
+  .font-cursive {
+    font-family: var(--font-cursive);
   }
 }
 
@@ -71,5 +76,75 @@
 
 .animate-marquee:hover {
   animation-play-state: paused;
+}
+
+/* In-place Flight Throttle & Lift Animation (Ready for Takeoff) */
+@keyframes flightThrottle {
+  0% {
+    transform: translateY(-4px) scale(1.04);
+  }
+  25% {
+    transform: translateY(-5px) translateX(-0.5px) scale(1.05);
+  }
+  50% {
+    transform: translateY(-4px) translateX(0.5px) scale(1.04);
+  }
+  75% {
+    transform: translateY(-5px) translateX(-0.3px) scale(1.06);
+  }
+  100% {
+    transform: translateY(-4px) scale(1.04);
+  }
+}
+
+.animate-flight-throttle {
+  animation: flightThrottle 0.12s linear infinite;
+  display: inline-block;
+}
+
+@keyframes thrustGlow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scaleX(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1.25);
+  }
+}
+
+.animate-thrust-glow {
+  animation: thrustGlow 0.2s ease-in-out infinite;
+}
+
+/* Acoustic Wave Dash Crawl */
+@keyframes waveDashCrawl {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.animate-wave-dash {
+  animation: waveDashCrawl 3s linear infinite;
+}
+
+/* Subtle Harmonic Node Glow & Pulse */
+@keyframes harmonicNodePulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(255, 174, 51, 0.4));
+  }
+  50% {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 6px rgba(255, 174, 51, 0.9));
+  }
+}
+
+.animate-harmonic-node {
+  animation: harmonicNodePulse 2.4s ease-in-out infinite;
+  transform-origin: center;
 }
 

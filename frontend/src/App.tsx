@@ -22,10 +22,21 @@ import { AboutView } from './components/views/AboutView';
 import { ServicesView } from './components/views/ServicesView';
 import { LegalModal, LegalModalType } from './components/LegalModals';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { IntroCinematic } from './components/IntroCinematic';
 
 export default function App() {
   // Developer Session & Tenancy State
   const [developer, setDeveloper] = useState<any>(TATSBackendAPI.getCurrentDeveloper());
+  const [showIntro, setShowIntro] = useState<boolean>(() => {
+    try {
+      const dev = TATSBackendAPI.getCurrentDeveloper();
+      const cached = localStorage.getItem('tats_current_view');
+      const isPublic = !dev && (!cached || cached === 'landing');
+      return isPublic && !sessionStorage.getItem('tats_intro_seen');
+    } catch {
+      return false;
+    }
+  });
   const [currentView, setCurrentView] = useState<AppView>(() => {
     const cached = localStorage.getItem('tats_current_view') as AppView | null;
     const dev = TATSBackendAPI.getCurrentDeveloper();
@@ -48,6 +59,9 @@ export default function App() {
   // Application Tenancy State
   const [applications, setApplications] = useState<any[]>([]);
   const [activeAppId, setActiveAppId] = useState<string>(() => localStorage.getItem('tats_active_app_id') || '');
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(() => {
+    return localStorage.getItem('tats_selected_service') || null;
+  });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const MAX_TOASTS = 5;
@@ -152,6 +166,17 @@ export default function App() {
     }
   };
 
+  const handleSelectService = (serviceId: string | null) => {
+    setSelectedServiceId(serviceId);
+    if (serviceId) {
+      localStorage.setItem('tats_selected_service', serviceId);
+    } else {
+      localStorage.removeItem('tats_selected_service');
+    }
+    window.dispatchEvent(new CustomEvent('tats_service_selected', { detail: serviceId }));
+    handleNavigate('services');
+  };
+
   const handleLogout = async () => {
     await TATSBackendAPI.logout();
     setDeveloper(null);
@@ -242,6 +267,8 @@ export default function App() {
       <Header
         currentView={currentView}
         onNavigate={handleNavigate}
+        selectedServiceId={selectedServiceId}
+        onSelectService={handleSelectService}
         onOpenCommand={() => setIsCommandOpen(true)}
         onOpenWizard={() => {
           if (!developer) {
@@ -293,6 +320,8 @@ export default function App() {
                 activeAppId={activeAppId}
                 onRefreshApps={loadApplications}
                 onOpenLegalModal={setActiveLegalModal}
+                onReplayIntro={() => setShowIntro(true)}
+                onSelectService={handleSelectService}
               />
             )}
 
@@ -379,6 +408,8 @@ export default function App() {
                 onNavigate={handleNavigate}
                 onOpenAuth={handleOpenAuth}
                 developer={developer}
+                selectedServiceId={selectedServiceId}
+                onSelectService={handleSelectService}
               />
             )}
           </ErrorBoundary>
@@ -430,6 +461,11 @@ export default function App() {
 
       {/* Toast Notification Stream */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Cinematic Developer Start Intro Animation */}
+      {showIntro && (
+        <IntroCinematic onComplete={() => setShowIntro(false)} />
+      )}
     </div>
   );
 }
