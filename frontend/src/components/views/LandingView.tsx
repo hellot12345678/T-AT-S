@@ -251,60 +251,47 @@ export function VoiceController() {
 
   return (
     <div className="w-full min-h-screen bg-[#FAF9F6] text-[#1D1A23] flex flex-col justify-between">
-      {/* Ambient Floating Sub-nav */}
-      <div className="sticky top-20 z-30 w-full px-4 flex justify-center pointer-events-none mb-6">
-        <nav className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white/95 backdrop-blur-xl border border-[#FFE6DC] shadow-md text-xs font-semibold">
-          <a href="#about" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
-            About
-          </a>
-          <a href="#services" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
-            Services
-          </a>
-          <a href="#quickstart" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
-            5-Min SDK
-          </a>
-          <a href="#pricing" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
-            Pricing
-          </a>
-          <a href="#faq" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
-            FAQ
-          </a>
-          <a href="#contact" className="text-[#57423D] hover:text-[#1D1A23] px-2.5 py-1 rounded-full transition-colors">
-            Contact
-          </a>
-          <div className="h-3.5 w-[1px] bg-[#DEC0B9]/50 mx-1"></div>
+      {/* Hero Section */}
+      <section className="relative w-full px-4 sm:px-8 pt-10 sm:pt-16 pb-16 overflow-hidden flex flex-col items-center text-center max-w-6xl mx-auto">
+        {/* Ambient Radial Coral Aura */}
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[720px] h-[340px] bg-gradient-to-b from-[#FF7E5F]/20 via-[#FFAE33]/15 to-transparent blur-3xl pointer-events-none rounded-full"></div>
+
+        {/* Announcement Pill (x.ai style) */}
+        <div className="relative z-10 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#FFE6DC] text-xs font-semibold text-[#57423D] mb-6 shadow-xs hover:border-[#FF7E5F] transition-all">
+          <span className="px-2 py-0.5 rounded-full bg-[#A53B22] text-white text-[10px] font-bold uppercase tracking-wider">New</span>
+          <span className="text-[#1D1A23] font-bold">T@S 2.0</span>
+          <span className="text-[#DEC0B9]">•</span>
+          <button onClick={() => onNavigate('services')} className="text-[#A53B22] hover:underline flex items-center gap-0.5 cursor-pointer font-medium">
+            <span>Autonomous Acoustic Engine</span>
+            <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
+          </button>
+        </div>
+
+        {/* Main Headline & Subtitle */}
+        <div className="relative z-10 max-w-4xl mx-auto mb-6">
+          <h1 className="font-['Outfit'] text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#1D1A23] tracking-tight leading-[1.1] mb-5 max-w-4xl">
+            Autonomous voice runtime for everything you build.
+          </h1>
+          <p className="font-['Manrope'] text-base sm:text-lg text-[#57423D] max-w-2xl mx-auto leading-relaxed">
+            Sub-850ms streaming acoustics, zero-shot voice cloning, and deterministic OpenAPI execution. Engineered for mission-critical software with zero audio disk retention.
+          </p>
+        </div>
+
+        {/* Action Buttons (Dual high-impact CTAs) */}
+        <div className="relative z-10 flex flex-wrap justify-center items-center gap-3.5 mb-12">
           <button
             onClick={() => {
               if (developer) {
                 onNavigate('developer-dashboard');
               } else {
-                onOpenAuth('Sign in or register to launch your workspace.');
+                onOpenAuth('Sign in or register to get instant API access.');
               }
             }}
-            className="text-white bg-[#A53B22] hover:bg-[#84240D] px-3.5 py-1 rounded-full shadow-sm transition-all text-xs"
+            className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-[#FF7E5F] via-[#FF5F45] to-[#FFAE33] text-white font-['Outfit'] font-bold text-sm shadow-lg shadow-[#FF5F45]/25 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
           >
-            Start Building Free
+            <span>Get API Access</span>
+            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
           </button>
-        </nav>
-      </div>
-
-      {/* Hero Section (About) */}
-      <section id="about" className="relative w-full px-4 sm:px-8 pt-14 sm:pt-20 pb-16 overflow-hidden flex flex-col items-center text-center max-w-6xl mx-auto scroll-mt-24">
-        {/* Ambient Radial Coral Aura */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[720px] h-[340px] bg-gradient-to-b from-[#FF7E5F]/20 via-[#FFAE33]/15 to-transparent blur-3xl pointer-events-none rounded-full"></div>
-
-        {/* Main Headline & Subtitle */}
-        <div className="relative z-10 max-w-4xl mx-auto mb-6 mt-4 sm:mt-6">
-          <h1 className="font-['Outfit'] text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#1D1A23] tracking-tight leading-tight mb-4">
-            Voice-to-Execution Brain for Modern Apps.
-          </h1>
-          <p className="font-['Manrope'] text-base sm:text-lg text-[#57423D] max-w-2xl mx-auto leading-relaxed">
-            Turn human speech into live backend actions with deterministic sub-850ms execution. Zero OpenAI or Anthropic metered cloud bills.
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="relative z-10 flex flex-wrap justify-center items-center gap-3.5 mb-12">
           <button
             onClick={() => {
               if (developer) {
@@ -313,36 +300,37 @@ export function VoiceController() {
                 onOpenAuth('Sign in or register to test the live voice playground.');
               }
             }}
-            className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-[#FF7E5F] via-[#FF5F45] to-[#FFAE33] text-white font-['Outfit'] font-bold text-sm shadow-xl shadow-[#FF7E5F]/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#1D1A23] font-['Outfit'] font-bold text-sm shadow-xs border border-[#DEC0B9]/60 hover:border-[#A53B22] hover:bg-[#FAF9F6] transition-all cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]">mic</span>
-            <span>Start Building for Free</span>
-            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-          </button>
-          <button
-            onClick={() => handleSimulateUtterance((activeUtteranceIndex + 1) % utterances.length)}
-            className="flex items-center gap-2 px-6 py-3 rounded-full bg-white/95 text-[#1D1A23] font-['Outfit'] font-bold text-sm shadow-md border border-[#FFE6DC] hover:bg-white hover:scale-[1.01] transition-all"
-          >
-            <span className="material-symbols-outlined text-[#FF5F45] text-[20px]">play_circle</span>
-            <span>Simulate Live Spoken Utterance</span>
+            <span className="material-symbols-outlined text-[#A53B22] text-[18px]">terminal</span>
+            <span>Test in Voice Playground</span>
           </button>
         </div>
 
-        {/* TARGET FOR #services & #features: Acoustic Wave Ribbon & Synthesized Tool Node */}
-        <div id="services" className="relative z-10 w-full max-w-5xl rounded-3xl bg-white/90 backdrop-blur-2xl p-5 sm:p-7 border border-[#FFE6DC] shadow-xl overflow-hidden text-left scroll-mt-28">
-          <span id="features" className="scroll-mt-28"></span>
-          <div className="flex items-center justify-between pb-3 border-b border-[#FFE6DC]/60 mb-5">
+        {/* Interactive Live Acoustic Pipeline Demonstration */}
+        <div className="relative z-10 w-full max-w-5xl rounded-3xl bg-white/95 backdrop-blur-2xl p-5 sm:p-7 border border-[#FFE6DC] shadow-xl overflow-hidden text-left">
+          <div className="flex flex-wrap items-center justify-between pb-3 border-b border-[#FFE6DC]/60 mb-5 gap-2">
             <div className="flex items-center gap-2 text-xs">
               <span className="w-3 h-3 rounded-full bg-[#BA1A1A]/70"></span>
               <span className="w-3 h-3 rounded-full bg-[#FFAE33]"></span>
               <span className="w-3 h-3 rounded-full bg-[#00C2FF]"></span>
               <span className="font-['Outfit'] text-[11px] font-bold uppercase tracking-wider text-[#8B716B] ml-2">
-                Acoustic Pipeline • Stream ID: #vox-9921e
+                Live Acoustic Stream • ID: #vox-9921e
               </span>
             </div>
-            <div className="flex items-center gap-2 font-['Outfit'] text-xs text-[#A53B22] font-bold">
-              <span className={`w-2 h-2 rounded-full bg-[#FF7E5F] ${isSimulatingSpeech ? 'animate-ping' : ''}`}></span>
-              <span>Execution Latency: {latencyProgress}ms</span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleSimulateUtterance((activeUtteranceIndex + 1) % utterances.length)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] border border-[#DEC0B9]/60 text-xs font-bold text-[#A53B22] transition-colors cursor-pointer"
+                title="Trigger simulated voice token to test latency and webhook resolution"
+              >
+                <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+                <span>Simulate Spoken Utterance</span>
+              </button>
+              <div className="flex items-center gap-2 font-['Outfit'] text-xs text-[#A53B22] font-bold">
+                <span className={`w-2 h-2 rounded-full bg-[#FF7E5F] ${isSimulatingSpeech ? 'animate-ping' : ''}`}></span>
+                <span>Latency: {latencyProgress}ms</span>
+              </div>
             </div>
           </div>
 
@@ -503,12 +491,12 @@ export function VoiceController() {
         </div>
       </section>
 
-      {/* Feature Bento Grid (4 Cards) */}
+      {/* Feature Bento Grid (4 Core Capabilities) */}
       <section className="w-full px-4 sm:px-8 py-16 bg-[#F8F1FE]/40 scroll-mt-24" id="architecture">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="font-['Outfit'] text-xs font-bold text-[#A53B22] uppercase tracking-widest">
-              Determinism By Architecture
+              Engineered For Determinism
             </span>
             <h2 className="font-['Outfit'] text-3xl font-bold text-[#1D1A23] mt-1">
               Built for real-world enterprise infrastructure.
@@ -519,79 +507,123 @@ export function VoiceController() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Card 1: 0ms Cold Starts */}
-            <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            {/* Card 1: Autonomous Voice Telephony */}
+            <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#FFDAD2] text-[#A53B22] flex items-center justify-center mb-4">
-                  <span className="material-symbols-outlined text-[24px]">speed</span>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#FFDAD2] text-[#A53B22] flex items-center justify-center font-bold">
+                    <span className="material-symbols-outlined text-[24px]">call</span>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-[#FAF9F6] border border-[#FFE6DC] text-[#A53B22] font-mono text-xs font-bold">
+                    &lt; 850ms Latency
+                  </span>
                 </div>
-                <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2">
-                  0ms Cold Starts
+                <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2 group-hover:text-[#A53B22] transition-colors">
+                  Autonomous Voice Telephony
                 </h3>
                 <p className="text-sm text-[#57423D] leading-relaxed">
-                  Instant audio stream ingestion via streaming WebSpeech & local lightweight Whisper nodes. Eliminates traditional LLM connection handshake delays.
+                  Full-duplex WebRTC and carrier-grade SIP trunk streaming with active human turn-taking, noise reduction, and interruption handling.
                 </p>
               </div>
-              <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs text-[#57423D]">
-                <span className="font-bold text-[#A53B22]">Streaming Pipeline</span>
-                <span className="font-mono">&lt;15ms First Chunk</span>
+              <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs">
+                <button
+                  onClick={() => onNavigate('services')}
+                  className="font-bold text-[#A53B22] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Explore Telephony Capabilities</span>
+                  <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                </button>
+                <span className="text-[#8B716B] font-mono text-[11px]">SIP &amp; WebRTC</span>
               </div>
             </div>
 
-            {/* Card 2: Zero-Shot Voice Cloning */}
-            <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            {/* Card 2: Deterministic Action Dispatcher */}
+            <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#FFDDB6] text-[#845400] flex items-center justify-center mb-4">
-                  <span className="material-symbols-outlined text-[24px]">graphic_eq</span>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#FFDDB6] text-[#845400] flex items-center justify-center font-bold">
+                    <span className="material-symbols-outlined text-[24px]">build</span>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-[#FAF9F6] border border-[#FFE6DC] text-[#845400] font-mono text-xs font-bold">
+                    0% Hallucinations
+                  </span>
                 </div>
-                <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2">
-                  Zero-Shot Voice Cloning
+                <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2 group-hover:text-[#845400] transition-colors">
+                  Deterministic Action Dispatcher
                 </h3>
                 <p className="text-sm text-[#57423D] leading-relaxed">
-                  Generate dynamic conversational voice responses with 6-second instant reference voice cloning and custom emotional warmth modulation.
+                  Bypasses LLM hallucinations by binding extracted acoustic arguments directly against your developer-registered OpenAPI parameter schemas.
                 </p>
               </div>
-              <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs text-[#57423D]">
-                <span className="font-bold text-[#845400]">Neural Synthesis</span>
-                <span className="font-mono">6-Sec Reference Sample</span>
+              <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs">
+                <button
+                  onClick={() => onNavigate('visual-tool-builder')}
+                  className="font-bold text-[#845400] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Open Visual Tool Builder</span>
+                  <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                </button>
+                <span className="text-[#8B716B] font-mono text-[11px]">Strict OpenAPI Contracts</span>
               </div>
             </div>
 
-            {/* Card 3: Self-Hosted pgvector Privacy */}
-            <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            {/* Card 3: Zero-Shot Voice Synthesis */}
+            <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#C2E8FF] text-[#006688] flex items-center justify-center mb-4">
-                  <span className="material-symbols-outlined text-[24px]">shield</span>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#C2E8FF] text-[#006688] flex items-center justify-center font-bold">
+                    <span className="material-symbols-outlined text-[24px]">graphic_eq</span>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-[#FAF9F6] border border-[#FFE6DC] text-[#006688] font-mono text-xs font-bold">
+                    6-Sec Setup
+                  </span>
                 </div>
-                <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2">
-                  Self-Hosted pgvector Privacy
+                <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2 group-hover:text-[#006688] transition-colors">
+                  Zero-Shot Acoustic Voice Cloning
                 </h3>
                 <p className="text-sm text-[#57423D] leading-relaxed">
-                  Deploy your semantic memory schema inside your existing Postgres instance. No user dialogue transcripts or embeddings ever touch external cloud servers.
+                  Synthesize personalized, conversational brand voices from 6 seconds of reference audio with zero GPU fine-tuning overhead or model drift.
                 </p>
               </div>
-              <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs text-[#57423D]">
-                <span className="font-bold text-[#006688]">VPC Isolation</span>
-                <span className="font-mono">SOC2 & HIPAA Compliant</span>
+              <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs">
+                <button
+                  onClick={onOpenWizard}
+                  className="font-bold text-[#006688] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Calibrate Voice Profile</span>
+                  <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                </button>
+                <span className="text-[#8B716B] font-mono text-[11px]">WAV / Mic Calibration</span>
               </div>
             </div>
 
-            {/* Card 4: 100% Ephemeral Audio Destruction */}
-            <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            {/* Card 4: 100% Volatile Ephemeral Destruction */}
+            <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#EDE5F2] text-[#1D1A23] flex items-center justify-center mb-4">
-                  <span className="material-symbols-outlined text-[24px]">auto_delete</span>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#EDE5F2] text-[#1D1A23] flex items-center justify-center font-bold">
+                    <span className="material-symbols-outlined text-[24px]">shield</span>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-[#FAF9F6] border border-[#FFE6DC] text-[#1D1A23] font-mono text-xs font-bold">
+                    Zero Disk Retention
+                  </span>
                 </div>
-                <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2">
-                  100% Ephemeral Audio Destruction
+                <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2 group-hover:text-[#A53B22] transition-colors">
+                  Ephemeral Security &amp; VPC Isolation
                 </h3>
                 <p className="text-sm text-[#57423D] leading-relaxed">
-                  Audio frames are processed purely in ephemeral RAM and wiped immediately post-execution. Zero audio disk logging and full GDPR Article 17 adherence.
+                  Raw voice streams are processed strictly in volatile RAM and purged immediately post-call. Optional self-hosted pgvector keeps memory on-premise.
                 </p>
               </div>
-              <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs text-[#57423D]">
-                <span className="font-bold text-[#1D1A23]">Volatile Memory Only</span>
-                <span className="font-mono">Zero Persistence</span>
+              <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs">
+                <button
+                  onClick={() => onOpenLegalModal?.('security')}
+                  className="font-bold text-[#1D1A23] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>View Security &amp; DPA Terms</span>
+                  <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                </button>
+                <span className="text-[#8B716B] font-mono text-[11px]">SOC2 &amp; GDPR Compliant</span>
               </div>
             </div>
           </div>
