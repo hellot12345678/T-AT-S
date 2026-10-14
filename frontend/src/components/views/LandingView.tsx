@@ -256,13 +256,13 @@ export function VoiceController() {
         {/* Ambient Radial Coral Aura */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[720px] h-[340px] bg-gradient-to-b from-[#FF7E5F]/20 via-[#FFAE33]/15 to-transparent blur-3xl pointer-events-none rounded-full"></div>
 
-        {/* Announcement Pill (x.ai style) */}
+        {/* Announcement Pill */}
         <div className="relative z-10 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#FFE6DC] text-xs font-semibold text-[#57423D] mb-6 shadow-xs hover:border-[#FF7E5F] transition-all">
           <span className="px-2 py-0.5 rounded-full bg-[#A53B22] text-white text-[10px] font-bold uppercase tracking-wider">New</span>
           <span className="text-[#1D1A23] font-bold">T@S 2.0</span>
           <span className="text-[#DEC0B9]">•</span>
           <button onClick={() => onNavigate('services')} className="text-[#A53B22] hover:underline flex items-center gap-0.5 cursor-pointer font-medium">
-            <span>Autonomous Acoustic Engine</span>
+            <span>Voice AI &amp; Action Engine</span>
             <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
           </button>
         </div>
@@ -270,14 +270,14 @@ export function VoiceController() {
         {/* Main Headline & Subtitle */}
         <div className="relative z-10 max-w-4xl mx-auto mb-6">
           <h1 className="font-['Outfit'] text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#1D1A23] tracking-tight leading-[1.1] mb-5 max-w-4xl">
-            Autonomous voice runtime for everything you build.
+            Build fast voice agents that actually run your code.
           </h1>
           <p className="font-['Manrope'] text-base sm:text-lg text-[#57423D] max-w-2xl mx-auto leading-relaxed">
-            Sub-850ms streaming acoustics, zero-shot voice cloning, and deterministic OpenAPI execution. Engineered for mission-critical software with zero audio disk retention.
+            Your users talk. T@S calls your API and replies in under 1 second. No made-up answers. No voice recordings saved on disk. Simple to connect.
           </p>
         </div>
 
-        {/* Action Buttons (Dual high-impact CTAs) */}
+        {/* Action Buttons */}
         <div className="relative z-10 flex flex-wrap justify-center items-center gap-3.5 mb-12">
           <button
             onClick={() => {
@@ -307,7 +307,7 @@ export function VoiceController() {
           </button>
         </div>
 
-        {/* Interactive Live Acoustic Pipeline Demonstration */}
+        {/* Interactive Live Voice Demo */}
         <div className="relative z-10 w-full max-w-5xl rounded-3xl bg-white/95 backdrop-blur-2xl p-5 sm:p-7 border border-[#FFE6DC] shadow-xl overflow-hidden text-left">
           <div className="flex flex-wrap items-center justify-between pb-3 border-b border-[#FFE6DC]/60 mb-5 gap-2">
             <div className="flex items-center gap-2 text-xs">
@@ -315,21 +315,21 @@ export function VoiceController() {
               <span className="w-3 h-3 rounded-full bg-[#FFAE33]"></span>
               <span className="w-3 h-3 rounded-full bg-[#00C2FF]"></span>
               <span className="font-['Outfit'] text-[11px] font-bold uppercase tracking-wider text-[#8B716B] ml-2">
-                Live Acoustic Stream • ID: #vox-9921e
+                Live Voice Stream • Call ID: #vox-9921e
               </span>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => handleSimulateUtterance((activeUtteranceIndex + 1) % utterances.length)}
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF9F6] hover:bg-[#F3EBF8] border border-[#DEC0B9]/60 text-xs font-bold text-[#A53B22] transition-colors cursor-pointer"
-                title="Trigger simulated voice token to test latency and webhook resolution"
+                title="Click to test this voice command and see how your API runs"
               >
                 <span className="material-symbols-outlined text-[16px]">play_arrow</span>
-                <span>Simulate Spoken Utterance</span>
+                <span>Test Voice Command</span>
               </button>
               <div className="flex items-center gap-2 font-['Outfit'] text-xs text-[#A53B22] font-bold">
                 <span className={`w-2 h-2 rounded-full bg-[#FF7E5F] ${isSimulatingSpeech ? 'animate-ping' : ''}`}></span>
-                <span>Latency: {latencyProgress}ms</span>
+                <span>Response Time: {latencyProgress}ms</span>
               </div>
             </div>
           </div>
@@ -340,10 +340,10 @@ export function VoiceController() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-['Outfit'] text-[11px] font-bold uppercase text-[#8B716B]">
-                    Input Stream: Human Utterance
+                    Caller Speaks:
                   </span>
                   <span className="text-[11px] text-[#845400] font-mono font-semibold">
-                    16-bit 48kHz PCM
+                    Live Microphone Audio
                   </span>
                 </div>
                 <div className="p-4 rounded-xl bg-white border border-[#FFE6DC] shadow-sm">
@@ -353,7 +353,7 @@ export function VoiceController() {
                 </div>
               </div>
 
-              {/* Bioluminescent Double-Helix Sound Ribbon SVG */}
+              {/* Sound Ribbon SVG */}
               <div className="relative w-full h-24 flex items-center justify-center overflow-hidden rounded-xl bg-[#1D1A23] p-2">
                 <svg className="w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 600 100">
                   <path
@@ -378,25 +378,25 @@ export function VoiceController() {
                   <circle cx="500" cy="50" fill="#00C2FF" r="4"></circle>
                 </svg>
                 <div className="absolute bottom-2 right-3 font-['Outfit'] text-[10px] text-[#FFDAD2] uppercase tracking-wider font-bold">
-                  Streaming Acoustic Mesh
+                  Live Voice Stream
                 </div>
               </div>
 
               {/* Action Selector Chips */}
               <div className="flex items-center justify-between text-xs pt-1">
-                <span className="font-bold text-[#57423D]">Select Utterance Sample:</span>
+                <span className="font-bold text-[#57423D]">Try an Example Command:</span>
                 <div className="flex gap-1.5">
                   {utterances.map((_, i) => (
                     <button
                       key={i}
                       onClick={() => handleSimulateUtterance(i)}
-                      className={`px-3 py-1 rounded-full font-bold transition-all ${
+                      className={`px-3 py-1 rounded-full font-bold transition-all cursor-pointer ${
                         activeUtteranceIndex === i
                           ? 'bg-[#A53B22] text-white shadow-sm'
                           : 'bg-white text-[#57423D] border border-[#FFE6DC] hover:bg-[#FAF9F6]'
                       }`}
                     >
-                      #{i + 1}
+                      Example #{i + 1}
                     </button>
                   ))}
                 </div>
@@ -407,24 +407,23 @@ export function VoiceController() {
             <div className="lg:col-span-5 flex flex-col justify-between gap-3 bg-[#1D1A23] text-[#FAF9F6] p-4 sm:p-5 rounded-2xl shadow-inner font-mono text-xs">
               <div className="flex items-center justify-between pb-2 border-b border-white/10">
                 <span className="font-['Outfit'] text-[11px] font-bold uppercase tracking-wider text-[#FFAE33]">
-                  Resolved Tool Call
+                  API Called Automatically
                 </span>
                 <span className="px-2 py-0.5 rounded bg-[#FF7E5F] text-white font-['Outfit'] text-[10px] font-bold">
-                  LIVE EXECUTION
+                  EXECUTED
                 </span>
               </div>
 
               <div className="overflow-x-auto text-[11px] leading-relaxed text-emerald-300/90 py-1">
-                <div className="text-sky-300">// Webhook auto-dispatched to Kubernetes Gateway</div>
+                <div className="text-sky-300">// Your API is called immediately with exact parameters</div>
                 <div className="text-[#FF7E5F] font-bold">
                   POST <span className="text-white">{currentUtterance.endpoint}</span>
                 </div>
                 <pre className="mt-2 text-white/90">
 {`{
   "action": "${currentUtterance.action}",
-  "intent_confidence": 0.9942,
+  "confidence": 0.99,
   "arguments": ${JSON.stringify(currentUtterance.arguments, null, 2).replace(/\n/g, '\n  ')},
-  "verification_seal": "bcrypt$v8$4f92...",
   "status": "${currentUtterance.status}"
 }`}
                 </pre>
@@ -433,9 +432,9 @@ export function VoiceController() {
               <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5 text-emerald-400">
                   <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                  <span className="font-bold">200 OK • Scaled in 110ms</span>
+                  <span className="font-bold">200 OK • Done in 110ms</span>
                 </div>
-                <span className="font-['Outfit'] font-bold text-[#FFAE33]">UNITS: {currentUtterance.units}</span>
+                <span className="font-['Outfit'] font-bold text-[#FFAE33]">Units Used: {currentUtterance.units}</span>
               </div>
             </div>
           </div>
@@ -447,13 +446,13 @@ export function VoiceController() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
           <div className="max-w-xl">
             <span className="font-['Outfit'] text-xs font-bold text-[#A53B22] uppercase tracking-widest">
-              Instant Developer Integration
+              Quickstart
             </span>
             <h2 className="font-['Outfit'] text-3xl font-bold text-[#1D1A23] mt-1">
-              Up and listening in 5 lines of code.
+              Add to your app in 5 lines of code.
             </h2>
             <p className="text-sm text-[#57423D] mt-1">
-              Bind high-security real-time voice controllers straight into your Django backend or React application with zero streaming WebSockets boilerplate.
+              Connect voice directly to your Python, Django, or React app. No complex streaming setups or WebSocket headaches.
             </p>
           </div>
 
@@ -496,18 +495,18 @@ export function VoiceController() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="font-['Outfit'] text-xs font-bold text-[#A53B22] uppercase tracking-widest">
-              Engineered For Determinism
+              Why Developers Choose T@S
             </span>
             <h2 className="font-['Outfit'] text-3xl font-bold text-[#1D1A23] mt-1">
-              Built for real-world enterprise infrastructure.
+              Fast, reliable, and built for real apps.
             </h2>
             <p className="text-sm text-[#57423D] mt-2">
-              Eradicate non-deterministic cloud reasoning bottlenecks. T@S operates on direct phoneme-to-intent pathways with complete operational sovereignty.
+              Stop waiting 3 to 5 seconds for slow voice bots. T@S turns human speech into direct API calls in under 1 second, without guessing or hallucinating.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Card 1: Autonomous Voice Telephony */}
+            {/* Card 1: Phone & Web Voice Calls */}
             <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -515,14 +514,14 @@ export function VoiceController() {
                     <span className="material-symbols-outlined text-[24px]">call</span>
                   </div>
                   <span className="px-3 py-1 rounded-full bg-[#FAF9F6] border border-[#FFE6DC] text-[#A53B22] font-mono text-xs font-bold">
-                    &lt; 850ms Latency
+                    &lt; 850ms Speed
                   </span>
                 </div>
                 <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2 group-hover:text-[#A53B22] transition-colors">
-                  Autonomous Voice Telephony
+                  Phone &amp; Web Voice Calls
                 </h3>
                 <p className="text-sm text-[#57423D] leading-relaxed">
-                  Full-duplex WebRTC and carrier-grade SIP trunk streaming with active human turn-taking, noise reduction, and interruption handling.
+                  Works on phone numbers (SIP) and web apps (WebRTC). Handles natural back-and-forth conversations, interruptions, and background noise effortlessly.
                 </p>
               </div>
               <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs">
@@ -530,14 +529,14 @@ export function VoiceController() {
                   onClick={() => onNavigate('services')}
                   className="font-bold text-[#A53B22] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <span>Explore Telephony Capabilities</span>
+                  <span>Explore Phone Services</span>
                   <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
                 </button>
                 <span className="text-[#8B716B] font-mono text-[11px]">SIP &amp; WebRTC</span>
               </div>
             </div>
 
-            {/* Card 2: Deterministic Action Dispatcher */}
+            {/* Card 2: Reliable API Calling */}
             <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -549,10 +548,10 @@ export function VoiceController() {
                   </span>
                 </div>
                 <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2 group-hover:text-[#845400] transition-colors">
-                  Deterministic Action Dispatcher
+                  Reliable API &amp; Tool Calling
                 </h3>
                 <p className="text-sm text-[#57423D] leading-relaxed">
-                  Bypasses LLM hallucinations by binding extracted acoustic arguments directly against your developer-registered OpenAPI parameter schemas.
+                  No made-up answers. Extracts the exact numbers, dates, and names your API expects, and calls your code with 100% precision.
                 </p>
               </div>
               <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs">
@@ -560,14 +559,14 @@ export function VoiceController() {
                   onClick={() => onNavigate('visual-tool-builder')}
                   className="font-bold text-[#845400] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <span>Open Visual Tool Builder</span>
+                  <span>Open Tool Builder</span>
                   <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
                 </button>
-                <span className="text-[#8B716B] font-mono text-[11px]">Strict OpenAPI Contracts</span>
+                <span className="text-[#8B716B] font-mono text-[11px]">Strict API Contracts</span>
               </div>
             </div>
 
-            {/* Card 3: Zero-Shot Voice Synthesis */}
+            {/* Card 3: Instant Brand Voices */}
             <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -579,10 +578,10 @@ export function VoiceController() {
                   </span>
                 </div>
                 <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2 group-hover:text-[#006688] transition-colors">
-                  Zero-Shot Acoustic Voice Cloning
+                  Instant Custom Brand Voices
                 </h3>
                 <p className="text-sm text-[#57423D] leading-relaxed">
-                  Synthesize personalized, conversational brand voices from 6 seconds of reference audio with zero GPU fine-tuning overhead or model drift.
+                  Create a lifelike voice for your brand from just 6 seconds of sample audio. Sounds natural and conversational with zero setup hassle.
                 </p>
               </div>
               <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs">
@@ -590,14 +589,14 @@ export function VoiceController() {
                   onClick={onOpenWizard}
                   className="font-bold text-[#006688] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <span>Calibrate Voice Profile</span>
+                  <span>Create a Voice Profile</span>
                   <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
                 </button>
-                <span className="text-[#8B716B] font-mono text-[11px]">WAV / Mic Calibration</span>
+                <span className="text-[#8B716B] font-mono text-[11px]">WAV / Mic Sample</span>
               </div>
             </div>
 
-            {/* Card 4: 100% Volatile Ephemeral Destruction */}
+            {/* Card 4: Private by Default */}
             <div className="p-7 rounded-3xl bg-white border border-[#FFE6DC] shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -605,14 +604,14 @@ export function VoiceController() {
                     <span className="material-symbols-outlined text-[24px]">shield</span>
                   </div>
                   <span className="px-3 py-1 rounded-full bg-[#FAF9F6] border border-[#FFE6DC] text-[#1D1A23] font-mono text-xs font-bold">
-                    Zero Disk Retention
+                    Zero Disk Storage
                   </span>
                 </div>
                 <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23] mb-2 group-hover:text-[#A53B22] transition-colors">
-                  Ephemeral Security &amp; VPC Isolation
+                  Private by Default (Zero Audio Saved)
                 </h3>
                 <p className="text-sm text-[#57423D] leading-relaxed">
-                  Raw voice streams are processed strictly in volatile RAM and purged immediately post-call. Optional self-hosted pgvector keeps memory on-premise.
+                  We never save user voice or audio to disk. Speech is processed in memory and deleted right after the call. Keep your data completely safe.
                 </p>
               </div>
               <div className="mt-6 pt-3 border-t border-[#FFE6DC]/60 flex items-center justify-between text-xs">
@@ -620,7 +619,7 @@ export function VoiceController() {
                   onClick={() => onOpenLegalModal?.('security')}
                   className="font-bold text-[#1D1A23] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <span>View Security &amp; DPA Terms</span>
+                  <span>View Security &amp; Privacy Terms</span>
                   <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
                 </button>
                 <span className="text-[#8B716B] font-mono text-[11px]">SOC2 &amp; GDPR Compliant</span>
@@ -630,39 +629,39 @@ export function VoiceController() {
         </div>
       </section>
 
-      {/* Dynamic Transparent Unit Pricing & INR Calculator */}
+      {/* Dynamic Unit Pricing & INR Calculator */}
       <section className="w-full px-4 sm:px-8 py-16 max-w-6xl mx-auto scroll-mt-24" id="pricing">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <span className="font-['Outfit'] text-xs font-bold text-[#A53B22] uppercase tracking-widest">
-            Transparent Acoustic Accounting
+            Simple, Fair Pricing
           </span>
           <h2 className="font-['Outfit'] text-3xl font-bold text-[#1D1A23] mt-1">
-            Pay only for deterministic software actions.
+            Pay only when your code runs.
           </h2>
           <p className="text-sm text-[#57423D] mt-2">
-            Eliminate unpredictable token billing. T@S meters usage purely by acoustic turn and resolved backend action.
+            No surprise token bills. You only pay for user questions, voice replies, and API calls.
           </p>
         </div>
 
-        {/* Dynamic Multiplier Breakdown */}
+        {/* Multiplier Breakdown */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="p-5 rounded-2xl bg-white border border-[#FFE6DC] shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit']">Text Utterance Turn</span>
+              <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit']">Text Question</span>
               <div className="font-['Outfit'] text-2xl font-bold text-[#1D1A23]">1 Unit</div>
             </div>
             <span className="material-symbols-outlined text-[#845400] text-[28px]">chat</span>
           </div>
           <div className="p-5 rounded-2xl bg-white border border-[#FFE6DC] shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit']">Voice Turn (Speech-to-Speech)</span>
+              <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit']">Voice Turn (Speak &amp; Reply)</span>
               <div className="font-['Outfit'] text-2xl font-bold text-[#1D1A23]">2 Units</div>
             </div>
             <span className="material-symbols-outlined text-[#FF5F45] text-[28px]">graphic_eq</span>
           </div>
           <div className="p-5 rounded-2xl bg-white border border-[#FFE6DC] shadow-sm flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit']">Tool Execution (Webhook/DB)</span>
+              <span className="text-[11px] font-bold text-[#8B716B] uppercase font-['Outfit']">API Tool Call</span>
               <div className="font-['Outfit'] text-2xl font-bold text-[#1D1A23]">3 Units</div>
             </div>
             <span className="material-symbols-outlined text-[#00C2FF] text-[28px]">bolt</span>
@@ -673,9 +672,9 @@ export function VoiceController() {
         <div className="p-6 sm:p-8 rounded-3xl bg-white border border-[#FFE6DC] shadow-xl mb-12">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#FFE6DC]">
             <div>
-              <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23]">Interactive INR Cost Calculator</h3>
+              <h3 className="font-['Outfit'] text-xl font-bold text-[#1D1A23]">Estimate Your Monthly Cost</h3>
               <p className="text-xs text-[#57423D] mt-0.5">
-                Estimate monthly operational expenditure across scaled application loads.
+                Slide to estimate your bill based on monthly usage.
               </p>
             </div>
             <div className="text-right">
@@ -690,7 +689,7 @@ export function VoiceController() {
 
           <div className="py-6">
             <div className="flex justify-between items-center mb-2 text-xs font-semibold">
-              <span className="text-[#57423D]">Monthly Action Units:</span>
+              <span className="text-[#57423D]">Monthly Units:</span>
               <span className="font-bold text-[#1D1A23] font-mono text-sm">
                 {units.toLocaleString('en-IN')} units
               </span>
@@ -705,21 +704,21 @@ export function VoiceController() {
               className="w-full h-2.5 bg-[#EDE5F2] rounded-lg appearance-none cursor-pointer accent-[#FF7E5F]"
             />
             <div className="flex justify-between text-[11px] text-[#8B716B] mt-2 font-mono">
-              <span>10k units (MVP)</span>
+              <span>10k units (Starter)</span>
               <span>100k units</span>
-              <span>500k units (Scale)</span>
+              <span>500k units (High Volume)</span>
             </div>
           </div>
 
           <div className="p-4 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC] flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
             <div>
-              <span className="font-bold text-[#845400]">Standard LLM Token Equivalent:</span>
+              <span className="font-bold text-[#845400]">Standard Voice Bots:</span>
               <span className="text-[#1D1A23] font-mono ml-2">
-                ~₹{competitorCost.toLocaleString('en-IN')} / mo on standard realtime token billing
+                ~₹{competitorCost.toLocaleString('en-IN')} / mo on per-minute token billing
               </span>
             </div>
             <div className="px-3.5 py-1.5 rounded-full bg-[#FFDDB6] text-[#643F00] font-bold font-['Outfit']">
-              {savingsPercent}% Direct Margin Saved
+              {savingsPercent}% Lower Cost with T@S
             </div>
           </div>
         </div>
@@ -830,16 +829,16 @@ export function VoiceController() {
         <div className="flex flex-col gap-3">
           {[
             {
-              q: 'How does T@S achieve sub-850ms latency without OpenAI?',
-              a: 'T@S utilizes a streaming acoustic phoneme graph directly compiled into deterministic backend tool vectors. We bypass heavy generative token-by-token parsing, matching voice intents to pre-compiled code signatures in one continuous edge pass.'
+              q: 'How does T@S respond in under 1 second?',
+              a: 'Traditional voice bots chain three slow services together: speech-to-text, a slow chatbot, and text-to-speech, taking 3 to 5 awkward seconds. T@S processes voice and triggers your API in a single fast loop, replying in under 850 milliseconds.'
             },
             {
-              q: 'Can I run T@S on our internal VPC with zero internet egress?',
-              a: 'Yes. The T@S Enterprise container package includes self-hosted acoustic weights and native PostgreSQL pgvector connectors. Your raw audio frames never leave your private network boundary.'
+              q: 'Can we run T@S on our own private servers?',
+              a: 'Yes. You can run T@S completely inside your own private cloud or internal network. Your audio streams and sensitive data never leave your private servers, making it safe for healthcare, banking, and internal tools.'
             },
             {
-              q: 'What happens if an unexpected ambient sound triggers the microphone?',
-              a: 'Our bcrypt-style vocal passphrase gating requires intentional acoustic trigger cadences before authorizing tool invocations. Noise, coughing, or side chatter are dropped before hitting your backend webhooks.'
+              q: 'How does T@S avoid accidental triggers from background noise?',
+              a: 'T@S automatically filters out coughing, typing, and room noise. Your API is only called when someone intentionally speaks a clear, recognized request.'
             }
           ].map((item, idx) => (
             <details
@@ -868,7 +867,7 @@ export function VoiceController() {
               Give your backend a real-time voice.
             </h2>
             <p className="text-sm text-white/90 mb-6">
-              Join thousands of developers turning speech into deterministic software actions. Spin up your free session in less than 5 minutes.
+              Join thousands of developers turning speech into reliable code execution. Get started free in less than 2 minutes.
             </p>
             <div className="flex flex-wrap justify-center items-center gap-4">
               <button
@@ -893,7 +892,7 @@ export function VoiceController() {
                 }}
                 className="px-6 py-3 rounded-full bg-white/20 backdrop-blur-md text-white font-['Outfit'] font-bold text-xs hover:bg-white/30 transition-all"
               >
-                Launch &lt;TASWizard /&gt; →
+                Quick Setup Wizard →
               </button>
             </div>
           </div>
@@ -922,7 +921,7 @@ export function VoiceController() {
               </div>
 
               <p className="text-xs text-[#8B8196] leading-relaxed">
-                Universal autonomous voice AI platform. Turn spoken commands into deterministic backend software actions in real-time.
+                Turn spoken words into real API actions in real time. Fast, private, and built for developers.
               </p>
 
               {/* Social Links */}

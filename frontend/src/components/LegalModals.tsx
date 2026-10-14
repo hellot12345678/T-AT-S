@@ -94,38 +94,36 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose, onShowToa
             <>
               <div className="p-3.5 rounded-2xl bg-[#FFF6F3] border border-[#FFDAD2] text-[#84240D]">
                 <strong className="block text-xs font-bold font-['Outfit'] mb-1">
-                  Volatile Audio Guarantee (Zero Audio Storage):
+                  Zero Audio Storage Guarantee:
                 </strong>
-                T@S processes voice audio strictly in transient, volatile memory during live calls.
-                Raw human speech is converted to deterministic tokens and executed immediately (&lt; 850ms).
-                We never record, write to disk, or train third-party machine learning models on your audio.
+                We never save your callers' voice or audio recordings to disk. Audio is processed directly in memory to run your tools, and is deleted immediately after the call. We will never sell, store, or train AI models on your customer voice data.
               </div>
 
               <div>
                 <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">1. Information We Collect</h4>
                 <p>
-                  We collect account identifiers (developer name, email address, and verified phone number), application metadata (registered OpenAPI endpoint URLs and schemas), and runtime telemetry logs strictly necessary to perform deterministic API tool dispatches.
+                  We collect your developer account details (name, email address, phone number), registered API endpoints and schemas, and technical logs needed to run your tool calls.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">2. Data Retention & Auto-Pruning</h4>
+                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">2. Data Retention &amp; Automatic Cleanup</h4>
                 <p>
-                  To prevent data hoarding, our backend strictly auto-prunes session histories, retaining only the latest 300 entries per application. Developers may permanently purge all caller session contexts at any time through their dashboard or wizard settings.
+                  To keep your data safe and clean, our backend automatically keeps only the latest 300 session entries per app. You can also permanently delete all caller session history at any time from your dashboard.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">3. Third-Party Integrations</h4>
+                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">3. Trusted Providers</h4>
                 <p>
-                  We integrate with secure industry providers: Groq Cloud (inference with zero retention agreements), Razorpay (PCI-DSS compliant payment processing), and Gmail SMTP for transactional authentication OTPs.
+                  We work with trusted industry providers: Groq Cloud (fast AI processing with zero data retention), Razorpay (secure PCI-compliant payments), and Google (email verification codes).
                 </p>
               </div>
 
               <div>
                 <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">4. Your Privacy Rights</h4>
                 <p>
-                  You hold the absolute right to export your telemetry data, request total deletion of your developer profile and application clusters, and rectify inaccurate information under applicable data protection laws.
+                  You can export your telemetry data, request total deletion of your developer profile and apps, and correct inaccurate details at any time under data protection regulations.
                 </p>
               </div>
 
@@ -145,35 +143,35 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose, onShowToa
               <div>
                 <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">1. Acceptance of Terms</h4>
                 <p>
-                  By provisioning an application cluster or executing endpoints on the T@S platform, you agree to these Terms of Service. T@S provides deterministic voice-to-execution telephony runtimes for software developers.
+                  By creating an account or using the T@S platform, you agree to these Terms. T@S provides real-time voice and API execution tools for software developers.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">2. Acceptable Use Policy</h4>
+                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">2. Acceptable Use</h4>
                 <p>
-                  You agree NOT to use the telephony engine for unlawful telemarketing, deceptive caller ID spoofing, harassment, fraudulent financial impersonation, or unconsented voice clone synthesis. Violation results in immediate cluster revocation.
+                  You agree not to use T@S for spam calls, deceptive caller ID spoofing, harassment, fraudulent impersonation, or creating voices without consent. Any violation results in immediate account suspension.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">3. Action Units & Metering</h4>
+                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">3. Units &amp; Fair Billing</h4>
                 <p>
-                  Services are billed based on transparent Action Units consumed. Each tier grants allocated monthly quotas with a 10% soft grace buffer. Beyond grace limits, requests are halted until upgrade or replenishment.
+                  Services are billed based on transparent Action Units consumed. Each plan includes monthly quotas with a 10% grace buffer so customer calls are not cut off unexpectedly.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">4. Ownership & Intellectual Property</h4>
+                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">4. Ownership of Your Code</h4>
                 <p>
-                  You retain 100% intellectual property ownership of your application schemas, business logic, endpoints, and tool definitions. T@S claims zero ownership over your proprietary software.
+                  You retain 100% intellectual property ownership of your application code, API endpoints, and business logic. T@S claims zero ownership over anything you build.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">5. SLA & Reliability</h4>
+                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">5. Uptime &amp; Reliability</h4>
                 <p>
-                  T@S maintains a 99.98% target throughput SLA for registered cluster routes. Services are provided with enterprise-grade durability and low latency.
+                  T@S targets a 99.98% uptime SLA with low-latency execution for all connected applications.
                 </p>
               </div>
             </>
@@ -185,32 +183,32 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose, onShowToa
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
                 <div className="p-3 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC]">
                   <span className="font-bold text-[#1D1A23] block text-xs">In-Transit Encryption</span>
-                  <span className="text-[11px] text-[#8B716B]">All SIP, WebRTC, and HTTPS traffic is enforced with TLS 1.3.</span>
+                  <span className="text-[11px] text-[#8B716B]">All voice (SIP, WebRTC) and web traffic is encrypted using modern TLS 1.3.</span>
                 </div>
                 <div className="p-3 rounded-2xl bg-[#FAF9F6] border border-[#FFE6DC]">
                   <span className="font-bold text-[#1D1A23] block text-xs">At-Rest Protection</span>
-                  <span className="text-[11px] text-[#8B716B]">API keys and database credentials encrypted with AES-256 and PBKDF2.</span>
+                  <span className="text-[11px] text-[#8B716B]">API keys and database credentials are encrypted at rest with AES-256.</span>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">Multi-Tenant Tenant Isolation</h4>
+                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">Dedicated App Workspaces</h4>
                 <p>
-                  Each developer cluster operates with isolated API keys (`tas_live_*`) and distinct database partitions. One cluster cannot read, query, or execute tools belonging to another tenant under any circumstance.
+                  Each developer workspace operates with isolated API keys (`tas_live_*`) and separate database partitions. One app cannot read or run code from another app.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">Data Processing Agreement (DPA) Terms</h4>
+                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">Data Processing Agreement (DPA)</h4>
                 <p>
-                  Under our standard DPA, T@S acts as a Data Processor for spoken input streams, executing user-directed webhooks solely upon natural caller instruction. We never utilize customer telemetry to train public models.
+                  Under our standard DPA, T@S processes voice streams solely to execute your chosen API actions upon user request. We never store audio or train public models on your customer data.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">Audit Logs & Access Controls</h4>
+                <h4 className="font-bold text-[#1D1A23] text-sm font-['Outfit'] mb-1">Audit Logs &amp; Access Controls</h4>
                 <p>
-                  Super Admin governance is role-restricted and cryptographically protected. Every configuration modification is timestamped and auditable.
+                  Admin controls are role-restricted. Every configuration modification is timestamped and logged for security.
                 </p>
               </div>
             </>
@@ -220,7 +218,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose, onShowToa
           {type === 'cookies' && (
             <div className="space-y-4">
               <p className="text-xs text-[#57423D]">
-                We value your privacy. We use minimal cookies and local browser storage to keep you authenticated, remember your active application cluster, and maintain workspace responsiveness.
+                We value your privacy. We use minimal cookies and local browser storage to keep you authenticated, remember your active workspace, and keep pages loading fast.
               </p>
 
               <div className="space-y-3">
@@ -234,7 +232,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose, onShowToa
                       </span>
                     </div>
                     <p className="text-[11px] text-[#8B716B] mt-0.5">
-                      Required for developer login session tokens, CSRF protection, and application cluster routing.
+                      Required for developer sign-in sessions, CSRF protection, and workspace routing.
                     </p>
                   </div>
                   <input
@@ -248,9 +246,9 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose, onShowToa
                 {/* Functional Cookies */}
                 <div className="p-3.5 rounded-2xl bg-white border border-[#FFE6DC] flex items-center justify-between gap-4">
                   <div>
-                    <span className="font-bold text-xs text-[#1D1A23]">Functional & Workspace Preferences</span>
+                    <span className="font-bold text-xs text-[#1D1A23]">Functional &amp; Workspace Preferences</span>
                     <p className="text-[11px] text-[#8B716B] mt-0.5">
-                      Remembers your last selected cluster ID, UI view mode, and starter templates filter state.
+                      Remembers your active workspace, selected view, and tool builder preferences.
                     </p>
                   </div>
                   <input
@@ -264,9 +262,9 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose, onShowToa
                 {/* Performance Cookies */}
                 <div className="p-3.5 rounded-2xl bg-white border border-[#FFE6DC] flex items-center justify-between gap-4">
                   <div>
-                    <span className="font-bold text-xs text-[#1D1A23]">Anonymous Latency Telemetry</span>
+                    <span className="font-bold text-xs text-[#1D1A23]">Latency &amp; Performance Telemetry</span>
                     <p className="text-[11px] text-[#8B716B] mt-0.5">
-                      Measures acoustic pipeline round-trip response latencies (ms) to detect network hiccups.
+                      Measures response times in milliseconds to help us detect and fix network slowdowns.
                     </p>
                   </div>
                   <input
@@ -283,21 +281,21 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose, onShowToa
           {/* 5. PLATFORM STATUS */}
           {type === 'status' && (
             <div className="space-y-4">
-              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between">
+              <div className="p-3.5 rounded-2xl bg-[#FFF6F3] border border-[#FFDAD2] text-[#84240D] flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span className="font-bold text-xs font-['Outfit']">All Core Telephony Nodes Operational</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF7E5F] animate-pulse"></span>
+                  <span className="font-bold text-xs font-['Outfit']">All Voice &amp; API Services Operational</span>
                 </div>
-                <span className="font-mono text-[11px] font-semibold text-emerald-700">99.98% Uptime (90d)</span>
+                <span className="font-mono text-[11px] font-semibold text-[#A53B22]">99.98% Uptime (90d)</span>
               </div>
 
               <div className="space-y-2">
                 {[
-                  { name: 'Acoustic Voice Pipeline (Groq / Llama)', status: 'Operational', latency: '482ms' },
-                  { name: 'Deterministic OpenAPI Function Router', status: 'Operational', latency: '210ms' },
-                  { name: 'Live Webhook & Telephony SIP Gateway', status: 'Operational', latency: '190ms' },
-                  { name: 'Razorpay Payment & Quota Gateway', status: 'Operational', latency: '340ms' },
-                  { name: 'Gmail SMTP OTP Verification Service', status: 'Operational', latency: '520ms' },
+                  { name: 'Voice Processing Pipeline (Groq / Llama)', status: 'Operational', latency: '482ms' },
+                  { name: 'API Tool Calling & Dispatcher', status: 'Operational', latency: '210ms' },
+                  { name: 'Phone & WebRTC Voice Gateway', status: 'Operational', latency: '190ms' },
+                  { name: 'Razorpay Payment Gateway', status: 'Operational', latency: '340ms' },
+                  { name: 'Email OTP Verification Service', status: 'Operational', latency: '520ms' },
                 ].map((item, idx) => (
                   <div
                     key={idx}
@@ -306,7 +304,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose, onShowToa
                     <span className="font-medium text-[#1D1A23]">{item.name}</span>
                     <div className="flex items-center gap-3">
                       <span className="font-mono text-[11px] text-[#8B716B]">{item.latency}</span>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold font-mono">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#FFDAD2]/60 text-[#A53B22] text-[10px] font-bold font-mono">
                         {item.status}
                       </span>
                     </div>
@@ -315,7 +313,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose, onShowToa
               </div>
 
               <div className="text-[11px] text-[#8B716B] text-center pt-2">
-                Real-time automated heartbeat probe executed every 60 seconds across all regions.
+                Automated health check runs every 60 seconds across all regions.
               </div>
             </div>
           )}

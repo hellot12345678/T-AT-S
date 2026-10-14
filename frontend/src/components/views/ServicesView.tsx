@@ -14,16 +14,16 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onOpenAu
     {
       id: 'telephony',
       category: 'voice',
-      title: 'Autonomous Voice Telephony Engine',
-      badge: 'Core Runtime',
-      latency: '< 850ms',
+      title: 'Phone & Web Voice Calls',
+      badge: 'Core Engine',
+      latency: '< 850ms Speed',
       icon: 'call',
-      summary: 'Inbound and outbound voice AI engine that talks with callers and executes live backend code during calls.',
+      summary: 'Talk with callers over regular phone lines or web browsers, and run your app\'s code live during the call.',
       details: [
-        'Full duplex audio streaming with WebRTC and SIP trunk compatibility.',
-        'Zero-audio disk storage: acoustic representations are processed in volatile memory and purged.',
-        'Humanized natural speech with active turn-taking and interruption handling.',
-        'Native call recording consent gating and compliance isolation.'
+        'Works on standard phone numbers (SIP) and web apps (WebRTC).',
+        'Zero audio saved on disk: voice is processed in memory and deleted right after the call.',
+        'Natural human speech with smart turn-taking and smooth interruption handling.',
+        'Built-in caller consent controls and privacy safeguards.'
       ],
       actionLabel: 'Test in Voice Playground',
       actionView: 'live-voice-playground' as AppView
@@ -31,16 +31,16 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onOpenAu
     {
       id: 'tool_calling',
       category: 'tools',
-      title: 'Deterministic Tool Calling & Action Dispatcher',
-      badge: 'Zero-Hallucination',
+      title: 'Reliable API & Tool Calling',
+      badge: 'Zero Guessing',
       latency: 'Instant Hook',
       icon: 'build_circle',
-      summary: 'Extracts exact JSON parameters from spoken words and dispatches verified HTTP calls to your applications.',
+      summary: 'Extracts exact names, dates, and numbers from spoken words and calls your API without making things up.',
       details: [
-        'Strict schema validation against developer-registered OpenAPI parameter contracts.',
-        'Eliminates hallucinated false-positive API requests common in generic conversational chatbots.',
-        'Dispatches GET, POST, PUT, DELETE with configurable authorization headers and timeouts.',
-        'Supports synchronous spoken results or asynchronous background webhooks.'
+        'Strict parameter checking against your OpenAPI specifications.',
+        'Eliminates made-up or hallucinated actions common in standard AI chatbots.',
+        'Supports GET, POST, PUT, and DELETE with custom headers and timeouts.',
+        'Runs actions instantly during calls or in the background via webhooks.'
       ],
       actionLabel: 'Open Visual Tool Builder',
       actionView: 'visual-tool-builder' as AppView
@@ -48,16 +48,16 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onOpenAu
     {
       id: 'voice_synthesis',
       category: 'voice',
-      title: 'Zero-Shot Voice Synthesis & Acoustic Cloning',
-      badge: 'Acoustic AI',
-      latency: '6-Sec Setup',
+      title: 'Instant Custom Brand Voices',
+      badge: 'Instant Setup',
+      latency: '6-Sec Voice',
       icon: 'record_voice_over',
-      summary: 'Create personalized, lifelike conversational brand voices in seconds with zero specialized GPU hardware.',
+      summary: 'Create natural, custom brand voices in seconds from just a short audio sample.',
       details: [
-        '6-second calibration from sample audio WAV or microphone voice sample.',
-        'Expressive conversational inflections tuned for professional phone customer service.',
-        'Low latency streaming playback with packetized chunk generation.',
-        'Voice clone authorization verification preventing unconsented voice spoofing.'
+        '6-second setup from an audio file or microphone recording.',
+        'Natural speaking tone designed for friendly customer support.',
+        'Fast streaming playback with zero awkward pauses.',
+        'Built-in voice verification to prevent unauthorized voice cloning.'
       ],
       actionLabel: 'Calibrate Voice Profile',
       actionView: 'component-wizard' as AppView
@@ -65,16 +65,16 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onOpenAu
     {
       id: 'cluster_isolation',
       category: 'infra',
-      title: 'Multi-Tenant Enterprise Cluster Isolation',
-      badge: 'VPC Security',
+      title: 'Dedicated App Workspaces',
+      badge: 'Private & Secure',
       latency: '100% Isolated',
       icon: 'dns',
-      summary: 'Provision dedicated application clusters with isolated schemas, scoped API keys, and custom quotas.',
+      summary: 'Separate workspaces with dedicated API keys, private data, and custom usage limits.',
       details: [
-        'Cryptographic separation of workspace applications preventing cross-tenant data leaks.',
-        'Scoped `tas_live_*` API keys with automated revocation and rotation.',
-        'Role-based access control with dedicated Super Admin governance capabilities.',
-        'Self-hosted pgvector memory integration option for on-premise compliance.'
+        'Complete separation of workspace apps to keep your data safe and isolated.',
+        'Scoped `tas_live_*` API keys that you can generate or revoke anytime.',
+        'Role-based access control with developer and admin permissions.',
+        'Option to run on your own internal servers or private cloud.'
       ],
       actionLabel: 'Manage App Clusters',
       actionView: 'developer-dashboard' as AppView
@@ -82,16 +82,16 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onOpenAu
     {
       id: 'telemetry_metering',
       category: 'infra',
-      title: 'Real-Time Telemetry & Quota Metering',
-      badge: 'ACID Metering',
-      latency: '10% Grace Buffer',
+      title: 'Simple Usage & Fair Billing',
+      badge: 'Transparent',
+      latency: 'Pay As You Go',
       icon: 'speed',
-      summary: 'Transparent Action Unit accounting with automatic database storage pruning to prevent bloat.',
+      summary: 'Clear Action Unit accounting with automatic history cleanup so you never overpay.',
       details: [
-        'Dynamic unit multipliers: Text queries (1 unit), Voice chats (2 units), Tool executions (3 units).',
-        'Automatic Session History pruning keeping strictly the newest 300 records per app.',
-        '10% soft grace buffer so critical customer phone calls are never abruptly dropped.',
-        'Live Razorpay payment gateway integration for automated top-ups and plan upgrades.'
+        'Simple units: 1 unit per text query, 2 units per voice turn, 3 units per API action.',
+        'Automatic cleanup keeps only the newest 300 sessions to keep things fast.',
+        '10% grace buffer ensures important customer calls are never cut off.',
+        'Safe payments powered by Razorpay for easy top-ups and upgrades.'
       ],
       actionLabel: 'View Subscription & Pricing',
       actionView: 'subscription-pricing' as AppView
@@ -99,16 +99,16 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onOpenAu
     {
       id: 'developer_sdk',
       category: 'tools',
-      title: 'Developer SDKs & OpenAPI JSON Connectors',
-      badge: '5-Min Drop-in',
-      latency: 'Native Code',
+      title: 'Developer SDKs & Starter Templates',
+      badge: '5-Min Setup',
+      latency: 'Ready to Run',
       icon: 'terminal',
-      summary: 'Pre-built libraries and connectors for Python, Django, and React with starter templates.',
+      summary: 'Ready-to-use libraries and templates for Python, Django, and React apps.',
       details: [
-        'Native Python SDK (`pip install t-at-s`) with clean `@engine.register_action` decorators.',
+        'Python SDK (`pip install t-at-s`) with simple function decorators.',
         'React hooks (`useAcousticSession`) for 1-click web microphone streaming.',
-        'Pre-built templates for Task Managers (Linear/Jira), Calendars (Calendly), Banking, and Support.',
-        'Interactive OpenAPI 3.0 Swagger interactive sandbox for live endpoint testing.'
+        'Starter templates for bookings, customer support, orders, and inquiries.',
+        'Interactive API sandbox to test endpoints in your browser before going live.'
       ],
       actionLabel: 'Launch Developer Dashboard',
       actionView: 'developer-dashboard' as AppView
@@ -144,22 +144,22 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onOpenAu
         {/* Header */}
         <div className="text-center space-y-3 max-w-2xl mx-auto">
           <span className="text-[11px] font-mono font-bold text-[#A53B22] uppercase tracking-wider">
-            Enterprise Solutions
+            Our Capabilities
           </span>
           <h1 className="font-['Outfit'] text-3xl sm:text-4xl font-extrabold text-[#1D1A23] tracking-tight">
             Explore T@S Platform Services
           </h1>
           <p className="text-xs sm:text-sm text-[#57423D] leading-relaxed">
-            Everything you need to deploy enterprise-grade autonomous voice agents that execute verified code in real-time.
+            Everything you need to build fast, private voice agents that run your code in real time.
           </p>
 
           {/* Category Filter Pills */}
           <div className="flex items-center justify-center gap-2 pt-3">
             {[
               { id: 'all', label: 'All Services' },
-              { id: 'voice', label: 'Voice & Telephony' },
-              { id: 'tools', label: 'Tool Calling & SDKs' },
-              { id: 'infra', label: 'Infrastructure & Security' },
+              { id: 'voice', label: 'Voice & Calling' },
+              { id: 'tools', label: 'API Tools & SDKs' },
+              { id: 'infra', label: 'Security & Billing' },
             ].map((cat) => (
               <button
                 key={cat.id}
@@ -239,9 +239,9 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onOpenAu
         {/* Bottom Contact / Inquiries Box */}
         <div className="p-6 rounded-3xl bg-[#FAF9F6] border border-[#FFE6DC] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="space-y-1">
-            <h4 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">Need a custom enterprise voice architecture?</h4>
+            <h4 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">Need a custom enterprise voice setup?</h4>
             <p className="text-xs text-[#57423D]">
-              Our engineering team helps developers deploy high-throughput SIP trunks and custom OpenAPI integrations.
+              Our engineering team helps developers connect phone systems and custom APIs.
             </p>
           </div>
           <a
@@ -255,3 +255,4 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ onNavigate, onOpenAu
     </div>
   );
 };
+

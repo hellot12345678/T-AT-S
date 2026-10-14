@@ -494,8 +494,8 @@ export const Header: React.FC<HeaderProps> = ({
                       >
                         <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">call</span>
                         <div>
-                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Autonomous Telephony</div>
-                          <div className="text-[11px] text-[#57423D]">Enterprise SIP, PSTN &amp; WebRTC voice pipelines</div>
+                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Phone &amp; Web Calls</div>
+                          <div className="text-[11px] text-[#57423D]">Talk to callers and run your app's code live</div>
                         </div>
                       </button>
                       <button
@@ -507,8 +507,8 @@ export const Header: React.FC<HeaderProps> = ({
                       >
                         <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">graphic_eq</span>
                         <div>
-                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Zero-Shot Voice Clones</div>
-                          <div className="text-[11px] text-[#57423D]">Sub-850ms natural latency acoustic graph</div>
+                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Custom AI Voices</div>
+                          <div className="text-[11px] text-[#57423D]">Natural brand voices ready in 6 seconds</div>
                         </div>
                       </button>
                       <button
@@ -520,8 +520,8 @@ export const Header: React.FC<HeaderProps> = ({
                       >
                         <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">build</span>
                         <div>
-                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Real-Time Tool Calling</div>
-                          <div className="text-[11px] text-[#57423D]">Zero-code dynamic OpenAPI parameter binding</div>
+                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Automated API Calling</div>
+                          <div className="text-[11px] text-[#57423D]">Extracts parameters and runs your tools without guessing</div>
                         </div>
                       </button>
                       <button
@@ -533,8 +533,8 @@ export const Header: React.FC<HeaderProps> = ({
                       >
                         <span className="material-symbols-outlined text-[18px] text-[#A53B22] mt-0.5">security</span>
                         <div>
-                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Deterministic Router &amp; DPAs</div>
-                          <div className="text-[11px] text-[#57423D]">bCrypt gating with self-hosted pgvector</div>
+                          <div className="text-xs font-bold text-[#1D1A23] group-hover:text-[#A53B22]">Private by Default</div>
+                          <div className="text-[11px] text-[#57423D]">Zero voice audio saved on disk. Safe and private</div>
                         </div>
                       </button>
                     </div>
@@ -624,7 +624,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <div>
                   <h3 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">T@S SDK Quickstart</h3>
-                  <p className="text-[11px] text-[#57423D]">Integrate deterministic acoustic AI into your stack</p>
+                  <p className="text-[11px] text-[#57423D]">Add real-time voice and API actions to your app in minutes</p>
                 </div>
               </div>
               <button
@@ -654,13 +654,13 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="mt-1.5 p-3 rounded-xl bg-[#1A1816] text-[#F4EFEA] font-mono text-[11px] overflow-x-auto leading-relaxed">
                   <span className="text-[#8B716B]"># Connect directly to your live cluster</span><br />
                   <span className="text-[#FF7E5F]">from</span> tats <span className="text-[#FF7E5F]">import</span> AcousticAgent<br />
-                  agent = AcousticAgent(api_key=<span className="text-emerald-400">"tas_live_..."</span>)<br />
+                  agent = AcousticAgent(api_key=<span className="text-amber-400">"tas_live_..."</span>)<br />
                   response = agent.execute_voice(audio_stream)
                 </div>
               </div>
 
               <div className="p-3 rounded-xl bg-[#FFF8EB] border border-[#FDE047] text-[11px] text-[#854D0E]">
-                <strong>Sub-100ms Action Routing:</strong> Every voice stream is processed through the acoustic neural core with verified tool execution.
+                <strong>Fast &amp; Reliable:</strong> Speech is processed directly in memory and triggers your verified code in under 1 second.
               </div>
             </div>
 

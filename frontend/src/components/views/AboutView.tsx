@@ -38,13 +38,12 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenAuth, de
           </div>
 
           <h1 className="font-['Outfit'] text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#1D1A23] tracking-tight leading-tight">
-            We build the autonomous voice-to-execution layer for modern software.
+            We connect human voice directly to your software.
           </h1>
 
           <p className="text-sm sm:text-base text-[#57423D] leading-relaxed">
-            T@S was founded to solve a simple problem: voice bots talk too much and do too little. 
-            We replace sluggish, multi-second conversational chatbots with a real-time acoustic engine 
-            that deterministically executes software actions the moment humans speak.
+            T@S was built to fix a simple frustration: most voice bots talk a lot, but cannot actually do anything. 
+            We replace slow, 5-second chatbots with a fast voice engine that runs your API the moment someone speaks.
           </p>
         </div>
 
@@ -67,8 +66,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenAuth, de
               <div className="space-y-1.5">
                 <h3 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">1. Talk (Listen)</h3>
                 <p className="text-xs text-[#57423D] leading-relaxed">
-                  Callers speak in everyday natural human language over telephony SIP or WebRTC. 
-                  Our pipeline breaks down phonemes and acoustic intent in under 480ms.
+                  Callers speak naturally over phone lines or web browsers. 
+                  T@S understands what they want in under half a second.
                 </p>
               </div>
             </div>
@@ -78,10 +77,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenAuth, de
                 <span className="material-symbols-outlined text-[22px]">psychology</span>
               </div>
               <div className="space-y-1.5">
-                <h3 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">2. Decide (Map)</h3>
+                <h3 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">2. Decide (Match)</h3>
                 <p className="text-xs text-[#57423D] leading-relaxed">
-                  Rather than guessing or hallucinating answers, our engine extracts and validates exact 
-                  parameter arguments against your developer-registered OpenAPI tool schemas.
+                  Instead of guessing or making things up, T@S extracts the exact names, dates, or numbers 
+                  needed to call your API safely.
                 </p>
               </div>
             </div>
@@ -91,10 +90,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenAuth, de
                 <span className="material-symbols-outlined text-[22px]">bolt</span>
               </div>
               <div className="space-y-1.5">
-                <h3 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">3. Solve (Execute)</h3>
+                <h3 className="font-['Outfit'] font-bold text-base text-[#1D1A23]">3. Solve (Run)</h3>
                 <p className="text-xs text-[#57423D] leading-relaxed">
-                  Your webhooks, database mutations, and backend endpoints execute immediately, 
-                  returning spoken conversational confirmations back to the caller in real-time.
+                  Your API runs immediately, updates your database, and gives a clear spoken confirmation 
+                  back to the caller in real time.
                 </p>
               </div>
             </div>
@@ -119,20 +118,20 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenAuth, de
                 <h3 className="font-bold text-sm text-[#1D1A23] font-['Outfit']">Sub-850ms vs 3-5s Delays</h3>
               </div>
               <p className="text-xs text-[#57423D] leading-relaxed">
-                Traditional voice bots pass audio through multiple heavy cloud layers, causing awkward 3 to 5 second silences. 
-                T@S operates on a synchronized acoustic graph that completes reasoning and execution in sub-850ms.
+                Most voice bots make callers wait 3 to 5 awkward seconds between replies. 
+                T@S processes voice and triggers your code in under 1 second, keeping conversations natural and snappy.
               </p>
             </div>
 
             <div className="p-5 rounded-2xl bg-white border border-[#FFE6DC] space-y-2">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#FF7E5F] text-[20px]">lock</span>
-                <h3 className="font-bold text-sm text-[#1D1A23] font-['Outfit']">Zero Audio Storage Guarantee</h3>
+                <h3 className="font-bold text-sm text-[#1D1A23] font-['Outfit']">Zero Audio Saved on Disk</h3>
               </div>
               <p className="text-xs text-[#57423D] leading-relaxed">
-                Most telephony aggregators record, store, and mine your voice calls. 
-                T@S processes voice strictly in volatile RAM and immediately purges audio frames. 
-                Your customer voice data is never stored on disk or used for model training.
+                Most voice platforms record and store your calls on disk. 
+                T@S processes audio directly in memory and deletes it immediately after the call. 
+                We never save recordings or train models on your data.
               </p>
             </div>
 
@@ -142,19 +141,19 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenAuth, de
                 <h3 className="font-bold text-sm text-[#1D1A23] font-['Outfit']">70-80% Lower Costs</h3>
               </div>
               <p className="text-xs text-[#57423D] leading-relaxed">
-                No high per-minute voice markups or unpredictable per-token LLM bills. 
-                We charge simple, transparent Action Units. You pay only for real, completed software operations.
+                No surprise bills or high per-minute charges. 
+                You only pay transparent units when user questions, replies, or API actions actually run.
               </p>
             </div>
 
             <div className="p-5 rounded-2xl bg-white border border-[#FFE6DC] space-y-2">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#FF7E5F] text-[20px]">check_circle</span>
-                <h3 className="font-bold text-sm text-[#1D1A23] font-['Outfit']">Deterministic Real Execution</h3>
+                <h3 className="font-bold text-sm text-[#1D1A23] font-['Outfit']">Reliable Code Execution (No Guessing)</h3>
               </div>
               <p className="text-xs text-[#57423D] leading-relaxed">
-                Conversational LLMs are notorious for hallucinating promises they cannot fulfill. 
-                T@S enforces strict schema validation before any API dispatch, ensuring zero false-positive mutations.
+                AI chatbots often make up answers or promise things they cannot do. 
+                T@S checks every parameter before running your API, ensuring your app runs accurately every time.
               </p>
             </div>
           </div>
@@ -174,23 +173,23 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenAuth, de
           <div className="space-y-3">
             {[
               {
-                title: '5-Minute Drop-in Integration',
-                desc: 'Works with your existing backend stack. Native SDKs for Python, Django, React, plus standard REST endpoints. Simply import your OpenAPI JSON to register tools.',
+                title: '5-Minute Setup',
+                desc: 'Connect your Python, Django, or React app in minutes. Import your existing OpenAPI file or define endpoints in our visual builder.',
                 icon: 'extension'
               },
               {
-                title: 'Multi-Tenant Security & Automated Pruning',
-                desc: 'Isolated application clusters with dedicated API keys and encrypted schemas. Database session history is automatically capped at 300 entries to prevent storage bloat.',
+                title: 'Private Workspaces & Security',
+                desc: 'Private workspaces with dedicated API keys. Your data stays separate, safe, and organized with automated history cleanup.',
                 icon: 'security'
               },
               {
-                title: 'Built-in Visual Tool Builder & Templates',
-                desc: 'Build, test, and deploy telephony endpoints visually with pre-built starter templates for task management, calendar bookings, banking inquiries, and refunds.',
+                title: 'Visual Tool Builder & Templates',
+                desc: 'Build and test your API tools visually. Choose from ready-to-use templates for bookings, customer support, and orders.',
                 icon: 'build'
               },
               {
-                title: '99.98% High-Throughput SLA',
-                desc: 'Architected for enterprise reliability with multi-region failover and real-time automated health probes.',
+                title: 'Reliable 99.98% Uptime',
+                desc: 'Built for mission-critical apps with automatic failover and 99.98% uptime.',
                 icon: 'verified'
               }
             ].map((b, idx) => (
@@ -212,7 +211,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenAuth, de
           <div className="space-y-1 text-center sm:text-left">
             <h3 className="font-['Outfit'] text-xl font-bold">Ready to voice-enable your software?</h3>
             <p className="text-xs text-[#A49BAF]">
-              Provision your first application cluster in under 60 seconds with 2,000 free Action Units.
+              Create your free account in under 60 seconds with 2,000 free Action Units included.
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -237,3 +236,4 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate, onOpenAuth, de
     </div>
   );
 };
+
